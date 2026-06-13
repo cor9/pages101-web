@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<!-- ===========================================================================
+  Pages101 — CLASSIC TEMPLATE · CANONICAL REFERENCE (port 1:1)
+
+  RULES FOR PORTING:
+  - This file IS the design. Port structure + CSS verbatim into the
+    /p/[slug] renderer for template = 'classic'. Do not redesign, re-space,
+    re-color, or "improve."
+  - Comments marked [BIND] show where dynamic data goes.
+  - 101 Tips NEVER render here — editor-only. Draft previews show exactly
+    what the public sees.
+  - The template name never renders on the public page.
+  - Placeholders: when an image slot is empty, render the .ph block as-is
+    (neutral gradient + monogram). Never branded artwork in photo slots.
+  - Free tier only: .freebar (top) and .promo (footer). Plus pages omit both
+    and render the small credit line instead (see comment at bottom).
+  - Accent/font overrides: set --ua / --ud / --ub on :root from page data;
+    fallbacks below are the Classic defaults.
+=========================================================================== -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- [BIND] <title>{display_name} — Young Actor</title> -->
+<title>Maya Ralston — Young Actor</title>
+<!-- [BIND] if noindex: <meta name="robots" content="noindex,nofollow"> -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:var(--ua, #C8553D);     /* [BIND] --ua from page.accent */
+    --display:var(--ud, 'Outfit');   /* [BIND] --ud from page.font_pair */
+    --bodyf:var(--ub, 'Inter');
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#FFFFFF;color:#1F1D1A;font-family:var(--bodyf),sans-serif}
+  button{font-family:inherit}
+  a{transition:all .15s ease}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+
+  /* Neutral image placeholder — the ONLY allowed empty-slot visual */
+  .ph{
+    position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    background:linear-gradient(150deg,#E0D5C3 0%,#CDBFA7 55%,#B9A98D 100%);
+  }
+  .ph::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 28%, rgba(255,255,255,.5), transparent 62%)}
+  .ph span{position:relative;z-index:1;font-family:var(--display),sans-serif;font-weight:700;
+    color:rgba(43,35,32,.28);font-size:30px}
+
+  .vid{position:relative;aspect-ratio:16/9;background:#221C18;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .vid::before{content:"";width:56px;height:56px;border-radius:50%;
+    border:1.5px solid rgba(245,239,230,.55);position:absolute}
+  .vid::after{content:"";width:0;height:0;border-left:17px solid rgba(245,239,230,.9);
+    border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+
+  /* FREE TIER ONLY — cream top bar (never black) */
+  .freebar{
+    background:#F5EFE6;border-bottom:1px solid rgba(43,35,32,.1);
+    padding:10px 16px;text-align:center;font-size:12px;font-weight:600;color:#5C5048;
+  }
+  .freebar b{color:var(--accent);font-weight:800}
+  .freebar a{color:var(--accent);font-weight:700;text-decoration:none;margin-left:8px;white-space:nowrap}
+  .freebar a:hover{text-decoration:underline}
+
+  /* Centered single column — Classic is NOT a two-column layout */
+  .page{max-width:680px;margin:0 auto;padding:64px 24px 0;text-align:center}
+  .sec{margin-top:84px}
+  .sec-title{font-size:12px;letter-spacing:.24em;text-transform:uppercase;
+    font-weight:700;color:#8A847C;margin-bottom:30px}
+
+  /* Hero: featured photo with slate pill badge */
+  .feature{position:relative;margin:0 auto 32px;cursor:pointer;border:none;background:none;
+    padding:0;display:block;width:min(380px,80vw)}
+  .feature .ph{aspect-ratio:4/5;border-radius:14px}
+  .feature .ph span{font-size:64px}
+  .slate-badge{
+    position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:8px;white-space:nowrap;
+    font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;
+    padding:11px 20px;border-radius:999px;background:var(--accent);color:#fff;
+    box-shadow:0 8px 22px rgba(31,29,26,.2);transition:transform .15s ease;
+  }
+  .slate-badge::before{content:"▶";font-size:9px}
+  .feature:hover .slate-badge{transform:translateX(-50%) scale(1.05)}
+  /* [BIND] hide .slate-badge when slate_url is empty */
+
+  h1{font-family:var(--display),sans-serif;font-weight:700;
+    font-size:clamp(36px,7vw,48px);letter-spacing:-.02em;line-height:1.05;margin-top:36px}
+  h1 em{font-style:normal;color:var(--accent)}  /* [BIND] surname in <em> */
+
+  .status{font-size:16px;font-weight:500;margin-top:14px;line-height:1.55}
+
+  /* Stats are a TEXT LINE, not boxes */
+  .reps{margin-top:14px;font-size:13px;color:#6E6862;line-height:1.85}
+  .reps a{color:#1F1D1A;font-weight:600;text-decoration:underline;
+    text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:3px}
+
+  /* Parent relay (has_rep = false): quiet button in the flow, not a banner */
+  .parent-btn{
+    display:inline-block;margin-top:10px;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;font-weight:700;background:var(--accent);color:#fff;
+    text-decoration:none;padding:13px 26px;border-radius:999px;transition:opacity .15s ease;
+  }
+  .parent-btn:hover{opacity:.88}
+  .parent-note{margin-top:12px;font-size:11.5px;color:#6E6862;line-height:1.5}
+
+  /* Link pills: soft gray, NOT red blocks */
+  .links{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .links a{font-size:12.5px;font-weight:600;text-decoration:none;color:#1F1D1A;
+    background:#F2EFEA;padding:11px 18px;border-radius:9px}
+  .links a:hover{background:var(--accent);color:#fff}
+
+  /* Headshots grid + lightbox */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .grid3 button{border:none;padding:0;cursor:zoom-in;background:none;transition:transform .18s ease}
+  .grid3 button:hover{transform:translateY(-4px)}
+  .grid3 .ph{aspect-ratio:4/5;width:100%;border-radius:10px}
+
+  /* Resume sheet (paper on the page) */
+  .sheet{background:#fff;color:#26201C;text-align:left;border-radius:3px;
+    box-shadow:0 1px 2px rgba(20,15,12,.14), 0 16px 42px rgba(20,15,12,.22);
+    padding:44px 46px;font-family:'Inter',sans-serif}
+  .sheet-head{text-align:center;border-bottom:2px solid #26201C;padding-bottom:16px;margin-bottom:8px}
+  .sheet-head h3{font-family:var(--display),sans-serif;font-weight:700;font-size:26px}
+  .sheet-head p{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;
+    color:#7A6E64;margin-top:7px}
+  .sheet h4{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;
+    margin:24px 0 10px;display:flex;align-items:center;gap:12px}
+  .sheet h4::after{content:"";flex:1;border-top:1px solid rgba(38,32,28,.18)}
+  .srow{display:grid;grid-template-columns:1.25fr .9fr 1fr;gap:12px;
+    font-size:13px;line-height:1.5;padding:4px 0}
+  .srow .p{font-weight:600}
+  .srow .r{font-style:italic;color:#5C5048}
+  .srow .d{text-align:right;color:#5C5048}
+  .skills{font-size:13px;line-height:1.7;color:#3D352F}
+  .sheet-sync{margin-top:24px;display:flex;align-items:center;justify-content:space-between;
+    gap:14px;background:#FAF6EE;border:1px dashed rgba(38,32,28,.25);border-radius:8px;
+    padding:14px 18px}
+  .sheet-sync p{font-size:12px;color:#5C5048;text-align:left;line-height:1.5}
+  .sheet-sync p b{color:#26201C}
+  .sheet-sync a{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;
+    white-space:nowrap;color:#fff;background:var(--accent);text-decoration:none;
+    padding:10px 16px;border-radius:999px}
+
+  /* Clips */
+  .clips{display:grid;grid-template-columns:1fr 1fr;gap:18px;text-align:left}
+  .clip p{font-size:13px;font-weight:700;margin-bottom:8px}
+  .clip small{display:block;font-size:11px;font-weight:700;color:var(--accent);
+    margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase}
+
+  /* Feed (PLUS pages only — omit entirely on free) */
+  .feed{display:grid;gap:16px;text-align:left}
+  .feed-card{border-radius:14px;padding:22px;display:grid;gap:12px;background:#F8F6F2}
+  .feed-date{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    font-weight:800;color:var(--accent)}
+  .feed-text{font-size:15px;line-height:1.6}
+  .feed-img{aspect-ratio:16/9;border-radius:10px}
+
+  /* FREE TIER ONLY — ecosystem footer */
+  .promo{margin-top:92px;background:#F5EFE6;border-top:1px solid rgba(43,35,32,.1);
+    padding:44px 24px 20px}
+  .promo-in{max-width:680px;margin:0 auto;text-align:center}
+  .promo-eyebrow{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;
+    font-weight:800;color:var(--accent);margin-bottom:18px}
+  .promo-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:left}
+  .promo-card{background:#fff;border:1px solid rgba(43,35,32,.12);border-radius:12px;
+    padding:20px;text-decoration:none;color:#1F1D1A;display:block}
+  .promo-card:hover{border-color:var(--accent);box-shadow:0 8px 22px rgba(43,35,32,.08)}
+  .promo-card b{display:block;font-family:var(--display),sans-serif;font-size:16px;
+    font-weight:700;margin-bottom:5px}
+  .promo-card span{font-size:12.5px;color:#6E6862;line-height:1.5;display:block}
+  .promo-card i{font-style:normal;font-size:11px;font-weight:800;color:var(--accent);
+    letter-spacing:.1em;text-transform:uppercase;display:block;margin-top:10px}
+  .promo-badge{margin-top:28px;padding-top:20px;border-top:1px solid rgba(43,35,32,.12);
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:#8A847C}
+  .promo-badge b{color:var(--accent)}
+
+  /* Lightbox + slate modal */
+  .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;
+    justify-content:center;background:rgba(15,12,10,.92);padding:24px}
+  .modal.open{display:flex}
+  .m-btn{position:absolute;background:none;border:none;color:rgba(245,239,230,.85);
+    cursor:pointer;font-size:34px;line-height:1;padding:14px}
+  .m-btn:hover{color:#fff}
+  .m-close{top:14px;right:18px;font-size:26px}
+  .m-prev{left:8px;top:50%;transform:translateY(-50%)}
+  .m-next{right:8px;top:50%;transform:translateY(-50%)}
+  .lb-stage{width:min(500px,86vw)}
+  .lb-stage .ph{aspect-ratio:4/5;border-radius:8px}
+  .lb-stage .ph span{font-size:60px}
+  .m-cap{text-align:center;color:rgba(245,239,230,.75);font-size:12px;
+    letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:14px}
+  .slate-stage{width:min(760px,92vw)}
+
+  @media (max-width:600px){
+    .grid3{grid-template-columns:repeat(2,1fr)}
+    .clips{grid-template-columns:1fr}
+    .promo-cards{grid-template-columns:1fr}
+    .page{padding-top:48px}
+    .sheet{padding:30px 22px}
+    .srow{grid-template-columns:1.4fr 1fr}
+    .srow .d{display:none}
+    .sheet-sync{flex-direction:column;align-items:flex-start}
+  }
+</style>
+</head>
+<body>
+
+<!-- FREE TIER ONLY -->
+<div class="freebar">✦ This page is hosted free on <b>Pages101</b> by Child Actor 101 <a href="https://pages.childactor101.com">Build yours →</a></div>
+
+<div class="page">
+
+  <!-- Hero. [BIND] featured headshot image replaces .ph when uploaded. -->
+  <button class="feature" data-slate aria-label="Play slate video">
+    <div class="ph"><span>M</span></div> <!-- [BIND] monogram = first initial -->
+    <span class="slate-badge">Play my slate</span> <!-- [BIND] hide if no slate_url -->
+  </button>
+
+  <!-- [BIND] split display_name: all-but-last word plain, last word in <em> -->
+  <h1>Maya <em>Ralston</em></h1>
+
+  <!-- [BIND] status_line -->
+  <p class="status">Young performer for film, TV, commercial, and voiceover.</p>
+
+  <!-- [BIND] union · age_range · market as ONE text line, then reps.
+       has_rep=true: rep names mailto-linked.
+       has_rep=false: replace rep line with .parent-btn + .parent-note. -->
+  <p class="reps">
+    SAG-AFTRA Eligible · Portrays 9–12 · Los Angeles / Southeast<br>
+    <!-- repped variant: -->
+    <!-- <a href="mailto:...">Agency Name</a> · <a href="mailto:...">Manager Name</a>, Manager -->
+    <!-- unrepped variant: -->
+    <a class="parent-btn" href="#contact">Contact Maya's Parent</a>
+  </p>
+  <p class="parent-note">Messages go through a private relay. No contact details are published on this page.</p>
+
+  <!-- [BIND] links[] -->
+  <div class="links"><a href="#">Actors Access</a><a href="#">IMDb</a></div>
+
+  <!-- Sections render in page_sections.sort_order where enabled. -->
+
+  <div class="sec">
+    <div class="sec-title">Headshots</div>
+    <div class="grid3" data-gallery>
+      <!-- [BIND] one button per headshot; .ph placeholder only when empty -->
+      <button class="ph" aria-label="View headshot 1"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 2"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 3"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 4"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 5"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 6"><span>✦</span></button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Resume</div>
+    <div class="sheet">
+      <div class="sheet-head"><h3>Maya Ralston</h3><p>SAG-AFTRA Eligible · Portrays 9–12 · Los Angeles</p></div>
+      <!-- [BIND] credit groups + rows from resume section content jsonb -->
+      <h4>Television</h4>
+      <div class="srow"><span class="p">Production</span><span class="r">Role</span><span class="d">Network</span></div>
+      <h4>Training</h4>
+      <div class="srow"><span class="p">Class</span><span class="r">Status</span><span class="d">Cadence</span></div>
+      <h4>Special Skills</h4>
+      <p class="skills">Skills line.</p>
+      <div class="sheet-sync">
+        <p><b>Synced with Resume101</b> · Last updated {date}. Edit once, update everywhere.</p>
+        <a href="#">↓ Download PDF</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Watch</div>
+    <div class="clips">
+      <!-- [BIND] clips[]: category label + title + embed -->
+      <div class="clip"><small>Demo Reel</small><p>Theatrical</p><div class="vid"></div></div>
+      <div class="clip"><small>About Me</small><p>Meet Maya</p><div class="vid"></div></div>
+    </div>
+  </div>
+
+  <!-- PLUS ONLY: feed section -->
+
+</div>
+
+<!-- FREE TIER ONLY -->
+<div class="promo">
+  <div class="promo-in">
+    <div class="promo-eyebrow">From Child Actor 101</div>
+    <div class="promo-cards">
+      <a class="promo-card" href="https://childactor101.com"><b>Prep101</b><span>Audition prep guides built from 30 years of coaching young actors.</span><i>Explore Prep101 →</i></a>
+      <a class="promo-card" href="https://childactor101.com"><b>Vendor Directory</b><span>Trusted headshot photographers, coaches, and reel editors — vetted for families.</span><i>Browse the Directory →</i></a>
+    </div>
+    <div class="promo-badge">Made with <b>Pages101</b> by Child Actor 101 · Free for young actors</div>
+  </div>
+</div>
+<!-- PLUS pages instead render only:
+  <div class="promo-badge" style="margin:92px 0 40px">Made with <b>Pages101</b></div> -->
+
+<!-- lightbox -->
+<div class="modal" id="lb" role="dialog" aria-modal="true" aria-label="Headshot viewer">
+  <button class="m-btn m-close" aria-label="Close">✕</button>
+  <button class="m-btn m-prev" aria-label="Previous">‹</button>
+  <div class="lb-stage"><div class="ph"><span id="lb-n">1</span></div><div class="m-cap">Headshot <span id="lb-cap-n">1</span></div></div>
+  <button class="m-btn m-next" aria-label="Next">›</button>
+</div>
+
+<!-- slate modal -->
+<div class="modal" id="slate" role="dialog" aria-modal="true" aria-label="Slate video">
+  <button class="m-btn m-close" aria-label="Close">✕</button>
+  <div class="slate-stage"><div class="vid"></div><div class="m-cap">Slate</div></div>
+</div>
+
+<script>
+  const lb = document.getElementById('lb');
+  const lbN = document.getElementById('lb-n');
+  const lbCapN = document.getElementById('lb-cap-n');
+  let idx = 0, total = 6; /* [BIND] total = headshot count */
+  const show = i => { idx = ((i % total) + total) % total;
+    lbN.textContent = idx + 1; lbCapN.textContent = idx + 1; };
+  document.querySelectorAll('[data-gallery] .ph').forEach((p, i) =>
+    p.addEventListener('click', () => { show(i); lb.classList.add('open'); }));
+  const slate = document.getElementById('slate');
+  document.querySelectorAll('[data-slate]').forEach(b =>
+    b.addEventListener('click', () => slate.classList.add('open')));
+  document.querySelectorAll('.modal').forEach(m => {
+    m.querySelector('.m-close').addEventListener('click', () => m.classList.remove('open'));
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+  lb.querySelector('.m-prev').addEventListener('click', () => show(idx - 1));
+  lb.querySelector('.m-next').addEventListener('click', () => show(idx + 1));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
+    if (lb.classList.contains('open')) {
+      if (e.key === 'ArrowLeft') show(idx - 1);
+      if (e.key === 'ArrowRight') show(idx + 1);
+    }
+  });
+</script>
+</body>
+</html>

@@ -20,12 +20,12 @@ export const templateTokens: Record<TemplateId, TemplateTokens> = {
     label: "Classic",
     tier: "free",
     personality: "Clean, casting-ready, Carrd-like",
-    accent: "#c9282d",
-    background: "#fbfaf8",
+    accent: "#C8553D",
+    background: "#ffffff",
     surface: "#ffffff",
-    ink: "#171717",
-    muted: "#6b625d",
-    displayFont: "Outfit, Inter, system-ui, sans-serif",
+    ink: "#1F1D1A",
+    muted: "#6E6862",
+    displayFont: "var(--font-outfit), Outfit, Inter, system-ui, sans-serif",
     bodyFont: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   splash: {
@@ -58,7 +58,7 @@ export const templateTokens: Record<TemplateId, TemplateTokens> = {
 
 export const accentSwatches = [
   { label: "Auto", value: null },
-  { label: "Marquee Red", value: "#c9282d" },
+  { label: "Marquee Red", value: "#C8553D" },
   { label: "Pink", value: "#f04f91" },
   { label: "Blue", value: "#2368d8" },
   { label: "Green", value: "#268060" },

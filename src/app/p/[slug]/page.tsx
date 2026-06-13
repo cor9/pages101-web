@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${page.displayName} | Pages101`,
+    title: page.template === "classic" ? `${page.displayName} — Young Actor` : `${page.displayName} | Pages101`,
     description: page.statusLine,
     robots: page.noindex
       ? {

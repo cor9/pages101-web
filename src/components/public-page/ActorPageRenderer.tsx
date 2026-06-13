@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import Image from "next/image";
 import { tips } from "@/content/tips";
+import { ClassicActorPageRenderer } from "@/components/public-page/ClassicActorPageRenderer";
 import { getTemplateCss, templateTokens } from "@/lib/templates";
 import type { ActorPage, Clip, FeedItem, Headshot, PressQuote, ResumeSection, SectionType } from "@/lib/types";
 
@@ -22,6 +23,10 @@ const sectionLabels: Record<SectionType, string> = {
 };
 
 export function ActorPageRenderer({ page }: ActorPageRendererProps) {
+  if (page.template === "classic") {
+    return <ClassicActorPageRenderer page={page} />;
+  }
+
   const template = templateTokens[page.template];
   const featured = getHeadshots(page).find((headshot) => headshot.featured) ?? getHeadshots(page)[0];
   const visibleSections = page.sections

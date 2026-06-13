@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, Inter, Outfit } from "next/font/google";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,9 +19,15 @@ const fraunces = Fraunces({
   display: "swap"
 });
 
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap"
+});
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
+    <html lang="en" className={`${inter.variable} ${fraunces.variable} ${outfit.variable}`}>
       <body>{children}</body>
     </html>
   );
