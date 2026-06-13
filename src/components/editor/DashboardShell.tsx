@@ -670,31 +670,37 @@ export function DashboardShell() {
   async function saveActorPage(actorPage: ActorPage) {
     if (!supabase || !authUser) throw new Error("Sign in to publish.");
 
+    const payload = {
+      user_id: authUser.id,
+      slug: actorPage.slug,
+      template: actorPage.template,
+      accent: actorPage.accent ?? null,
+      font_pair: actorPage.fontPair ?? null,
+      display_name: actorPage.displayName,
+      status_line: actorPage.statusLine ?? null,
+      union_status: actorPage.unionStatus ?? null,
+      age_range: actorPage.ageRange ?? null,
+      market: actorPage.market ?? null,
+      has_rep: actorPage.hasRep ?? true,
+      reps: actorPage.reps ?? [],
+      links: actorPage.links ?? [],
+      slate_url: actorPage.slateUrl ?? null,
+      published: true,
+      noindex: actorPage.noindex,
+      updated_at: new Date().toISOString()
+    };
+
+    console.log("SAVE ATTEMPT - user:", authUser.id);
+    console.log("SAVE ATTEMPT - payload:", payload);
+
     const { data, error } = await supabase
       .from("p101_actor_pages")
-      .upsert({
-        user_id: authUser.id,
-        slug: actorPage.slug,
-        template: actorPage.template,
-        accent: actorPage.accent ?? null,
-        font_pair: actorPage.fontPair ?? null,
-        display_name: actorPage.displayName,
-        status_line: actorPage.statusLine ?? null,
-        union_status: actorPage.unionStatus ?? null,
-        age_range: actorPage.ageRange ?? null,
-        market: actorPage.market ?? null,
-        has_rep: actorPage.hasRep ?? true,
-        reps: actorPage.reps ?? [],
-        links: actorPage.links ?? [],
-        slate_url: actorPage.slateUrl ?? null,
-        published: true,
-        noindex: actorPage.noindex,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: "slug"
-      })
+      .upsert(payload, { onConflict: "slug" })
       .select("id")
       .single<{ id: string }>();
+
+    console.log("SAVE RESULT - data:", data);
+    console.log("SAVE RESULT - error:", JSON.stringify(error));
 
     if (error) throw error;
     return data.id;
