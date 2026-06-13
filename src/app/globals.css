@@ -741,7 +741,8 @@ img {
   text-underline-offset: 3px;
 }
 
-.classic-template .parent-btn {
+.classic-template .parent-btn,
+.classic-template .reps a.parent-btn {
   display: inline-block;
   margin-top: 10px;
   padding: 13px 26px;
@@ -757,6 +758,7 @@ img {
 }
 
 .classic-template .parent-btn:hover {
+  color: #fff;
   opacity: 0.88;
 }
 
@@ -1333,7 +1335,8 @@ img {
   text-underline-offset: 3px;
 }
 
-.splash-template .parent-btn {
+.splash-template .parent-btn,
+.splash-template .reps a.parent-btn {
   display: inline-block;
   margin-top: 10px;
   padding: 13px 26px;
@@ -1351,6 +1354,7 @@ img {
 }
 
 .splash-template .parent-btn:hover {
+  color: #fff;
   box-shadow: 2px 2px 0 var(--ink);
   transform: translate(2px, 2px);
 }
@@ -1742,7 +1746,8 @@ img {
   text-underline-offset: 4px;
 }
 
-.prestige-template .parent-btn {
+.prestige-template .parent-btn,
+.prestige-template .reps-block a.parent-btn {
   display: inline-block;
   margin-top: 12px;
   padding: 14px 28px;
@@ -1758,6 +1763,7 @@ img {
 
 .prestige-template .parent-btn:hover {
   background: var(--accent);
+  color: #fff;
 }
 
 .prestige-template .parent-note {
@@ -2526,6 +2532,83 @@ img {
   box-shadow: 0 0 0 2px rgba(200, 85, 61, 0.18);
 }
 
+.checkbox-line {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center;
+  gap: 10px !important;
+}
+
+.checkbox-line input {
+  width: 18px;
+  min-height: 18px;
+  accent-color: var(--marquee);
+}
+
+.checkbox-line span {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.editor-rows {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.editor-row {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: #fbf8f2;
+}
+
+.field-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.field-grid--rep {
+  grid-template-columns: minmax(0, 1.1fr) 116px minmax(0, 1.2fr);
+}
+
+.field-grid--link {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+}
+
+.field-grid--clip {
+  grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1.25fr);
+}
+
+.editor-row label {
+  margin-top: 0;
+}
+
+.row-remove {
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(43, 35, 32, 0.24);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.row-remove:hover {
+  border-color: var(--marquee);
+  color: var(--marquee-deep);
+}
+
+.panel-action {
+  justify-self: start;
+}
+
 .auth-form {
   display: grid;
   gap: 10px;
@@ -3116,7 +3199,10 @@ img {
   .clip-grid,
   .ecosystem-footer,
   .three-fields,
-  .template-options {
+  .template-options,
+  .field-grid--rep,
+  .field-grid--link,
+  .field-grid--clip {
     grid-template-columns: 1fr;
   }
 
