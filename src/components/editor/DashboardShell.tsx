@@ -93,11 +93,15 @@ export function DashboardShell() {
     console.log('SUPABASE CLIENT:', supabase);
 
     if (supabase) {
-      supabase.from('p101_actor_pages').select('*', { count: 'exact', head: true }).limit(1).then(result => {
-        console.log('TEST QUERY:', result);
-      }).catch(e => {
-        console.log('TEST QUERY THREW:', e);
-      });
+      async function testQuery() {
+        try {
+          const result = await supabase!.from('p101_actor_pages').select('*', { count: 'exact', head: true }).limit(1);
+          console.log('TEST QUERY:', result);
+        } catch(e) {
+          console.log('TEST QUERY THREW:', e);
+        }
+      }
+      testQuery();
     }
   }, [supabase]);
 
