@@ -58,12 +58,16 @@ export function TemplateResume({ page, resume }: { page: ActorPage; resume: Resu
       </div>
       <h4>Special Skills</h4>
       <p className="skills">Skills line.</p>
-      {resume.syncedWithResume101 ? (
+      {resume.syncedWithResume101 || resume.fileUrl ? (
         <div className="sheet-sync">
-          <p>
-            <b>Synced with Resume101</b> · Last updated {resume.updatedAt}. Edit once, update everywhere.
-          </p>
-          <a href="#">↓ Download PDF</a>
+          {resume.syncedWithResume101 ? (
+            <p>
+              <b>Synced with Resume101</b> · Last updated {resume.updatedAt}. Edit once, update everywhere.
+            </p>
+          ) : null}
+          {resume.fileUrl ? (
+            <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer">↓ Download {resume.fileName || "Document"}</a>
+          ) : null}
         </div>
       ) : null}
     </div>

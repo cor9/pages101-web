@@ -40,6 +40,8 @@ export type ResumeSection = {
   syncedWithResume101: boolean;
   updatedAt: string;
   credits: ResumeCredit[];
+  fileUrl?: string;
+  fileName?: string;
 };
 
 export type Clip = {

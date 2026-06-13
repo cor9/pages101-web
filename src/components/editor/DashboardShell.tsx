@@ -83,6 +83,8 @@ export function DashboardShell() {
   const [upgrading, setUpgrading] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [resumeUploadStatus, setResumeUploadStatus] = useState<string | null>(null);
+  const [resumeUploading, setResumeUploading] = useState(false);
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const checkedSlug = validateSlug(slug);
@@ -501,6 +503,53 @@ export function DashboardShell() {
       alt: `${displayName} headshot`,
       label: getHeadshotLabel(file.name)
     };
+  }
+
+  async function uploadResumeDocument(file: File): Promise<{ url: string; name: string }> {
+    if (!supabase || !authUser) {
+      return { url: URL.createObjectURL(file), name: file.name };
+    }
+
+    const objectPath = `${authUser.id}/${page.id}/resume-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+    const { error } = await supabase.storage.from("pages101-media").upload(objectPath, file, {
+      cacheControl: "31536000",
+      contentType: file.type,
+      upsert: false
+    });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage.from("pages101-media").getPublicUrl(objectPath);
+
+    return { url: data.publicUrl, name: file.name };
+  }
+
+  async function handleResumeUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setResumeUploadStatus(null);
+    if (file.size > 10 * 1024 * 1024) {
+      setResumeUploadStatus("Use document files under 10MB.");
+      return;
+    }
+
+    setResumeUploading(true);
+    try {
+      const doc = await uploadResumeDocument(file);
+      updateResume({ fileUrl: doc.url, fileName: doc.name });
+      setResumeUploadStatus("Resume document uploaded.");
+    } catch (error) {
+      setResumeUploadStatus(error instanceof Error ? error.message : "Upload failed.");
+    } finally {
+      setResumeUploading(false);
+      event.target.value = "";
+    }
+  }
+
+  function handleRemoveResumeDocument() {
+    updateResume({ fileUrl: undefined, fileName: undefined });
+    setResumeUploadStatus("Document removed.");
   }
 
   // ─── Resume101 import ──────────────────────────────────────────────────────
@@ -998,6 +1047,23 @@ export function DashboardShell() {
             </div>
             {importStatus ? <p className="panel-note">{importStatus}</p> : null}
             {!authUser ? <p className="panel-note">Sign in to import from Resume101.</p> : null}
+            
+            <div className="resume-import-bar" style={{ marginTop: 16 }}>
+              <p>
+                <b>Resume Document</b> — {resumeContent?.fileName ? `Current: ${resumeContent.fileName}` : "Upload a PDF or DOC for download."}
+              </p>
+              {resumeContent?.fileUrl ? (
+                <button className="btn-import" type="button" onClick={handleRemoveResumeDocument}>
+                  Remove
+                </button>
+              ) : (
+                <label className="btn-import" style={{ cursor: "pointer", textAlign: "center" }}>
+                  {resumeUploading ? "Uploading…" : "Upload →"}
+                  <input type="file" accept=".pdf,.doc,.docx" disabled={resumeUploading} onChange={handleResumeUpload} style={{ display: "none" }} />
+                </label>
+              )}
+            </div>
+            {resumeUploadStatus ? <p className="panel-note">{resumeUploadStatus}</p> : null}
             <div className="editor-rows" aria-label="Resume credits" style={{ marginTop: 16 }}>
               {(resumeContent?.credits ?? []).map((credit, index) => (
                 <div className="editor-row" key={`credit-${index}`}>
