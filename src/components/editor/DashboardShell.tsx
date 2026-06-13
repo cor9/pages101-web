@@ -13,18 +13,21 @@ import type {
   ActorPage,
   ActorPageSection,
   Clip,
+  FeedItem,
   FontPair,
   Headshot,
   PageLink,
   Plan,
+  PressQuote,
   Rep,
+  ResumeCredit,
+  ResumeSection,
   SectionType,
   TemplateId
 } from "@/lib/types";
 
 const page = samplePages[0];
 const initialHeadshots = getPageHeadshots(page);
-const betaFullAccess = process.env.NEXT_PUBLIC_PAGES101_BETA_FULL_ACCESS !== "0";
 
 const sectionTipMap: Partial<Record<SectionType, TipKey>> = {
   headshots: "headshots",
@@ -35,6 +38,21 @@ const sectionTipMap: Partial<Record<SectionType, TipKey>> = {
 };
 
 const clipCategories: Clip["category"][] = ["Booked Work", "Demo Reel", "About Me", "VO Reel", "Singing"];
+
+// ─── Plan subscription state ──────────────────────────────────────────────────
+
+type SubscriptionRow = {
+  plan: Plan;
+  status: string;
+  current_period_end: string | null;
+};
+
+function isActivePlus(sub: SubscriptionRow | null): boolean {
+  if (!sub) return false;
+  return sub.plan === "plus" && (sub.status === "active" || sub.status === "trialing");
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function DashboardShell() {
   const [displayName, setDisplayName] = useState(page.displayName);
@@ -61,14 +79,30 @@ export function DashboardShell() {
   const [uploading, setUploading] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Beta preview");
   const [saving, setSaving] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [upgrading, setUpgrading] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const checkedSlug = validateSlug(slug);
   const publicSlug = checkedSlug.ok ? checkedSlug.slug : page.slug;
-  const editorPlan: Plan = betaFullAccess ? "plus" : page.plan;
+
+  // Plan: use real subscription when signed in
+  const editorPlan: Plan = useMemo(() => {
+    if (authUser && subscription) return isActivePlus(subscription) ? "plus" : "free";
+    // Beta fallback: NEXT_PUBLIC_PAGES101_BETA_FULL_ACCESS=1 → plus in dev
+    if (process.env.NEXT_PUBLIC_PAGES101_BETA_FULL_ACCESS !== "0") return "plus";
+    return page.plan;
+  }, [authUser, subscription]);
+
   const renderedHeadshots = headshots.length > 0 ? headshots : initialHeadshots;
   const realHeadshotCount = renderedHeadshots.filter((headshot) => !isPlaceholderHeadshot(headshot)).length;
   const clips = getSectionClips(sections);
+  const feedItems = getSectionFeedItems(sections);
+  const pressQuote = getSectionPress(sections);
+
+  // ─── Preview tick (debounced) ──────────────────────────────────────────────
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -93,33 +127,43 @@ export function DashboardShell() {
     sections
   ]);
 
+  // ─── Auth listener ─────────────────────────────────────────────────────────
+
   useEffect(() => {
-    if (!supabase) {
-      return;
-    }
+    if (!supabase) return;
 
     supabase.auth.getUser().then(({ data }) => {
       setAuthUser(data.user);
     });
 
     const {
-      data: { subscription }
+      data: { subscription: authSubscription }
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => authSubscription.unsubscribe();
   }, [supabase]);
+
+  // ─── Load saved page ───────────────────────────────────────────────────────
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadSavedPage() {
-      if (!supabase || !authUser) {
-        return;
-      }
+      if (!supabase || !authUser) return;
 
       setSaveStatus("Loading saved page...");
+
+      // Load subscription plan
+      const { data: subRow } = await supabase
+        .schema("pages101")
+        .from("subscriptions")
+        .select("plan, status, current_period_end")
+        .eq("user_id", authUser.id)
+        .maybeSingle<SubscriptionRow>();
+
+      if (!cancelled) setSubscription(subRow ?? null);
 
       const { data: pageRow, error: pageError } = await supabase
         .schema("pages101")
@@ -130,19 +174,9 @@ export function DashboardShell() {
         .limit(1)
         .maybeSingle<ActorPageRow>();
 
-      if (cancelled) {
-        return;
-      }
-
-      if (pageError) {
-        setSaveStatus(pageError.message);
-        return;
-      }
-
-      if (!pageRow) {
-        setSaveStatus("Beta preview");
-        return;
-      }
+      if (cancelled) return;
+      if (pageError) { setSaveStatus(pageError.message); return; }
+      if (!pageRow) { setSaveStatus("Beta preview"); return; }
 
       const { data: sectionRows, error: sectionError } = await supabase
         .schema("pages101")
@@ -152,25 +186,18 @@ export function DashboardShell() {
         .order("sort_order", { ascending: true })
         .returns<PageSectionRow[]>();
 
-      if (cancelled) {
-        return;
-      }
+      if (cancelled) return;
+      if (sectionError) { setSaveStatus(sectionError.message); return; }
 
-      if (sectionError) {
-        setSaveStatus(sectionError.message);
-        return;
-      }
-
-      applyActorPage(mapActorPageRows(pageRow, sectionRows ?? [], editorPlan));
+      applyActorPage(mapActorPageRows(pageRow, sectionRows ?? [], isActivePlus(subRow ?? null) ? "plus" : "free"));
       setSaveStatus(pageRow.published ? `Published /p/${pageRow.slug}` : "Saved draft loaded");
     }
 
     loadSavedPage();
+    return () => { cancelled = true; };
+  }, [authUser, supabase]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [authUser, editorPlan, supabase]);
+  // ─── Preview URL & page object ─────────────────────────────────────────────
 
   const previewUrl = useMemo(() => {
     const params = new URLSearchParams({
@@ -183,14 +210,8 @@ export function DashboardShell() {
       tick: String(previewTick)
     });
 
-    if (accent) {
-      params.set("accent", accent);
-    }
-
-    if (fontPair !== "template") {
-      params.set("font", fontPair);
-    }
-
+    if (accent) params.set("accent", accent);
+    if (fontPair !== "template") params.set("font", fontPair);
     params.set("template", templateId);
 
     return `/p/${publicSlug}?${params.toString()}`;
@@ -215,45 +236,22 @@ export function DashboardShell() {
       fontPair,
       sections: sections.map((section) => {
         if (section.type === "headshots") {
-          return {
-            ...section,
-            content: {
-              headshots: renderedHeadshots
-            }
-          };
+          return { ...section, content: { headshots: renderedHeadshots } };
         }
-
         if (section.type === "clips") {
-          return {
-            ...section,
-            content: {
-              clips: normalizeClips(section.content.clips)
-            }
-          };
+          return { ...section, content: { clips: normalizeClips(section.content.clips) } };
         }
-
         return section;
       })
     }),
     [
-      accent,
-      ageRange,
-      displayName,
-      editorPlan,
-      fontPair,
-      hasRep,
-      links,
-      market,
-      publicSlug,
-      renderedHeadshots,
-      reps,
-      sections,
-      slateUrl,
-      statusLine,
-      templateId,
-      unionStatus
+      accent, ageRange, displayName, editorPlan, fontPair, hasRep,
+      links, market, publicSlug, renderedHeadshots, reps, sections,
+      slateUrl, statusLine, templateId, unionStatus
     ]
   );
+
+  // ─── Apply loaded page ─────────────────────────────────────────────────────
 
   function applyActorPage(actorPage: ActorPage) {
     const loadedSections = actorPage.sections.length > 0 ? actorPage.sections : page.sections;
@@ -276,134 +274,158 @@ export function DashboardShell() {
     setHeadshots(normalizeHeadshots(loadedHeadshots.length > 0 ? loadedHeadshots : initialHeadshots));
   }
 
-  function updateRep(index: number, patch: Partial<Rep>) {
-    setReps((currentReps) => currentReps.map((rep, repIndex) => (repIndex === index ? { ...rep, ...patch } : rep)));
-  }
+  // ─── Reps / Links ──────────────────────────────────────────────────────────
 
+  function updateRep(index: number, patch: Partial<Rep>) {
+    setReps((r) => r.map((rep, i) => (i === index ? { ...rep, ...patch } : rep)));
+  }
   function addRep() {
-    setReps((currentReps) => [...currentReps, { name: "", role: "agent", email: "" }]);
+    setReps((r) => [...r, { name: "", role: "agent", email: "" }]);
     setHasRep(true);
   }
-
   function removeRep(index: number) {
-    setReps((currentReps) => currentReps.filter((_rep, repIndex) => repIndex !== index));
+    setReps((r) => r.filter((_, i) => i !== index));
   }
 
   function updateLink(index: number, patch: Partial<PageLink>) {
-    setLinks((currentLinks) => currentLinks.map((link, linkIndex) => (linkIndex === index ? { ...link, ...patch } : link)));
+    setLinks((l) => l.map((link, i) => (i === index ? { ...link, ...patch } : link)));
   }
-
   function addLink() {
-    setLinks((currentLinks) => [...currentLinks, { label: "", url: "" }]);
+    setLinks((l) => [...l, { label: "", url: "" }]);
+  }
+  function removeLink(index: number) {
+    setLinks((l) => l.filter((_, i) => i !== index));
   }
 
-  function removeLink(index: number) {
-    setLinks((currentLinks) => currentLinks.filter((_link, linkIndex) => linkIndex !== index));
-  }
+  // ─── Clips ─────────────────────────────────────────────────────────────────
 
   function updateClip(index: number, patch: Partial<Clip>) {
-    setSections((currentSections) =>
-      currentSections.map((section) => {
-        if (section.type !== "clips") {
-          return section;
-        }
-
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "clips") return section;
         return {
           ...section,
+          content: { clips: section.content.clips.map((clip, i) => (i === index ? { ...clip, ...patch } : clip)) }
+        };
+      })
+    );
+  }
+  function addClip() {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "clips") return section;
+        return {
+          ...section,
+          enabled: true,
           content: {
-            clips: section.content.clips.map((clip, clipIndex) => (clipIndex === index ? { ...clip, ...patch } : clip))
+            clips: [...section.content.clips, { id: crypto.randomUUID(), title: "", category: "Demo Reel", embedUrl: "" }]
           }
         };
       })
     );
   }
+  function removeClip(index: number) {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "clips") return section;
+        return { ...section, content: { clips: section.content.clips.filter((_, i) => i !== index) } };
+      })
+    );
+  }
 
-  function addClip() {
-    setSections((currentSections) =>
-      currentSections.map((section) => {
-        if (section.type !== "clips") {
-          return section;
-        }
+  // ─── Resume credits ────────────────────────────────────────────────────────
 
+  function updateResume(patch: Partial<ResumeSection>) {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "resume") return section;
+        return { ...section, content: { ...section.content, ...patch } };
+      })
+    );
+  }
+  function addCredit() {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "resume") return section;
+        return { ...section, enabled: true, content: { ...section.content, credits: [...section.content.credits, { project: "", role: "", company: "" }] } };
+      })
+    );
+  }
+  function updateCredit(index: number, patch: Partial<ResumeCredit>) {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "resume") return section;
+        return { ...section, content: { ...section.content, credits: section.content.credits.map((c, i) => (i === index ? { ...c, ...patch } : c)) } };
+      })
+    );
+  }
+  function removeCredit(index: number) {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "resume") return section;
+        return { ...section, content: { ...section.content, credits: section.content.credits.filter((_, i) => i !== index) } };
+      })
+    );
+  }
+
+  // ─── BTS Feed ──────────────────────────────────────────────────────────────
+
+  function addFeedItem() {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "feed") return section;
+        const today = new Date().toISOString().slice(0, 10);
         return {
           ...section,
           enabled: true,
           content: {
-            clips: [
-              ...section.content.clips,
-              {
-                id: crypto.randomUUID(),
-                title: "",
-                category: "Demo Reel",
-                embedUrl: ""
-              }
+            items: [
+              ...section.content.items,
+              { id: crypto.randomUUID(), date: today, title: "", body: "" }
             ]
           }
         };
       })
     );
   }
-
-  function removeClip(index: number) {
-    setSections((currentSections) =>
-      currentSections.map((section) => {
-        if (section.type !== "clips") {
-          return section;
-        }
-
-        return {
-          ...section,
-          content: {
-            clips: section.content.clips.filter((_clip, clipIndex) => clipIndex !== index)
-          }
-        };
+  function updateFeedItem(index: number, patch: Partial<FeedItem>) {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "feed") return section;
+        return { ...section, content: { items: section.content.items.map((item, i) => (i === index ? { ...item, ...patch } : item)) } };
+      })
+    );
+  }
+  function removeFeedItem(index: number) {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "feed") return section;
+        return { ...section, content: { items: section.content.items.filter((_, i) => i !== index) } };
       })
     );
   }
 
-  async function handleAuthSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setAuthStatus(null);
+  // ─── Press Quote ───────────────────────────────────────────────────────────
 
-    if (!supabase) {
-      setAuthStatus("Set the Supabase URL and anon key to enable sign-in.");
-      return;
-    }
-
-    if (!authEmail.trim()) {
-      setAuthStatus("Enter an email address.");
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email: authEmail.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/app`
-      }
-    });
-
-    setAuthStatus(error ? error.message : "Check your email for the sign-in link.");
+  function updatePress(patch: Partial<PressQuote>) {
+    setSections((secs) =>
+      secs.map((section) => {
+        if (section.type !== "press") return section;
+        return { ...section, content: { ...section.content, ...patch } };
+      })
+    );
   }
 
-  async function handleSignOut() {
-    if (!supabase) {
-      return;
-    }
-
-    await supabase.auth.signOut();
-    setAuthStatus("Signed out.");
-  }
+  // ─── Headshots ─────────────────────────────────────────────────────────────
 
   async function handleHeadshotUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.currentTarget.files ?? []);
     event.currentTarget.value = "";
     setUploadStatus(null);
 
-    if (files.length === 0) {
-      return;
-    }
+    if (files.length === 0) return;
 
-    const existingHeadshots = renderedHeadshots.filter((headshot) => !isPlaceholderHeadshot(headshot));
+    const existingHeadshots = renderedHeadshots.filter((h) => !isPlaceholderHeadshot(h));
     const capacity = editorPlan === "free" ? Math.max(0, 6 - existingHeadshots.length) : files.length;
     const selectedFiles = files.slice(0, capacity);
 
@@ -422,7 +444,6 @@ export function DashboardShell() {
 
     try {
       const uploadedHeadshots: Headshot[] = [];
-
       for (const file of selectedFiles) {
         uploadedHeadshots.push(await uploadHeadshot(file));
       }
@@ -443,8 +464,15 @@ export function DashboardShell() {
   }
 
   function handleRemoveHeadshot(id: string) {
-    const nextHeadshots = renderedHeadshots.filter((headshot) => headshot.id !== id && !isPlaceholderHeadshot(headshot));
-    setHeadshots(normalizeHeadshots(nextHeadshots.length > 0 ? nextHeadshots : initialHeadshots));
+    const next = renderedHeadshots.filter((h) => h.id !== id && !isPlaceholderHeadshot(h));
+    setHeadshots(normalizeHeadshots(next.length > 0 ? next : initialHeadshots));
+  }
+
+  function handleSetFeatured(id: string) {
+    const next = renderedHeadshots
+      .filter((h) => !isPlaceholderHeadshot(h))
+      .map((h) => ({ ...h, featured: h.id === id }));
+    setHeadshots(normalizeHeadshots(next));
   }
 
   async function uploadHeadshot(file: File): Promise<Headshot> {
@@ -464,9 +492,7 @@ export function DashboardShell() {
       upsert: false
     });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     const { data } = supabase.storage.from("pages101-media").getPublicUrl(objectPath);
 
@@ -478,32 +504,113 @@ export function DashboardShell() {
     };
   }
 
+  // ─── Resume101 import ──────────────────────────────────────────────────────
+
+  async function handleResume101Import() {
+    if (!supabase || !authUser) {
+      setImportStatus("Sign in to import from Resume101.");
+      return;
+    }
+
+    setImporting(true);
+    setImportStatus(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? "";
+
+      const response = await fetch("/api/resume101/import", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? "Import failed");
+      }
+
+      const { credits, updatedAt } = (await response.json()) as { credits: ResumeCredit[]; updatedAt: string };
+      updateResume({ credits, syncedWithResume101: true, updatedAt });
+      setImportStatus(`Imported ${credits.length} credit${credits.length === 1 ? "" : "s"} from Resume101.`);
+    } catch (error) {
+      setImportStatus(error instanceof Error ? error.message : "Import failed.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  // ─── Stripe ────────────────────────────────────────────────────────────────
+
+  async function handleUpgrade() {
+    if (!supabase || !authUser) {
+      setAuthStatus("Sign in first to upgrade.");
+      return;
+    }
+
+    setUpgrading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? "";
+
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const body = (await response.json()) as { url?: string; error?: string };
+      if (body.url) {
+        window.location.href = body.url;
+      } else {
+        setAuthStatus(body.error ?? "Upgrade failed.");
+      }
+    } catch {
+      setAuthStatus("Upgrade failed. Please try again.");
+    } finally {
+      setUpgrading(false);
+    }
+  }
+
+  async function handleManageSubscription() {
+    if (!supabase || !authUser) return;
+
+    setUpgrading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? "";
+
+      const response = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const body = (await response.json()) as { url?: string; error?: string };
+      if (body.url) {
+        window.location.href = body.url;
+      } else {
+        setAuthStatus(body.error ?? "Could not open subscription portal.");
+      }
+    } catch {
+      setAuthStatus("Could not open subscription portal.");
+    } finally {
+      setUpgrading(false);
+    }
+  }
+
+  // ─── Publish ───────────────────────────────────────────────────────────────
+
   async function handlePublish() {
     setSaveStatus("Publishing...");
 
-    if (!supabase) {
-      setSaveStatus("Supabase env vars are missing.");
-      return;
-    }
+    if (!supabase) { setSaveStatus("Supabase env vars are missing."); return; }
+    if (!authUser) { setSaveStatus("Sign in to publish."); return; }
+    if (!checkedSlug.ok) { setSaveStatus(checkedSlug.reason); return; }
 
-    if (!authUser) {
-      setSaveStatus("Sign in to publish.");
-      return;
-    }
-
-    if (!checkedSlug.ok) {
-      setSaveStatus(checkedSlug.reason);
-      return;
-    }
-
-    const previewOnlyHeadshots = renderedHeadshots.some((headshot) => headshot.src.startsWith("blob:"));
+    const previewOnlyHeadshots = renderedHeadshots.some((h) => h.src.startsWith("blob:"));
     if (previewOnlyHeadshots) {
       setSaveStatus("Sign in, then re-upload preview photos before publishing.");
       return;
     }
 
     setSaving(true);
-
     try {
       const savedPageId = await saveActorPage(previewPage);
       await saveSections(savedPageId, previewPage.sections);
@@ -516,9 +623,7 @@ export function DashboardShell() {
   }
 
   async function saveActorPage(actorPage: ActorPage) {
-    if (!supabase || !authUser) {
-      throw new Error("Sign in to publish.");
-    }
+    if (!supabase || !authUser) throw new Error("Sign in to publish.");
 
     const pages = supabase.schema("pages101").from("actor_pages");
     const payload = {
@@ -547,32 +652,23 @@ export function DashboardShell() {
       .eq("slug", actorPage.slug)
       .maybeSingle<{ id: string }>();
 
-    if (existingError) {
-      throw existingError;
-    }
+    if (existingError) throw existingError;
 
     if (existing) {
       const { data, error } = await pages.update(payload).eq("id", existing.id).select("id").single<{ id: string }>();
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       return data.id;
     }
 
     const { data, error } = await pages.insert(payload).select("id").single<{ id: string }>();
-    if (error) {
-      throw error;
-    }
-
+    if (error) throw error;
     return data.id;
   }
 
-  async function saveSections(pageId: string, sections: ActorPage["sections"]) {
-    if (!supabase) {
-      throw new Error("Supabase env vars are missing.");
-    }
+  async function saveSections(pageId: string, pageSections: ActorPage["sections"]) {
+    if (!supabase) throw new Error("Supabase env vars are missing.");
 
-    const rows = sections.map((section) => ({
+    const rows = pageSections.map((section) => ({
       page_id: pageId,
       type: section.type,
       enabled: section.enabled,
@@ -585,10 +681,41 @@ export function DashboardShell() {
       .from("page_sections")
       .upsert(rows, { onConflict: "page_id,type" });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
   }
+
+  // ─── Auth ──────────────────────────────────────────────────────────────────
+
+  async function handleAuthSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAuthStatus(null);
+
+    if (!supabase) { setAuthStatus("Set the Supabase URL and anon key to enable sign-in."); return; }
+    if (!authEmail.trim()) { setAuthStatus("Enter an email address."); return; }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: authEmail.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/app` }
+    });
+
+    setAuthStatus(error ? error.message : "Check your email for the sign-in link.");
+  }
+
+  async function handleSignOut() {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setAuthStatus("Signed out.");
+    setSubscription(null);
+  }
+
+  // ─── Render ────────────────────────────────────────────────────────────────
+
+  const resumeSection = sections.find((s) => s.type === "resume");
+  const resumeContent = resumeSection?.type === "resume" ? resumeSection.content : null;
+
+  const feedSection = sections.find((s) => s.type === "feed");
+  const pressSection = sections.find((s) => s.type === "press");
+  const pressContent = pressSection?.type === "press" ? pressSection.content : null;
 
   return (
     <main className="dashboard-shell">
@@ -603,6 +730,8 @@ export function DashboardShell() {
 
       <section className="editor-workspace" aria-label="Pages101 editor workspace">
         <div className="editor-column">
+
+          {/* Page Setup */}
           <article className="editor-panel" data-testid="page-setup-panel">
             <div className="panel-heading">
               <p>Page Setup</p>
@@ -611,39 +740,40 @@ export function DashboardShell() {
             <TipDisclosure tipKey="slate" />
             <label>
               Performer name
-              <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+              <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </label>
             <label>
               Safe URL
-              <input value={slug} onChange={(event) => setSlug(normalizeSlug(event.target.value))} />
+              <input value={slug} onChange={(e) => setSlug(normalizeSlug(e.target.value))} />
             </label>
             <label>
               Status line
-              <input value={statusLine} onChange={(event) => setStatusLine(event.target.value)} />
+              <input value={statusLine} onChange={(e) => setStatusLine(e.target.value)} />
             </label>
             <div className="three-fields">
               <label>
                 Union
-                <input value={unionStatus} onChange={(event) => setUnionStatus(event.target.value)} />
+                <input value={unionStatus} onChange={(e) => setUnionStatus(e.target.value)} />
               </label>
               <label>
                 Age range
-                <input value={ageRange} onChange={(event) => setAgeRange(event.target.value)} />
+                <input value={ageRange} onChange={(e) => setAgeRange(e.target.value)} />
               </label>
               <label>
                 Market
-                <input value={market} onChange={(event) => setMarket(event.target.value)} />
+                <input value={market} onChange={(e) => setMarket(e.target.value)} />
               </label>
             </div>
           </article>
 
+          {/* Representation & Contact */}
           <article className="editor-panel" data-testid="representation-panel">
             <div className="panel-heading">
               <p>Representation &amp; Contact</p>
               <span>{hasRep ? `${normalizeReps(reps).length} rep${normalizeReps(reps).length === 1 ? "" : "s"}` : "Parent relay"}</span>
             </div>
             <label className="checkbox-line">
-              <input type="checkbox" checked={hasRep} onChange={(event) => setHasRep(event.target.checked)} />
+              <input type="checkbox" checked={hasRep} onChange={(e) => setHasRep(e.target.checked)} />
               <span>Represented by agent or manager</span>
             </label>
             {hasRep ? (
@@ -653,28 +783,24 @@ export function DashboardShell() {
                     <div className="field-grid field-grid--rep">
                       <label>
                         Name
-                        <input value={rep.name} onChange={(event) => updateRep(index, { name: event.target.value })} />
+                        <input value={rep.name} onChange={(e) => updateRep(index, { name: e.target.value })} />
                       </label>
                       <label>
                         Role
-                        <select value={rep.role} onChange={(event) => updateRep(index, { role: event.target.value as Rep["role"] })}>
+                        <select value={rep.role} onChange={(e) => updateRep(index, { role: e.target.value as Rep["role"] })}>
                           <option value="agent">Agent</option>
                           <option value="manager">Manager</option>
                         </select>
                       </label>
                       <label>
                         Email
-                        <input type="email" value={rep.email} onChange={(event) => updateRep(index, { email: event.target.value })} />
+                        <input type="email" value={rep.email} onChange={(e) => updateRep(index, { email: e.target.value })} />
                       </label>
                     </div>
-                    <button className="row-remove" type="button" onClick={() => removeRep(index)}>
-                      Remove
-                    </button>
+                    <button className="row-remove" type="button" onClick={() => removeRep(index)}>Remove</button>
                   </div>
                 ))}
-                <button className="button-secondary panel-action" type="button" onClick={addRep}>
-                  Add rep
-                </button>
+                <button className="button-secondary panel-action" type="button" onClick={addRep}>Add rep</button>
               </div>
             ) : (
               <p className="panel-note">
@@ -683,6 +809,7 @@ export function DashboardShell() {
             )}
           </article>
 
+          {/* Casting Links */}
           <article className="editor-panel" data-testid="links-panel">
             <div className="panel-heading">
               <p>Casting Links</p>
@@ -694,28 +821,27 @@ export function DashboardShell() {
                   <div className="field-grid field-grid--link">
                     <label>
                       Button label
-                      <input value={link.label} placeholder="Actors Access" onChange={(event) => updateLink(index, { label: event.target.value })} />
+                      <input value={link.label} placeholder="Actors Access" onChange={(e) => updateLink(index, { label: e.target.value })} />
                     </label>
                     <label>
                       URL
-                      <input value={link.url} placeholder="https://..." onChange={(event) => updateLink(index, { url: event.target.value })} />
+                      <input value={link.url} placeholder="https://..." onChange={(e) => updateLink(index, { url: e.target.value })} />
                     </label>
                   </div>
-                  <button className="row-remove" type="button" onClick={() => removeLink(index)}>
-                    Remove
-                  </button>
+                  <button className="row-remove" type="button" onClick={() => removeLink(index)}>Remove</button>
                 </div>
               ))}
-              <button className="button-secondary panel-action" type="button" onClick={addLink}>
-                Add link
-              </button>
+              <button className="button-secondary panel-action" type="button" onClick={addLink}>Add link</button>
             </div>
           </article>
 
+          {/* Template & Style */}
           <article className="editor-panel" data-testid="template-panel">
             <div className="panel-heading">
               <p>Template &amp; Style</p>
-              <span>{betaFullAccess ? "Beta full access" : "Plus templates preview here"}</span>
+              <span className={editorPlan === "plus" ? "plan-badge plan-badge--plus" : "plan-badge plan-badge--free"}>
+                {editorPlan === "plus" ? "✦ Plus" : "Free"}
+              </span>
             </div>
             <div className="template-options" aria-label="Template">
               {Object.values(templateTokens).map((template) => {
@@ -729,16 +855,20 @@ export function DashboardShell() {
                     type="button"
                     aria-current={selected ? "true" : undefined}
                     data-locked={locked ? "true" : undefined}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setTemplateId(template.id);
+                    onClick={() => {
+                      if (locked) {
+                        // Clicking a locked template scrolls to the upgrade prompt
+                        document.getElementById("upgrade-bar")?.scrollIntoView({ behavior: "smooth" });
+                      } else {
+                        setTemplateId(template.id);
+                      }
                     }}
                   >
                     <span className={`template-thumb template-thumb--${template.id}`} aria-hidden="true">
                       <span />
                     </span>
                     <strong>{template.label}</strong>
-                    <small>{locked ? "Preview · Plus" : template.tier === "plus" && betaFullAccess ? "Beta" : template.tier === "plus" ? "Plus" : "Free"}</small>
+                    <small>{locked ? "Plus only ↑" : template.tier === "plus" ? "Plus" : "Free"}</small>
                     {selected ? <span className="check-badge" aria-hidden="true">✓</span> : null}
                   </button>
                 );
@@ -760,75 +890,15 @@ export function DashboardShell() {
             </div>
             <label>
               Font pairing
-              <select value={fontPair} onChange={(event) => setFontPair(event.target.value as FontPair)}>
+              <select value={fontPair} onChange={(e) => setFontPair(e.target.value as FontPair)}>
                 {fontPairOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
+                  <option key={option.id} value={option.id}>{option.label}</option>
                 ))}
               </select>
             </label>
           </article>
 
-          <article className="editor-panel" data-testid="account-panel">
-            <div className="panel-heading">
-              <p>Account</p>
-              <span>{betaFullAccess ? "Full beta enabled" : "Auth ready"}</span>
-            </div>
-            <AuthControls
-              email={authEmail}
-              user={authUser}
-              status={authStatus}
-              onEmailChange={setAuthEmail}
-              onSubmit={handleAuthSubmit}
-              onSignOut={handleSignOut}
-            />
-          </article>
-
-          <article className="editor-panel" data-testid="clips-panel">
-            <div className="panel-heading">
-              <p>Slate, Clips &amp; Reels</p>
-              <span>{normalizeClips(clips).length} visible</span>
-            </div>
-            <TipDisclosure tipKey="clips" />
-            <label>
-              Slate video URL
-              <input value={slateUrl} placeholder="YouTube or Vimeo URL" onChange={(event) => setSlateUrl(event.target.value)} />
-            </label>
-            <div className="editor-rows" aria-label="Clip and reel links">
-              {clips.map((clip, index) => (
-                <div className="editor-row" key={clip.id}>
-                  <div className="field-grid field-grid--clip">
-                    <label>
-                      Title
-                      <input value={clip.title} placeholder="Demo Reel" onChange={(event) => updateClip(index, { title: event.target.value })} />
-                    </label>
-                    <label>
-                      Category
-                      <select value={clip.category} onChange={(event) => updateClip(index, { category: event.target.value as Clip["category"] })}>
-                        {clipCategories.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      YouTube/Vimeo URL
-                      <input value={clip.embedUrl} placeholder="https://..." onChange={(event) => updateClip(index, { embedUrl: event.target.value })} />
-                    </label>
-                  </div>
-                  <button className="row-remove" type="button" onClick={() => removeClip(index)}>
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button className="button-secondary panel-action" type="button" onClick={addClip}>
-                Add clip
-              </button>
-            </div>
-          </article>
-
+          {/* Headshots */}
           <article className="editor-panel" data-testid="headshots-panel">
             <div className="panel-heading">
               <p>Headshots</p>
@@ -843,7 +913,7 @@ export function DashboardShell() {
             {uploadStatus ? <p className="panel-note">{uploadStatus}</p> : null}
             <div className="uploaded-headshots" aria-label="Uploaded headshots">
               {renderedHeadshots
-                .filter((headshot) => !isPlaceholderHeadshot(headshot))
+                .filter((h) => !isPlaceholderHeadshot(h))
                 .map((headshot) => (
                   <div key={headshot.id} className="uploaded-headshot">
                     <span
@@ -856,14 +926,195 @@ export function DashboardShell() {
                       <strong>{headshot.label}</strong>
                       {headshot.featured ? <span>Featured</span> : null}
                     </div>
-                    <button type="button" onClick={() => handleRemoveHeadshot(headshot.id)}>
-                      Remove
-                    </button>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      {!headshot.featured ? (
+                        <button type="button" className="btn-set-featured" onClick={() => handleSetFeatured(headshot.id)}>
+                          Set featured
+                        </button>
+                      ) : null}
+                      <button type="button" onClick={() => handleRemoveHeadshot(headshot.id)}>Remove</button>
+                    </div>
                   </div>
                 ))}
             </div>
           </article>
 
+          {/* Slate, Clips & Reels */}
+          <article className="editor-panel" data-testid="clips-panel">
+            <div className="panel-heading">
+              <p>Slate, Clips &amp; Reels</p>
+              <span>{normalizeClips(clips).length} visible</span>
+            </div>
+            <TipDisclosure tipKey="clips" />
+            <label>
+              Slate video URL
+              <input value={slateUrl} placeholder="YouTube or Vimeo URL" onChange={(e) => setSlateUrl(e.target.value)} />
+            </label>
+            <div className="editor-rows" aria-label="Clip and reel links">
+              {clips.map((clip, index) => (
+                <div className="editor-row" key={clip.id}>
+                  <div className="field-grid field-grid--clip">
+                    <label>
+                      Title
+                      <input value={clip.title} placeholder="Demo Reel" onChange={(e) => updateClip(index, { title: e.target.value })} />
+                    </label>
+                    <label>
+                      Category
+                      <select value={clip.category} onChange={(e) => updateClip(index, { category: e.target.value as Clip["category"] })}>
+                        {clipCategories.map((category) => (
+                          <option key={category} value={category}>{category}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      YouTube/Vimeo URL
+                      <input value={clip.embedUrl} placeholder="https://..." onChange={(e) => updateClip(index, { embedUrl: e.target.value })} />
+                    </label>
+                  </div>
+                  <button className="row-remove" type="button" onClick={() => removeClip(index)}>Remove</button>
+                </div>
+              ))}
+              <button className="button-secondary panel-action" type="button" onClick={addClip}>Add clip</button>
+            </div>
+          </article>
+
+          {/* Resume */}
+          <article className="editor-panel" data-testid="resume-panel">
+            <div className="panel-heading">
+              <p>Resume</p>
+              <span>{(resumeContent?.credits ?? []).length} credit{(resumeContent?.credits ?? []).length === 1 ? "" : "s"}</span>
+            </div>
+            <TipDisclosure tipKey="resume" />
+            <div className="resume-import-bar">
+              <p>
+                <b>Resume101 Import</b> — pull your credits directly from resumes.childactor101.com.
+              </p>
+              <button
+                className="btn-import"
+                type="button"
+                disabled={importing || !authUser}
+                onClick={handleResume101Import}
+              >
+                {importing ? "Importing…" : "Import →"}
+              </button>
+            </div>
+            {importStatus ? <p className="panel-note">{importStatus}</p> : null}
+            {!authUser ? <p className="panel-note">Sign in to import from Resume101.</p> : null}
+            <div className="editor-rows" aria-label="Resume credits" style={{ marginTop: 16 }}>
+              {(resumeContent?.credits ?? []).map((credit, index) => (
+                <div className="editor-row" key={`credit-${index}`}>
+                  <div className="field-grid field-grid--credit">
+                    <label>
+                      Project / Production
+                      <input value={credit.project} placeholder="Short film title" onChange={(e) => updateCredit(index, { project: e.target.value })} />
+                    </label>
+                    <label>
+                      Role
+                      <input value={credit.role} placeholder="Supporting" onChange={(e) => updateCredit(index, { role: e.target.value })} />
+                    </label>
+                    <label>
+                      Company / Network
+                      <input value={credit.company} placeholder="Independent" onChange={(e) => updateCredit(index, { company: e.target.value })} />
+                    </label>
+                  </div>
+                  <button className="row-remove" type="button" onClick={() => removeCredit(index)}>Remove</button>
+                </div>
+              ))}
+              <button className="button-secondary panel-action" type="button" onClick={addCredit}>Add credit</button>
+            </div>
+          </article>
+
+          {/* BTS Feed (Plus only) */}
+          <article className="editor-panel" data-testid="feed-panel">
+            <div className="panel-heading">
+              <p>Updates Feed</p>
+              <span className="plus-badge">Plus</span>
+            </div>
+            <TipDisclosure tipKey="updates" />
+            {editorPlan === "plus" ? (
+              <>
+                <div className="editor-rows" aria-label="Updates feed items">
+                  {feedItems.map((item, index) => (
+                    <div className="editor-row" key={item.id}>
+                      <div className="field-grid field-grid--feed">
+                        <label>
+                          Date
+                          <input type="date" value={item.date} onChange={(e) => updateFeedItem(index, { date: e.target.value })} />
+                        </label>
+                        <label>
+                          Body (keep short — wins only, no locations or schedules)
+                          <textarea
+                            className="feed-body-input"
+                            value={item.body}
+                            placeholder="We booked a commercial!"
+                            maxLength={280}
+                            onChange={(e) => updateFeedItem(index, { body: e.target.value })}
+                          />
+                        </label>
+                      </div>
+                      <button className="row-remove" type="button" onClick={() => removeFeedItem(index)}>Remove</button>
+                    </div>
+                  ))}
+                  <button className="button-secondary panel-action" type="button" onClick={addFeedItem}>Add update</button>
+                </div>
+              </>
+            ) : (
+              <div className="plus-gate-strip">
+                <span className="plus-badge">Plus</span>
+                <p>The BTS feed is available on Plus. Upgrade to share wins and updates directly on your page.</p>
+              </div>
+            )}
+          </article>
+
+          {/* Press Quote (Prestige template only) */}
+          {(templateId === "prestige" || pressContent) ? (
+            <article className="editor-panel" data-testid="press-panel">
+              <div className="panel-heading">
+                <p>Press Quote</p>
+                <span className="plus-badge">Prestige</span>
+              </div>
+              <TipDisclosure tipKey="press" />
+              <label>
+                Quote
+                <input
+                  value={pressContent?.quote ?? ""}
+                  placeholder="Prepared, present, and unusually natural on camera."
+                  onChange={(e) => updatePress({ quote: e.target.value })}
+                />
+              </label>
+              <label>
+                Attribution
+                <input
+                  value={pressContent?.attribution ?? ""}
+                  placeholder="Casting workshop note"
+                  onChange={(e) => updatePress({ attribution: e.target.value })}
+                />
+              </label>
+            </article>
+          ) : null}
+
+          {/* Account */}
+          <article className="editor-panel" data-testid="account-panel">
+            <div className="panel-heading">
+              <p>Account</p>
+              <span>{authUser ? (editorPlan === "plus" ? "✦ Plus" : "Free") : "Not signed in"}</span>
+            </div>
+            <AuthControls
+              email={authEmail}
+              user={authUser}
+              status={authStatus}
+              plan={editorPlan}
+              subscription={subscription}
+              upgrading={upgrading}
+              onEmailChange={setAuthEmail}
+              onSubmit={handleAuthSubmit}
+              onSignOut={handleSignOut}
+              onUpgrade={handleUpgrade}
+              onManageSubscription={handleManageSubscription}
+            />
+          </article>
+
+          {/* Sections sorter */}
           <article className="editor-panel section-sorter" data-testid="sections-panel">
             <div className="panel-heading">
               <p>Sections</p>
@@ -875,21 +1126,15 @@ export function DashboardShell() {
               .map((section) => (
                 <div key={section.id} className="section-card">
                   <div className={section.enabled ? "section-row" : "section-row section-row--disabled"}>
-                    <button type="button" className="drag-handle" aria-label={`Drag ${section.type}`}>
-                      ⠿
-                    </button>
+                    <button type="button" className="drag-handle" aria-label={`Drag ${section.type}`}>⠿</button>
                     <span>{section.type}</span>
                     <label className="toggle-switch">
                       <input
                         type="checkbox"
                         checked={section.enabled}
-                        onChange={(event) => {
-                          const enabled = event.target.checked;
-                          setSections((currentSections) =>
-                            currentSections.map((candidate) =>
-                              candidate.id === section.id ? { ...candidate, enabled } : candidate
-                            )
-                          );
+                        onChange={(e) => {
+                          const enabled = e.target.checked;
+                          setSections((secs) => secs.map((s) => s.id === section.id ? { ...s, enabled } : s));
                         }}
                       />
                       <span>Enabled</span>
@@ -897,24 +1142,21 @@ export function DashboardShell() {
                   </div>
                   {sectionTipMap[section.type] ? <TipDisclosure tipKey={sectionTipMap[section.type]} /> : null}
                 </div>
-            ))}
+              ))}
           </article>
+
         </div>
 
         <PreviewPane page={previewPage} pageUrl={`pages.childactor101.com/p/${publicSlug}`} />
       </section>
 
-      <button type="button" className="floating-preview" onClick={() => setPreviewOpen(true)}>
-        Preview
-      </button>
+      <button type="button" className="floating-preview" onClick={() => setPreviewOpen(true)}>Preview</button>
 
       {previewOpen ? (
         <div className="preview-overlay" role="dialog" aria-label="Page preview" aria-modal="true">
           <div className="preview-overlay-bar">
             <span>{`pages.childactor101.com/p/${publicSlug}`}</span>
-            <button type="button" onClick={() => setPreviewOpen(false)}>
-              Close
-            </button>
+            <button type="button" onClick={() => setPreviewOpen(false)}>Close</button>
           </div>
           <div className="preview-overlay-surface">
             <ActorPageRenderer page={previewPage} />
@@ -925,13 +1167,10 @@ export function DashboardShell() {
   );
 }
 
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
 function EditorToolbar({
-  displayName,
-  previewUrl,
-  saveStatus,
-  saving,
-  onPreview,
-  onPublish
+  displayName, previewUrl, saveStatus, saving, onPreview, onPublish
 }: {
   displayName: string;
   previewUrl: string;
@@ -965,27 +1204,52 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 }
 
 function AuthControls({
-  email,
-  user,
-  status,
-  onEmailChange,
-  onSubmit,
-  onSignOut
+  email, user, status, plan, subscription, upgrading,
+  onEmailChange, onSubmit, onSignOut, onUpgrade, onManageSubscription
 }: {
   email: string;
   user: User | null;
   status: string | null;
+  plan: Plan;
+  subscription: SubscriptionRow | null;
+  upgrading: boolean;
   onEmailChange: (email: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onSignOut: () => void;
+  onUpgrade: () => void;
+  onManageSubscription: () => void;
 }) {
   if (user) {
     return (
-      <div className="auth-strip">
-        <span>{user.email}</span>
-        <button type="button" onClick={onSignOut}>
-          Sign out
-        </button>
+      <div>
+        <div className="auth-strip">
+          <span>{user.email}</span>
+          <button type="button" onClick={onSignOut}>Sign out</button>
+        </div>
+
+        {/* Subscription panel */}
+        {plan === "plus" ? (
+          <div className="upgrade-bar" id="upgrade-bar">
+            <p>
+              <strong>✦ Pages101 Plus</strong> — Premium templates, unlimited headshots &amp; clips, BTS feed.
+              {subscription?.current_period_end ? ` Renews ${new Date(subscription.current_period_end).toLocaleDateString()}.` : ""}
+            </p>
+            <button className="btn-import" type="button" disabled={upgrading} onClick={onManageSubscription}>
+              {upgrading ? "Loading…" : "Manage subscription"}
+            </button>
+          </div>
+        ) : (
+          <div className="upgrade-bar" id="upgrade-bar">
+            <p>
+              <strong>Upgrade to Plus</strong> — Unlock Splash &amp; Prestige templates, unlimited headshots, BTS feed, and custom domain.
+            </p>
+            <button className="button-primary" type="button" style={{ minHeight: 38, padding: "0 18px", borderRadius: 999 }} disabled={upgrading} onClick={onUpgrade}>
+              {upgrading ? "Loading…" : "Upgrade — $49/yr"}
+            </button>
+          </div>
+        )}
+
+        {status ? <p className="panel-note">{status}</p> : null}
       </div>
     );
   }
@@ -994,23 +1258,17 @@ function AuthControls({
     <form className="auth-form" onSubmit={onSubmit}>
       <label>
         Account email
-        <input type="email" value={email} onChange={(event) => onEmailChange(event.target.value)} />
+        <input type="email" value={email} onChange={(e) => onEmailChange(e.target.value)} />
       </label>
-      <button className="button-secondary" type="submit">
-        Send link
-      </button>
+      <button className="button-secondary" type="submit">Send link</button>
       {status ? <p className="panel-note">{status}</p> : null}
     </form>
   );
 }
 
 function TipDisclosure({ tipKey }: { tipKey?: TipKey }) {
-  if (!tipKey) {
-    return null;
-  }
-
+  if (!tipKey) return null;
   const tip = tips[tipKey];
-
   return (
     <details className="tip-disclosure">
       <summary>💡 101 Tip</summary>
@@ -1034,14 +1292,26 @@ function PreviewPane({ page, pageUrl }: { page: ActorPage; pageUrl: string }) {
   );
 }
 
+// ─── Utility helpers ───────────────────────────────────────────────────────────
+
 function getPageHeadshots(actorPage: ActorPage) {
-  const section = actorPage.sections.find((candidate) => candidate.type === "headshots");
+  const section = actorPage.sections.find((s) => s.type === "headshots");
   return section?.type === "headshots" ? section.content.headshots : [];
 }
 
 function getSectionClips(sections: ActorPageSection[]) {
-  const section = sections.find((candidate) => candidate.type === "clips");
+  const section = sections.find((s) => s.type === "clips");
   return section?.type === "clips" ? section.content.clips : [];
+}
+
+function getSectionFeedItems(sections: ActorPageSection[]) {
+  const section = sections.find((s) => s.type === "feed");
+  return section?.type === "feed" ? section.content.items : [];
+}
+
+function getSectionPress(sections: ActorPageSection[]) {
+  const section = sections.find((s) => s.type === "press");
+  return section?.type === "press" ? section.content : null;
 }
 
 function isPlaceholderHeadshot(headshot: Headshot) {
@@ -1050,17 +1320,10 @@ function isPlaceholderHeadshot(headshot: Headshot) {
 
 function normalizeHeadshots(headshotsToNormalize: Headshot[]) {
   let featuredAssigned = false;
-
   return headshotsToNormalize.map((headshot, index) => {
     const featured = !featuredAssigned && (headshot.featured || index === 0);
-    if (featured) {
-      featuredAssigned = true;
-    }
-
-    return {
-      ...headshot,
-      featured
-    };
+    if (featured) featuredAssigned = true;
+    return { ...headshot, featured };
   });
 }
 
@@ -1069,57 +1332,37 @@ function sanitizeFileName(fileName: string) {
     .toLowerCase()
     .replace(/[^a-z0-9.]+/g, "-")
     .replace(/^-+|-+$/g, "");
-
   return sanitized || "headshot.jpg";
 }
 
 function normalizeReps(repsToNormalize: Rep[]) {
   return repsToNormalize
-    .map((rep) => ({
-      name: rep.name.trim(),
-      role: rep.role,
-      email: rep.email.trim()
-    }))
+    .map((rep) => ({ name: rep.name.trim(), role: rep.role, email: rep.email.trim() }))
     .filter((rep) => rep.name && rep.email);
 }
 
 function normalizeLinks(linksToNormalize: PageLink[]) {
   return linksToNormalize
-    .map((link) => ({
-      label: link.label.trim(),
-      url: normalizeExternalUrl(link.url)
-    }))
+    .map((link) => ({ label: link.label.trim(), url: normalizeExternalUrl(link.url) }))
     .filter((link) => link.label && link.url);
 }
 
 function normalizeClips(clipsToNormalize: Clip[]) {
   return clipsToNormalize
-    .map((clip) => ({
-      ...clip,
-      title: clip.title.trim(),
-      embedUrl: normalizeEmbedUrl(clip.embedUrl.trim())
-    }))
+    .map((clip) => ({ ...clip, title: clip.title.trim(), embedUrl: normalizeEmbedUrl(clip.embedUrl.trim()) }))
     .filter((clip) => clip.title && clip.embedUrl);
 }
 
 function normalizeExternalUrl(url: string) {
   const trimmed = url.trim();
-  if (!trimmed) {
-    return "";
-  }
-
-  if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
-  }
-
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
 }
 
 function normalizeEmbedUrl(url: string) {
   const normalized = normalizeExternalUrl(url);
-  if (!normalized) {
-    return "";
-  }
+  if (!normalized) return "";
 
   try {
     const parsed = new URL(normalized);
@@ -1131,10 +1374,7 @@ function normalizeEmbedUrl(url: string) {
     }
 
     if (host === "youtube.com" || host === "m.youtube.com") {
-      if (parsed.pathname.startsWith("/embed/")) {
-        return normalized;
-      }
-
+      if (parsed.pathname.startsWith("/embed/")) return normalized;
       const id = parsed.searchParams.get("v") ?? parsed.pathname.split("/").filter(Boolean).at(-1);
       return id ? `https://www.youtube.com/embed/${id}` : normalized;
     }
@@ -1144,9 +1384,7 @@ function normalizeEmbedUrl(url: string) {
       return id ? `https://player.vimeo.com/video/${id}` : normalized;
     }
 
-    if (host === "player.vimeo.com") {
-      return normalized;
-    }
+    if (host === "player.vimeo.com") return normalized;
   } catch {
     return normalized;
   }
@@ -1156,15 +1394,7 @@ function normalizeEmbedUrl(url: string) {
 
 function getHeadshotLabel(fileName: string) {
   const nameWithoutExtension = fileName.replace(/\.[^.]+$/, "");
-  const words = nameWithoutExtension
-    .replace(/[-_]+/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (words.length === 0) {
-    return "Headshot";
-  }
-
+  const words = nameWithoutExtension.replace(/[-_]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "Headshot";
   return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
 }

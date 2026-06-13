@@ -17,15 +17,13 @@ export function TemplateImageSlot({
   priority?: boolean;
 }) {
   if (image && hasRenderableImage(image)) {
-    if (className) {
-      return (
-        <div className={className}>
-          <Image src={image.src} alt={image.alt} fill priority={priority} sizes={sizes} />
-        </div>
-      );
-    }
-
-    return <Image src={image.src} alt={image.alt} fill priority={priority} sizes={sizes} />;
+    // Use .img-wrap instead of .ph so the placeholder gradient ::after does NOT overlay real photos
+    const wrapClass = className ? className.replace(/\bph\b/, "img-wrap").trim() || "img-wrap" : "img-wrap";
+    return (
+      <div className={wrapClass}>
+        <Image src={image.src} alt={image.alt} fill priority={priority} sizes={sizes} />
+      </div>
+    );
   }
 
   return (

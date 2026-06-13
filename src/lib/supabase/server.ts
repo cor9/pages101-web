@@ -42,3 +42,46 @@ export function getSupabasePublicClient() {
 
   return publicClient;
 }
+
+/**
+ * Service-role client for server-side routes that need to bypass RLS
+ * (Stripe webhook upserts, Resume101 import, etc.)
+ */
+export function createSupabaseServiceClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
+
+/**
+ * Reads the authenticated user from a cookie-based session token passed in headers.
+ * Used by API routes that need to know who is signed in (checkout, portal, import).
+ */
+export function createSupabaseServerClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null;
+  }
+
+  // In API routes we use the anon key; the JWT from the cookie is forwarded
+  // via a global cookie adapter. For now this returns a simple anon client —
+  // callers must pass the Authorization header from the client or use service role.
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
