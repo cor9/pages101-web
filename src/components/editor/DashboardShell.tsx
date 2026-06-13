@@ -158,7 +158,6 @@ export function DashboardShell() {
 
       // Load subscription plan
       const { data: subRow } = await supabase
-        .schema("pages101")
         .from("subscriptions")
         .select("plan, status, current_period_end")
         .eq("user_id", authUser.id)
@@ -167,8 +166,7 @@ export function DashboardShell() {
       if (!cancelled) setSubscription(subRow ?? null);
 
       const { data: pageRow, error: pageError } = await supabase
-        .schema("pages101")
-        .from("actor_pages")
+        .from("p101_actor_pages")
         .select("*")
         .eq("user_id", authUser.id)
         .order("updated_at", { ascending: false })
@@ -180,8 +178,7 @@ export function DashboardShell() {
       if (!pageRow) { setSaveStatus("Beta preview"); return; }
 
       const { data: sectionRows, error: sectionError } = await supabase
-        .schema("pages101")
-        .from("page_sections")
+        .from("p101_page_sections")
         .select("*")
         .eq("page_id", pageRow.id)
         .order("sort_order", { ascending: true })
@@ -673,42 +670,32 @@ export function DashboardShell() {
   async function saveActorPage(actorPage: ActorPage) {
     if (!supabase || !authUser) throw new Error("Sign in to publish.");
 
-    const pages = supabase.schema("pages101").from("actor_pages");
-    const payload = {
-      user_id: authUser.id,
-      slug: actorPage.slug,
-      template: actorPage.template,
-      accent: actorPage.accent,
-      font_pair: actorPage.fontPair,
-      display_name: actorPage.displayName,
-      status_line: actorPage.statusLine,
-      union_status: actorPage.unionStatus,
-      age_range: actorPage.ageRange,
-      market: actorPage.market,
-      has_rep: actorPage.hasRep,
-      reps: actorPage.reps,
-      links: actorPage.links,
-      slate_url: actorPage.slateUrl,
-      published: true,
-      noindex: actorPage.noindex,
-      updated_at: new Date().toISOString()
-    };
-
-    const { data: existing, error: existingError } = await pages
+    const { data, error } = await supabase
+      .from("p101_actor_pages")
+      .upsert({
+        user_id: authUser.id,
+        slug: actorPage.slug,
+        template: actorPage.template,
+        accent: actorPage.accent ?? null,
+        font_pair: actorPage.fontPair ?? null,
+        display_name: actorPage.displayName,
+        status_line: actorPage.statusLine ?? null,
+        union_status: actorPage.unionStatus ?? null,
+        age_range: actorPage.ageRange ?? null,
+        market: actorPage.market ?? null,
+        has_rep: actorPage.hasRep ?? true,
+        reps: actorPage.reps ?? [],
+        links: actorPage.links ?? [],
+        slate_url: actorPage.slateUrl ?? null,
+        published: true,
+        noindex: actorPage.noindex,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: "slug"
+      })
       .select("id")
-      .eq("user_id", authUser.id)
-      .eq("slug", actorPage.slug)
-      .maybeSingle<{ id: string }>();
+      .single<{ id: string }>();
 
-    if (existingError) throw existingError;
-
-    if (existing) {
-      const { data, error } = await pages.update(payload).eq("id", existing.id).select("id").single<{ id: string }>();
-      if (error) throw error;
-      return data.id;
-    }
-
-    const { data, error } = await pages.insert(payload).select("id").single<{ id: string }>();
     if (error) throw error;
     return data.id;
   }
@@ -725,8 +712,7 @@ export function DashboardShell() {
     }));
 
     const { error } = await supabase
-      .schema("pages101")
-      .from("page_sections")
+      .from("p101_page_sections")
       .upsert(rows, { onConflict: "page_id,type" });
 
     if (error) throw error;
