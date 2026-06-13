@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_dummy", {
   apiVersion: "2025-08-27.basil"
 });
 

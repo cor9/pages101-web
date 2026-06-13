@@ -13,7 +13,7 @@ import { NextResponse } from "next/server";
  *   STRIPE_PLUS_PRICE_ID    — price_1ThmmxDALb4OhZMWZ31ZyU09
  */
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_dummy", {
   apiVersion: "2025-08-27.basil"
 });
 

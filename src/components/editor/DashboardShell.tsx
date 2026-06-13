@@ -100,7 +100,6 @@ export function DashboardShell() {
   const realHeadshotCount = renderedHeadshots.filter((headshot) => !isPlaceholderHeadshot(headshot)).length;
   const clips = getSectionClips(sections);
   const feedItems = getSectionFeedItems(sections);
-  const pressQuote = getSectionPress(sections);
 
   // ─── Preview tick (debounced) ──────────────────────────────────────────────
 
@@ -713,7 +712,6 @@ export function DashboardShell() {
   const resumeSection = sections.find((s) => s.type === "resume");
   const resumeContent = resumeSection?.type === "resume" ? resumeSection.content : null;
 
-  const feedSection = sections.find((s) => s.type === "feed");
   const pressSection = sections.find((s) => s.type === "press");
   const pressContent = pressSection?.type === "press" ? pressSection.content : null;
 
