@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pages101 — Templates v5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#E8E4DC;color:#221E1B}
+  button{font-family:inherit}
+  :focus-visible{outline:3px solid #C8553D;outline-offset:3px}
+  a{transition:all .15s ease}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+
+  /* ============ PREVIEW CHROME ============ */
+  .chrome{
+    position:sticky;top:0;z-index:60;background:#1B1714;color:#F5EFE6;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 18px;gap:12px;flex-wrap:wrap;
+  }
+  .chrome-group{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .chrome-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.65;font-weight:600}
+  .chrome-tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .chrome-tab{
+    font-size:12.5px;font-weight:600;background:transparent;color:#F5EFE6;
+    border:1px solid rgba(245,239,230,.3);border-radius:999px;padding:7px 14px;cursor:pointer;
+    transition:all .18s ease;display:flex;align-items:center;gap:7px;
+  }
+  .chrome-tab small{font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;font-weight:700}
+  .chrome-tab:hover{border-color:#F5EFE6}
+  .chrome-tab.active{background:#C8553D;border-color:#C8553D;color:#fff}
+  .chrome-tab.active small{opacity:.85}
+  .swatches{display:flex;gap:6px;align-items:center}
+  .swatch{width:19px;height:19px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+  .swatch.auto{background:conic-gradient(#C8553D,#FF4D8D,#3E63DD,#4E7458,#8A6F47,#C8553D);font-size:0}
+  .swatch.active{border-color:#F5EFE6}
+  .fontsel{
+    background:rgba(245,239,230,.08);color:#F5EFE6;border:1px solid rgba(245,239,230,.3);
+    border-radius:8px;padding:6px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  .tipstoggle{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;cursor:pointer;user-select:none}
+  .tipstoggle input{accent-color:#C8553D;width:14px;height:14px;cursor:pointer}
+  .tpl{display:none}
+  .tpl.active{display:block}
+
+  /* ============ SHARED ============ */
+  .ph{
+    position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    background:linear-gradient(150deg,#E0D5C3 0%,#CDBFA7 55%,#B9A98D 100%);
+  }
+  .ph::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 28%, rgba(255,255,255,.5), transparent 62%)}
+  .ph span{position:relative;z-index:1;font-family:var(--display,'Outfit'),sans-serif;font-weight:700;
+    color:rgba(43,35,32,.28);font-size:30px}
+  .vid{position:relative;aspect-ratio:16/9;background:#221C18;
+    display:flex;align-items:center;justify-content:center}
+  .vid::before{content:"";width:56px;height:56px;border-radius:50%;border:1.5px solid rgba(245,239,230,.55);position:absolute}
+  .vid::after{content:"";width:0;height:0;border-left:17px solid rgba(245,239,230,.9);
+    border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+
+  .page{max-width:680px;margin:0 auto;padding:64px 24px 0;text-align:center}
+  .sec{margin-top:84px}
+  .sec-title{margin-bottom:30px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .grid3 button{border:none;padding:0;cursor:zoom-in;background:none;transition:transform .18s ease}
+  .grid3 button:hover{transform:translateY(-4px) rotate(0deg)!important}
+  .grid3 .ph{aspect-ratio:4/5;width:100%}
+  .clips{display:grid;grid-template-columns:1fr 1fr;gap:18px;text-align:left}
+  .clip p{font-size:13px;font-weight:700;margin-bottom:8px}
+  .clip small{display:block;font-size:11px;font-weight:700;opacity:.65;margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase}
+  .links{display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
+  @media (max-width:600px){
+    .grid3{grid-template-columns:repeat(2,1fr)}
+    .clips{grid-template-columns:1fr}
+    .page{padding-top:48px}
+  }
+
+  .feature{position:relative;margin:0 auto 32px;cursor:pointer;border:none;background:none;padding:0;display:block}
+  .slate-badge{
+    position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:8px;white-space:nowrap;
+    font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;
+    padding:11px 20px;border-radius:999px;z-index:2;transition:transform .15s ease;
+  }
+  .feature:hover .slate-badge{transform:translateX(-50%) scale(1.05)}
+  .slate-badge::before{content:"▶";font-size:9px}
+
+  /* resume sheet */
+  .sheet{
+    background:#fff;color:#26201C;text-align:left;border-radius:3px;
+    box-shadow:0 1px 2px rgba(20,15,12,.14), 0 16px 42px rgba(20,15,12,.22);
+    padding:44px 46px;font-family:'Inter',sans-serif;
+  }
+  .sheet-head{text-align:center;border-bottom:2px solid #26201C;padding-bottom:16px;margin-bottom:8px}
+  .sheet-head h3{font-family:var(--display,'Outfit'),serif;font-weight:700;font-size:26px}
+  .sheet-head p{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:#7A6E64;margin-top:7px}
+  .sheet h4{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;
+    margin:24px 0 10px;display:flex;align-items:center;gap:12px}
+  .sheet h4::after{content:"";flex:1;border-top:1px solid rgba(38,32,28,.18)}
+  .srow{display:grid;grid-template-columns:1.25fr .9fr 1fr;gap:12px;font-size:13px;line-height:1.5;padding:4px 0}
+  .srow .p{font-weight:600}
+  .srow .r{font-style:italic;color:#5C5048}
+  .srow .d{text-align:right;color:#5C5048}
+  .skills{font-size:13px;line-height:1.7;color:#3D352F}
+  .sheet-sync{
+    margin-top:24px;display:flex;align-items:center;justify-content:space-between;gap:14px;
+    background:#FAF6EE;border:1px dashed rgba(38,32,28,.25);border-radius:8px;padding:14px 18px;
+  }
+  .sheet-sync p{font-size:12px;color:#5C5048;text-align:left;line-height:1.5}
+  .sheet-sync p b{color:#26201C}
+  .sheet-sync a{
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;white-space:nowrap;
+    color:#fff;background:var(--accent,#C8553D);text-decoration:none;padding:10px 16px;border-radius:999px;
+  }
+  @media (max-width:600px){
+    .sheet{padding:30px 22px}
+    .srow{grid-template-columns:1.4fr 1fr}
+    .srow .d{display:none}
+    .sheet-sync{flex-direction:column;align-items:flex-start}
+  }
+
+  .feed{display:grid;gap:16px;text-align:left}
+  .feed-card{border-radius:14px;padding:22px;display:grid;gap:12px}
+  .feed-date{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--accent,#C8553D)}
+  .feed-text{font-size:15px;line-height:1.6}
+  .feed-img{aspect-ratio:16/9;border-radius:10px}
+
+  /* builder tips */
+  .tip{
+    display:none;text-align:left;margin:0 0 22px;
+    background:#FFF8DC;border:1.5px solid #E3C84F;border-radius:12px;
+    padding:16px 18px;color:#4A3F1D;box-shadow:0 4px 14px rgba(120,95,20,.12);
+  }
+  body.tips .tip{display:block}
+  .tip b{display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:.18em;
+    text-transform:uppercase;font-weight:800;color:#9A7B12;margin-bottom:7px;font-family:'Inter',sans-serif}
+  .tip b::before{content:"💡"}
+  .tip p{font-size:13.5px;line-height:1.6;font-family:'Inter',sans-serif;font-weight:500;font-style:normal}
+
+  /* modals */
+  .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+    background:rgba(15,12,10,.92);padding:24px}
+  .modal.open{display:flex}
+  .m-btn{position:absolute;background:none;border:none;color:rgba(245,239,230,.85);cursor:pointer;
+    font-size:34px;line-height:1;padding:14px}
+  .m-btn:hover{color:#fff}
+  .m-close{top:14px;right:18px;font-size:26px}
+  .m-prev{left:8px;top:50%;transform:translateY(-50%)}
+  .m-next{right:8px;top:50%;transform:translateY(-50%)}
+  .lb-stage{width:min(500px,86vw)}
+  .lb-stage .ph{aspect-ratio:4/5;border-radius:8px}
+  .lb-stage .ph span{font-size:60px}
+  .m-cap{text-align:center;color:rgba(245,239,230,.75);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;font-weight:700;margin-top:14px}
+  .slate-stage{width:min(760px,92vw)}
+  .slate-stage .vid{border-radius:12px}
+
+  /* =====================================================
+     1 · CLASSIC — free, Carrd-clean + CA101 branding
+     ===================================================== */
+  .t1{
+    --accent:var(--ua, #C8553D);
+    --display:var(--ud, 'Outfit');
+    --bodyf:var(--ub, 'Inter');
+    background:#FFFFFF;color:#1F1D1A;font-family:var(--bodyf),sans-serif;
+  }
+  .t1 .freebar{
+    background:#F5EFE6;border-bottom:1px solid rgba(43,35,32,.1);
+    padding:10px 16px;text-align:center;font-size:12px;font-weight:600;color:#5C5048;
+  }
+  .t1 .freebar b{color:var(--accent);font-weight:800}
+  .t1 .freebar a{color:var(--accent);font-weight:700;text-decoration:none;margin-left:8px;white-space:nowrap}
+  .t1 .freebar a:hover{text-decoration:underline}
+  .t1 .feature{width:min(380px,80vw)}
+  .t1 .feature .ph{aspect-ratio:4/5;border-radius:14px}
+  .t1 .feature .ph span{font-size:64px}
+  .t1 .slate-badge{background:var(--accent);color:#fff;box-shadow:0 8px 22px rgba(31,29,26,.2)}
+  .t1 h1{font-family:var(--display),sans-serif;font-weight:700;
+    font-size:clamp(36px,7vw,48px);letter-spacing:-.02em;line-height:1.05;margin-top:36px}
+  .t1 h1 em{font-style:normal;color:var(--accent)}
+  .t1 .status{font-size:16px;font-weight:500;margin-top:14px;line-height:1.55}
+  .t1 .reps{margin-top:14px;font-size:13px;color:#6E6862;line-height:1.85}
+  .t1 .reps a{color:#1F1D1A;font-weight:600;text-decoration:underline;
+    text-decoration-color:var(--accent);text-decoration-thickness:2px;text-underline-offset:3px}
+  .t1 .links{margin-top:26px}
+  .t1 .links a{font-size:12.5px;font-weight:600;text-decoration:none;color:#1F1D1A;
+    background:#F2EFEA;padding:11px 18px;border-radius:9px}
+  .t1 .links a:hover{background:var(--accent);color:#fff}
+  .t1 .sec-title{font-size:12px;letter-spacing:.24em;text-transform:uppercase;font-weight:700;color:#8A847C}
+  .t1 .grid3 .ph,.t1 .vid,.t1 .feed-img{border-radius:10px}
+  .t1 .clip small{color:var(--accent);opacity:1}
+  .t1 .feed-card{background:#F8F6F2}
+  .t1 .promo{margin-top:92px;background:#F5EFE6;border-top:1px solid rgba(43,35,32,.1);
+    padding:44px 24px 20px}
+  .t1 .promo-in{max-width:680px;margin:0 auto;text-align:center}
+  .t1 .promo-eyebrow{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;font-weight:800;
+    color:var(--accent);margin-bottom:18px}
+  .t1 .promo-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:left}
+  .t1 .promo-card{background:#fff;border:1px solid rgba(43,35,32,.12);border-radius:12px;
+    padding:20px;text-decoration:none;color:#1F1D1A;display:block}
+  .t1 .promo-card:hover{border-color:var(--accent);box-shadow:0 8px 22px rgba(43,35,32,.08)}
+  .t1 .promo-card b{display:block;font-family:var(--display),sans-serif;font-size:16px;font-weight:700;margin-bottom:5px}
+  .t1 .promo-card span{font-size:12.5px;color:#6E6862;line-height:1.5;display:block}
+  .t1 .promo-card i{font-style:normal;font-size:11px;font-weight:800;color:var(--accent);
+    letter-spacing:.1em;text-transform:uppercase;display:block;margin-top:10px}
+  .t1 .promo-badge{margin-top:28px;padding-top:20px;border-top:1px solid rgba(43,35,32,.12);
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:#8A847C}
+  .t1 .promo-badge b{color:var(--accent)}
+  @media (max-width:600px){.t1 .promo-cards{grid-template-columns:1fr}}
+
+  /* =====================================================
+     2 · SPLASH — plus, personality
+     ===================================================== */
+  .t2{
+    --accent:var(--ua, #FF4D8D);
+    --display:var(--ud, 'Bricolage Grotesque');
+    --bodyf:var(--ub, 'Inter');
+    background:#FFDE59;color:#221C3A;font-family:var(--bodyf),sans-serif;
+  }
+  .t2 .feature{width:min(330px,78vw)}
+  .t2 .feature .ph{aspect-ratio:4/5;border-radius:22px;border:3px solid #221C3A;box-shadow:8px 8px 0 #221C3A}
+  .t2 .slate-badge{background:var(--accent);color:#fff;border:3px solid #221C3A;box-shadow:4px 4px 0 #221C3A}
+  .t2 h1{font-family:var(--display),sans-serif;font-weight:800;
+    font-size:clamp(48px,10vw,76px);line-height:.96;letter-spacing:-.03em;margin-top:34px}
+  .t2 h1 em{font-style:normal;color:transparent;-webkit-text-stroke:2.5px #221C3A}
+  .t2 .pills{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .t2 .pill{font-size:12px;font-weight:800;letter-spacing:.06em;background:#fff;
+    border:2.5px solid #221C3A;border-radius:999px;padding:9px 16px}
+  .t2 .pill:nth-child(1){transform:rotate(-2.5deg)}
+  .t2 .pill:nth-child(2){transform:rotate(1.5deg);background:#3E63DD;color:#fff}
+  .t2 .pill:nth-child(3){transform:rotate(-1deg)}
+  .t2 .status{font-size:18px;font-weight:700;margin-top:24px;line-height:1.5}
+  .t2 .reps{margin-top:14px;font-size:13.5px;font-weight:500;line-height:1.9;color:rgba(34,28,58,.75)}
+  .t2 .reps a{color:#221C3A;font-weight:700;text-decoration:underline;text-decoration-color:var(--accent);
+    text-decoration-thickness:2.5px;text-underline-offset:3px}
+  .t2 .links{margin-top:28px}
+  .t2 .links a{font-size:12.5px;font-weight:800;text-decoration:none;color:#221C3A;background:#fff;
+    border:2.5px solid #221C3A;padding:11px 19px;border-radius:12px;box-shadow:3px 3px 0 #221C3A}
+  .t2 .links a:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 #221C3A;background:var(--accent);color:#fff}
+  .t2 .sec-title{font-family:var(--display),sans-serif;font-weight:800;font-size:30px;
+    letter-spacing:-.02em;text-decoration:underline wavy var(--accent) 3px;text-underline-offset:9px}
+  .t2 .grid3 button:nth-child(odd){transform:rotate(-1.4deg)}
+  .t2 .grid3 button:nth-child(even){transform:rotate(1.4deg)}
+  .t2 .grid3 .ph{border-radius:16px;border:2.5px solid #221C3A}
+  .t2 .vid{border-radius:16px;border:2.5px solid #221C3A;box-shadow:5px 5px 0 #221C3A}
+  .t2 .clip small{color:#3E63DD;opacity:1}
+  .t2 .feed-card{background:#fff;border:2.5px solid #221C3A;box-shadow:5px 5px 0 #221C3A}
+  .t2 .feed-img{border:2px solid #221C3A}
+  .t2 .footer{margin-top:92px;border-top:2.5px solid #221C3A;padding:28px 0 44px;text-align:center;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:rgba(34,28,58,.65)}
+  .t2 .footer b{color:var(--accent)}
+
+  /* =====================================================
+     3 · PRESTIGE — plus, Squarespace gravitas
+     ===================================================== */
+  .t3{
+    --accent:var(--ua, #8A6F47);
+    --display:var(--ud, 'Cormorant Garamond');
+    --bodyf:var(--ub, 'Inter');
+    background:#FAF8F4;color:#1E1C19;font-family:var(--bodyf),sans-serif;
+  }
+  .t3 .hero{position:relative;height:min(92vh,820px);overflow:hidden}
+  .t3 .hero .ph{position:absolute;inset:0}
+  .t3 .hero .ph span{font-size:clamp(120px,22vw,220px);color:rgba(43,35,32,.18)}
+  .t3 .hero::after{content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(to bottom, rgba(18,15,12,.32) 0%, transparent 30%, transparent 45%, rgba(18,15,12,.62) 100%)}
+  .t3 .nav{
+    position:absolute;top:0;left:0;right:0;z-index:3;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:26px clamp(22px,5vw,54px);
+  }
+  .t3 .nav .wordmark{font-family:var(--display),serif;font-weight:600;font-size:19px;
+    letter-spacing:.12em;text-transform:uppercase;color:#fff;text-decoration:none}
+  .t3 .nav ul{display:flex;gap:26px;list-style:none}
+  .t3 .nav a{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;
+    color:rgba(255,255,255,.85);text-decoration:none}
+  .t3 .nav a:hover{color:#fff}
+  .t3 .hero-info{position:absolute;left:0;right:0;bottom:0;z-index:2;
+    padding:0 clamp(22px,5vw,54px) clamp(34px,5vh,56px);text-align:left}
+  .t3 .hero-info h1{font-family:var(--display),serif;font-weight:500;
+    font-size:clamp(54px,9vw,96px);line-height:.98;letter-spacing:.01em;color:#fff}
+  .t3 .hero-info p{font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;font-weight:600;
+    color:rgba(255,255,255,.85);margin-top:16px}
+  .t3 .hero-slate{
+    position:absolute;right:clamp(22px,5vw,54px);bottom:clamp(34px,5vh,56px);z-index:3;
+    display:flex;align-items:center;gap:9px;cursor:pointer;background:rgba(250,248,244,.94);
+    border:none;color:#1E1C19;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+    font-weight:700;padding:14px 22px;border-radius:999px;transition:transform .15s ease;
+  }
+  .t3 .hero-slate::before{content:"▶";font-size:8px;color:var(--accent)}
+  .t3 .hero-slate:hover{transform:scale(1.05)}
+  @media (max-width:700px){
+    .t3 .nav ul{display:none}
+    .t3 .hero-slate{right:50%;transform:translateX(50%)}
+    .t3 .hero-slate:hover{transform:translateX(50%) scale(1.05)}
+    .t3 .hero-info{text-align:center;padding-bottom:96px}
+  }
+  .t3 .quote{max-width:760px;margin:0 auto;padding:96px 24px 12px;text-align:center}
+  .t3 .quote p{font-family:var(--display),serif;font-style:italic;font-weight:500;
+    font-size:clamp(24px,4vw,31px);line-height:1.45;color:#1E1C19}
+  .t3 .quote cite{display:block;margin-top:20px;font-style:normal;font-size:11px;
+    letter-spacing:.26em;text-transform:uppercase;font-weight:600;color:var(--accent)}
+  .t3 .page{max-width:880px}
+  .t3 .sec-title{font-size:11px;letter-spacing:.34em;text-transform:uppercase;font-weight:600;
+    color:#9C958A;display:flex;align-items:center;gap:18px}
+  .t3 .sec-title::before,.t3 .sec-title::after{content:"";flex:1;border-top:1px solid rgba(30,28,25,.14)}
+  .t3 .reps-block{margin-top:26px;font-size:13px;line-height:2;color:#6E675E}
+  .t3 .reps-block a{color:#1E1C19;font-weight:600;text-decoration:underline;
+    text-decoration-color:var(--accent);text-decoration-thickness:1.5px;text-underline-offset:4px}
+  .t3 .links{margin-top:26px}
+  .t3 .links a{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;
+    text-decoration:none;color:#1E1C19;border:1px solid rgba(30,28,25,.35);padding:13px 24px;border-radius:0}
+  .t3 .links a:hover{background:#1E1C19;border-color:#1E1C19;color:#FAF8F4}
+  .t3 .grid3{gap:10px}
+  .t3 .grid3 .ph{border-radius:0}
+  .t3 .stills{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+  .t3 .still{text-align:left}
+  .t3 .still .ph{aspect-ratio:16/10}
+  .t3 .still figcaption{font-family:var(--display),serif;font-style:italic;font-size:15px;
+    color:#6E675E;margin-top:9px}
+  @media (max-width:600px){.t3 .stills{grid-template-columns:1fr}}
+  .t3 .vid{border-radius:0}
+  .t3 .clip small{color:var(--accent);opacity:1}
+  .t3 .clip p{font-family:var(--display),serif;font-weight:600;font-size:16px}
+  .t3 .feed-card{background:#fff;border:1px solid rgba(30,28,25,.1);border-radius:0}
+  .t3 .footer{margin-top:100px;border-top:1px solid rgba(30,28,25,.14);padding:34px 24px 48px;text-align:center}
+  .t3 .footer .fm{font-family:var(--display),serif;font-weight:600;font-size:15px;
+    letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+  .t3 .footer small{font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:#9C958A}
+  .t3 .footer small b{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="chrome">
+  <div class="chrome-group">
+    <span class="chrome-label">Pages101 · v5</span>
+    <div class="chrome-tabs" role="tablist">
+      <button class="chrome-tab active" role="tab" data-tpl="1">Classic <small>Free</small></button>
+      <button class="chrome-tab" role="tab" data-tpl="2">Splash <small>Plus</small></button>
+      <button class="chrome-tab" role="tab" data-tpl="3">Prestige <small>Plus</small></button>
+    </div>
+  </div>
+  <div class="chrome-group">
+    <span class="chrome-label">Accent</span>
+    <div class="swatches">
+      <button class="swatch auto active" data-c="" aria-label="Template default">auto</button>
+      <button class="swatch" style="background:#C8553D" data-c="#C8553D" aria-label="Marquee red"></button>
+      <button class="swatch" style="background:#FF4D8D" data-c="#FF4D8D" aria-label="Pink"></button>
+      <button class="swatch" style="background:#3E63DD" data-c="#3E63DD" aria-label="Blue"></button>
+      <button class="swatch" style="background:#4E7458" data-c="#4E7458" aria-label="Green"></button>
+      <button class="swatch" style="background:#8A6F47" data-c="#8A6F47" aria-label="Gold"></button>
+    </div>
+    <span class="chrome-label">Fonts</span>
+    <select class="fontsel" id="fontsel" aria-label="Font pairing">
+      <option value="auto">Template default</option>
+      <option value="fraunces">Fraunces + Inter</option>
+      <option value="cormorant">Cormorant + Inter</option>
+      <option value="bricolage">Bricolage + Inter</option>
+      <option value="outfit">Outfit + Inter</option>
+    </select>
+    <label class="tipstoggle"><input type="checkbox" id="tipstoggle"> Builder tips</label>
+  </div>
+</div>
+
+<!-- ================= 1 · CLASSIC (FREE) ================= -->
+<div class="tpl active" id="tpl-1"><div class="t1">
+  <div class="freebar">✦ This page is hosted free on <b>Pages101</b> by Child Actor 101 <a href="#">Build yours →</a></div>
+  <div class="page">
+
+    <div class="tip"><b>101 Tip · Slate</b><p>Record a short slate — 20 to 30 seconds max. Name, age range, union status, and one fun fact. Smile, breathe, be you. Casting watches hundreds of these; warmth wins.</p></div>
+    <button class="feature" data-slate aria-label="Play Maya's slate">
+      <div class="ph"><span>M</span></div>
+      <span class="slate-badge">Play my slate · 0:22</span>
+    </button>
+
+    <h1>Maya <em>Brooks</em></h1>
+    <p class="status">Recurring on a new ABC drama — premiering this fall.</p>
+    <p class="reps">SAG-AFTRA · Plays 9–12 · Los Angeles<br><a href="mailto:youth@example-agency.com">Coast To Coast Talent</a> · <a href="mailto:manager@example-mgmt.com">Bohemia Group</a>, Manager</p>
+    <div class="links"><a href="#">Instagram</a><a href="#">Actors Access</a><a href="#">IMDb</a></div>
+
+    <div class="sec">
+      <div class="sec-title">Headshots</div>
+      <div class="tip"><b>101 Tip · Headshots</b><p>Upload a variety: a commercial look, a theatrical look, a light theatrical look, and character types. Casting should see your range at a glance — not six versions of the same smile.</p></div>
+      <div class="grid3" data-gallery>
+        <button class="ph" aria-label="Headshot 1"><span>✦</span></button><button class="ph" aria-label="Headshot 2"><span>✦</span></button><button class="ph" aria-label="Headshot 3"><span>✦</span></button>
+        <button class="ph" aria-label="Headshot 4"><span>✦</span></button><button class="ph" aria-label="Headshot 5"><span>✦</span></button><button class="ph" aria-label="Headshot 6"><span>✦</span></button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">Resume</div>
+      <div class="tip"><b>101 Tip · Resume</b><p>Already built your resume on Resume101? Pull it in with one click — credits, training, and skills stay formatted exactly the way casting expects.</p></div>
+      <div class="sheet">
+        <div class="sheet-head"><h3>Maya Brooks</h3><p>SAG-AFTRA · Plays 9–12 · Los Angeles</p></div>
+        <h4>Television</h4>
+        <div class="srow"><span class="p">Harbor Lights</span><span class="r">Co-Star</span><span class="d">ABC</span></div>
+        <div class="srow"><span class="p">The Lookouts</span><span class="r">Guest Star</span><span class="d">Netflix</span></div>
+        <h4>Film</h4>
+        <div class="srow"><span class="p">Paper Kites</span><span class="r">Supporting</span><span class="d">Ind. · dir. R. Calloway</span></div>
+        <h4>Training</h4>
+        <div class="srow"><span class="p">On-Camera Scene Study</span><span class="r">Ongoing</span><span class="d">Weekly</span></div>
+        <h4>Special Skills</h4>
+        <p class="skills">Improv, vocal performance (mezzo), conversational Spanish, skateboarding, dialects on request.</p>
+        <div class="sheet-sync"><p><b>Synced with Resume101</b> · Last updated May 2026. Edit once, update everywhere.</p><a href="#">↓ Download PDF</a></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">Watch</div>
+      <div class="tip"><b>101 Tip · Clips</b><p>Feature booked work clips, demo reels, an About Me video, a voice over reel, a singing clip — lead with your strongest. A 60-second booked-work clip beats a 3-minute montage every time.</p></div>
+      <div class="clips">
+        <div class="clip"><small>Booked Work</small><p>ABC's Harbor Lights</p><div class="vid"></div></div>
+        <div class="clip"><small>Demo Reel</small><p>Theatrical · 1:12</p><div class="vid"></div></div>
+        <div class="clip"><small>About Me</small><p>Meet Maya · 0:45</p><div class="vid"></div></div>
+        <div class="clip"><small>Singing</small><p>"Tomorrow" · 0:38</p><div class="vid"></div></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">Lately</div>
+      <div class="tip"><b>101 Tip · Updates</b><p>Share wins and milestones — never school names, set locations, or schedules. "Wrapped an episode!" is perfect. "Filming at Studio X until Friday" is not.</p></div>
+      <div class="feed">
+        <div class="feed-card"><div class="feed-date">May 2026</div><p class="feed-text">Wrapped another episode this week — can't share details yet, but counting down to the premiere! 🎬</p></div>
+        <div class="feed-card"><div class="feed-date">Apr 2026</div><p class="feed-text">New headshots day! Swipe through the gallery ☝️</p><div class="ph feed-img"><span>✦</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="promo">
+    <div class="promo-in">
+      <div class="promo-eyebrow">From Child Actor 101</div>
+      <div class="promo-cards">
+        <a class="promo-card" href="#"><b>Prep101</b><span>Audition prep guides built from 30 years of coaching young actors — know exactly how to work the scene before you tape.</span><i>Explore Prep101 →</i></a>
+        <a class="promo-card" href="#"><b>Vendor Directory</b><span>Trusted headshot photographers, coaches, reel editors, and more — vetted for families.</span><i>Browse the Directory →</i></a>
+      </div>
+      <div class="promo-badge">Made with <b>Pages101</b> by Child Actor 101 · Free for young actors</div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ================= 2 · SPLASH (PLUS) ================= -->
+<div class="tpl" id="tpl-2"><div class="t2"><div class="page">
+
+  <div class="tip"><b>101 Tip · Slate</b><p>Record a short slate — 20 to 30 seconds max. Name, age range, union status, and one fun fact. Smile, breathe, be you. Casting watches hundreds of these; warmth wins.</p></div>
+  <button class="feature" data-slate aria-label="Play Maya's slate">
+    <div class="ph"><span>M</span></div>
+    <span class="slate-badge">Play my slate · 0:22</span>
+  </button>
+
+  <h1>Maya <em>Brooks</em></h1>
+  <div class="pills"><span class="pill">SAG-AFTRA</span><span class="pill">Plays 9–12</span><span class="pill">Los Angeles</span></div>
+  <p class="status">Recurring on a new ABC drama — premiering this fall! 🎬</p>
+  <p class="reps"><a href="mailto:youth@example-agency.com">Coast To Coast Talent</a> · <a href="mailto:manager@example-mgmt.com">Bohemia Group</a>, Manager</p>
+  <div class="links"><a href="#">Instagram</a><a href="#">Actors Access</a><a href="#">IMDb</a></div>
+
+  <div class="sec">
+    <div class="sec-title">Headshots</div>
+    <div class="tip"><b>101 Tip · Headshots</b><p>Upload a variety: a commercial look, a theatrical look, a light theatrical look, and character types. Casting should see your range at a glance — not six versions of the same smile.</p></div>
+    <div class="grid3" data-gallery>
+      <button class="ph" aria-label="Headshot 1"><span>✦</span></button><button class="ph" aria-label="Headshot 2"><span>✦</span></button><button class="ph" aria-label="Headshot 3"><span>✦</span></button>
+      <button class="ph" aria-label="Headshot 4"><span>✦</span></button><button class="ph" aria-label="Headshot 5"><span>✦</span></button><button class="ph" aria-label="Headshot 6"><span>✦</span></button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Resume</div>
+    <div class="tip"><b>101 Tip · Resume</b><p>Already built your resume on Resume101? Pull it in with one click — credits, training, and skills stay formatted exactly the way casting expects.</p></div>
+    <div class="sheet">
+      <div class="sheet-head"><h3>Maya Brooks</h3><p>SAG-AFTRA · Plays 9–12 · Los Angeles</p></div>
+      <h4>Television</h4>
+      <div class="srow"><span class="p">Harbor Lights</span><span class="r">Co-Star</span><span class="d">ABC</span></div>
+      <div class="srow"><span class="p">The Lookouts</span><span class="r">Guest Star</span><span class="d">Netflix</span></div>
+      <h4>Film</h4>
+      <div class="srow"><span class="p">Paper Kites</span><span class="r">Supporting</span><span class="d">Ind. · dir. R. Calloway</span></div>
+      <h4>Training</h4>
+      <div class="srow"><span class="p">On-Camera Scene Study</span><span class="r">Ongoing</span><span class="d">Weekly</span></div>
+      <h4>Special Skills</h4>
+      <p class="skills">Improv, vocal performance (mezzo), conversational Spanish, skateboarding, dialects on request.</p>
+      <div class="sheet-sync"><p><b>Synced with Resume101</b> · Last updated May 2026. Edit once, update everywhere.</p><a href="#">↓ Download PDF</a></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Watch</div>
+    <div class="tip"><b>101 Tip · Clips</b><p>Feature booked work clips, demo reels, an About Me video, a voice over reel, a singing clip — lead with your strongest. A 60-second booked-work clip beats a 3-minute montage every time.</p></div>
+    <div class="clips">
+      <div class="clip"><small>Booked Work</small><p>ABC's Harbor Lights</p><div class="vid"></div></div>
+      <div class="clip"><small>Demo Reel</small><p>Theatrical · 1:12</p><div class="vid"></div></div>
+      <div class="clip"><small>About Me</small><p>Meet Maya · 0:45</p><div class="vid"></div></div>
+      <div class="clip"><small>Singing</small><p>"Tomorrow" · 0:38</p><div class="vid"></div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-title">Lately</div>
+    <div class="tip"><b>101 Tip · Updates</b><p>Share wins and milestones — never school names, set locations, or schedules. "Wrapped an episode!" is perfect. "Filming at Studio X until Friday" is not.</p></div>
+    <div class="feed">
+      <div class="feed-card"><div class="feed-date">May 2026</div><p class="feed-text">Wrapped another episode this week — can't share details yet, but counting down to the premiere! 🎬</p></div>
+      <div class="feed-card"><div class="feed-date">Apr 2026</div><p class="feed-text">New headshots day! Swipe through the gallery ☝️</p><div class="ph feed-img"><span>✦</span></div></div>
+    </div>
+  </div>
+
+  <div class="footer">Made with <b>Pages101</b></div>
+</div></div></div>
+
+<!-- ================= 3 · PRESTIGE (PLUS) ================= -->
+<div class="tpl" id="tpl-3"><div class="t3">
+
+  <header class="hero">
+    <div class="ph"><span>M</span></div>
+    <nav class="nav">
+      <a class="wordmark" href="#">Maya Brooks</a>
+      <ul>
+        <li><a href="#p-photos">Photos</a></li>
+        <li><a href="#p-resume">Resume</a></li>
+        <li><a href="#p-video">Video</a></li>
+        <li><a href="#p-lately">Lately</a></li>
+      </ul>
+    </nav>
+    <div class="hero-info">
+      <h1>Maya Brooks</h1>
+      <p>Actor · SAG-AFTRA · Los Angeles</p>
+    </div>
+    <button class="hero-slate" data-slate>Play Slate</button>
+  </header>
+
+  <div class="quote">
+    <div class="tip"><b>101 Tip · Press</b><p>Have a review, a director's note, or a coach's praise? One great quote with a real attribution does more than three paragraphs of bio. No press yet? This section simply stays hidden.</p></div>
+    <p>"Brooks brings a groundedness rare for her age — the camera simply believes her."</p>
+    <cite>Independent Film Review</cite>
+  </div>
+
+  <div class="page">
+    <div class="reps-block">
+      Recurring on a new ABC drama — premiering this fall.<br>
+      <a href="mailto:youth@example-agency.com">Coast To Coast Talent</a>, Los Angeles · <a href="mailto:manager@example-mgmt.com">Bohemia Group</a>, Manager
+    </div>
+    <div class="links"><a href="#">Instagram</a><a href="#">Actors Access</a><a href="#">IMDb</a></div>
+
+    <div class="sec" id="p-photos">
+      <div class="sec-title">Photographs</div>
+      <div class="tip"><b>101 Tip · Headshots</b><p>Upload a variety: a commercial look, a theatrical look, a light theatrical look, and character types. Casting should see your range at a glance — not six versions of the same smile.</p></div>
+      <div class="grid3" data-gallery>
+        <button class="ph" aria-label="Headshot 1"><span>✦</span></button><button class="ph" aria-label="Headshot 2"><span>✦</span></button><button class="ph" aria-label="Headshot 3"><span>✦</span></button>
+        <button class="ph" aria-label="Headshot 4"><span>✦</span></button><button class="ph" aria-label="Headshot 5"><span>✦</span></button><button class="ph" aria-label="Headshot 6"><span>✦</span></button>
+      </div>
+      <div class="stills">
+        <figure class="still"><div class="ph"><span>✦</span></div><figcaption>Harbor Lights, ABC — Episode 104</figcaption></figure>
+        <figure class="still"><div class="ph"><span>✦</span></div><figcaption>Paper Kites, dir. R. Calloway</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="sec" id="p-resume">
+      <div class="sec-title">Resume</div>
+      <div class="tip"><b>101 Tip · Resume</b><p>Already built your resume on Resume101? Pull it in with one click — credits, training, and skills stay formatted exactly the way casting expects.</p></div>
+      <div class="sheet">
+        <div class="sheet-head"><h3>Maya Brooks</h3><p>SAG-AFTRA · Plays 9–12 · Los Angeles</p></div>
+        <h4>Television</h4>
+        <div class="srow"><span class="p">Harbor Lights</span><span class="r">Co-Star</span><span class="d">ABC</span></div>
+        <div class="srow"><span class="p">The Lookouts</span><span class="r">Guest Star</span><span class="d">Netflix</span></div>
+        <h4>Film</h4>
+        <div class="srow"><span class="p">Paper Kites</span><span class="r">Supporting</span><span class="d">Ind. · dir. R. Calloway</span></div>
+        <h4>Training</h4>
+        <div class="srow"><span class="p">On-Camera Scene Study</span><span class="r">Ongoing</span><span class="d">Weekly</span></div>
+        <h4>Special Skills</h4>
+        <p class="skills">Improv, vocal performance (mezzo), conversational Spanish, skateboarding, dialects on request.</p>
+        <div class="sheet-sync"><p><b>Synced with Resume101</b> · Last updated May 2026. Edit once, update everywhere.</p><a href="#">↓ Download PDF</a></div>
+      </div>
+    </div>
+
+    <div class="sec" id="p-video">
+      <div class="sec-title">Video</div>
+      <div class="tip"><b>101 Tip · Clips</b><p>Feature booked work clips, demo reels, an About Me video, a voice over reel, a singing clip — lead with your strongest. A 60-second booked-work clip beats a 3-minute montage every time.</p></div>
+      <div class="clips">
+        <div class="clip"><small>Booked Work</small><p>ABC's Harbor Lights</p><div class="vid"></div></div>
+        <div class="clip"><small>Demo Reel</small><p>Theatrical · 1:12</p><div class="vid"></div></div>
+        <div class="clip"><small>About Me</small><p>Meet Maya · 0:45</p><div class="vid"></div></div>
+        <div class="clip"><small>Singing</small><p>"Tomorrow" · 0:38</p><div class="vid"></div></div>
+      </div>
+    </div>
+
+    <div class="sec" id="p-lately">
+      <div class="sec-title">Lately</div>
+      <div class="tip"><b>101 Tip · Updates</b><p>Share wins and milestones — never school names, set locations, or schedules. "Wrapped an episode!" is perfect. "Filming at Studio X until Friday" is not.</p></div>
+      <div class="feed">
+        <div class="feed-card"><div class="feed-date">May 2026</div><p class="feed-text">Wrapped another episode this week — can't share details yet, but counting down to the premiere.</p></div>
+        <div class="feed-card"><div class="feed-date">Apr 2026</div><p class="feed-text">New headshots — see Photographs above.</p><div class="ph feed-img"><span>✦</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="fm">Maya Brooks</div>
+    <small>© 2026 · Made with <b>Pages101</b></small>
+  </footer>
+</div></div>
+
+<!-- lightbox -->
+<div class="modal" id="lb" role="dialog" aria-modal="true" aria-label="Headshot viewer">
+  <button class="m-btn m-close" aria-label="Close">✕</button>
+  <button class="m-btn m-prev" aria-label="Previous">‹</button>
+  <div class="lb-stage"><div class="ph"><span id="lb-n">1</span></div><div class="m-cap">Headshot <span id="lb-cap-n">1</span> of 6</div></div>
+  <button class="m-btn m-next" aria-label="Next">›</button>
+</div>
+
+<!-- slate modal -->
+<div class="modal" id="slate" role="dialog" aria-modal="true" aria-label="Slate video">
+  <button class="m-btn m-close" aria-label="Close">✕</button>
+  <div class="slate-stage"><div class="vid"></div><div class="m-cap">Slate · "Hi, I'm Maya Brooks!" · 0:22</div></div>
+</div>
+
+<script>
+  // tabs
+  const tabs = document.querySelectorAll('.chrome-tab');
+  const tpls = document.querySelectorAll('.tpl');
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tpls.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tpl-' + tab.dataset.tpl).classList.add('active');
+    window.scrollTo({top: 0});
+  }));
+
+  // accent override (empty = template default)
+  const swatches = document.querySelectorAll('.swatch');
+  swatches.forEach(s => s.addEventListener('click', () => {
+    swatches.forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+    if (s.dataset.c) document.documentElement.style.setProperty('--ua', s.dataset.c);
+    else document.documentElement.style.removeProperty('--ua');
+  }));
+
+  // font pairing override
+  const pair = {
+    fraunces:  ["'Fraunces', Georgia, serif", "'Inter', sans-serif"],
+    cormorant: ["'Cormorant Garamond', Georgia, serif", "'Inter', sans-serif"],
+    bricolage: ["'Bricolage Grotesque', sans-serif", "'Inter', sans-serif"],
+    outfit:    ["'Outfit', sans-serif", "'Inter', sans-serif"]
+  };
+  document.getElementById('fontsel').addEventListener('change', e => {
+    const v = e.target.value;
+    if (v === 'auto') {
+      document.documentElement.style.removeProperty('--ud');
+      document.documentElement.style.removeProperty('--ub');
+    } else {
+      document.documentElement.style.setProperty('--ud', pair[v][0]);
+      document.documentElement.style.setProperty('--ub', pair[v][1]);
+    }
+  });
+
+  // builder tips
+  document.getElementById('tipstoggle').addEventListener('change', e => {
+    document.body.classList.toggle('tips', e.target.checked);
+  });
+
+  // lightbox
+  const lb = document.getElementById('lb');
+  const lbN = document.getElementById('lb-n');
+  const lbCapN = document.getElementById('lb-cap-n');
+  let idx = 0, total = 6;
+  const show = i => {
+    idx = ((i % total) + total) % total;
+    lbN.textContent = idx + 1;
+    lbCapN.textContent = idx + 1;
+  };
+  document.querySelectorAll('[data-gallery]').forEach(g => {
+    g.querySelectorAll('.ph').forEach((p, i) => p.addEventListener('click', () => {
+      show(i); lb.classList.add('open');
+    }));
+  });
+
+  // slate
+  const slate = document.getElementById('slate');
+  document.querySelectorAll('[data-slate]').forEach(b =>
+    b.addEventListener('click', () => slate.classList.add('open')));
+
+  // modal controls
+  document.querySelectorAll('.modal').forEach(m => {
+    m.querySelector('.m-close').addEventListener('click', () => m.classList.remove('open'));
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+  lb.querySelector('.m-prev').addEventListener('click', () => show(idx - 1));
+  lb.querySelector('.m-next').addEventListener('click', () => show(idx + 1));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
+    if (lb.classList.contains('open')) {
+      if (e.key === 'ArrowLeft') show(idx - 1);
+      if (e.key === 'ArrowRight') show(idx + 1);
+    }
+  });
+</script>
+</body>
+</html>
