@@ -156,6 +156,20 @@ export function DashboardShell() {
 
       setSaveStatus("Loading saved page...");
 
+      console.log('SUPABASE URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+      console.log('SUPABASE KEY exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+      console.log('SUPABASE CLIENT:', supabase)
+
+      try {
+        const result = await supabase
+          .from('p101_actor_pages')
+          .select('*', { count: 'exact', head: true })
+          .limit(1)
+        console.log('TEST QUERY:', result)
+      } catch(e) {
+        console.log('TEST QUERY THREW:', e)
+      }
+
       // Load subscription plan
       const { data: subRow } = await supabase
         .from("subscriptions")
