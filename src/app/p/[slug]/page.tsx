@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ActorPageRenderer } from "@/components/public-page/ActorPageRenderer";
-import { getPageBySlug } from "@/lib/sample-data";
+import { getPublicPageBySlug } from "@/lib/pages";
 import type { FontPair, TemplateId } from "@/lib/types";
 
 type PageProps = {
@@ -12,7 +12,7 @@ type PageProps = {
 export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const query = searchParams ? await searchParams : {};
-  const page = getPageBySlug(slug);
+  const page = await getPublicPageBySlug(slug);
 
   if (!page) {
     return {
@@ -40,7 +40,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
 export default async function PublicActorPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const query = searchParams ? await searchParams : {};
-  const page = getPageBySlug(slug);
+  const page = await getPublicPageBySlug(slug);
 
   if (!page) {
     notFound();

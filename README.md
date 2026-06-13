@@ -7,7 +7,8 @@ Pages101 is the Child Actor 101 actor-page builder for young performers. The v1 
 This repo starts with a Phase 0 / early Phase 1 foundation:
 
 - Next.js App Router scaffold
-- Wildcard subdomain middleware shape for `*.pages.childactor101.com`
+- Path-based public URLs at `pages.childactor101.com/p/[slug]`
+- Optional wildcard subdomain middleware shape for `*.pages.childactor101.com`
 - Server-rendered public actor page at `/p/[slug]`
 - Template tokens for Classic, Splash, and Prestige
 - Static 101 Tips content map
@@ -37,3 +38,5 @@ The planned production environment uses:
 - `SES_FROM_ADDRESS`
 - `VERCEL_API_TOKEN`
 - `NEXT_PUBLIC_ROOT_DOMAIN=pages.childactor101.com`
+
+The v1 launch path uses slug URLs like `https://pages.childactor101.com/p/maya-ralston`. Wildcard DNS for `*.pages.childactor101.com` is optional and can be deferred.

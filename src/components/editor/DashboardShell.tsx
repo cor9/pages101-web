@@ -8,10 +8,11 @@ import { samplePages } from "@/lib/sample-data";
 import { tips, type TipKey } from "@/content/tips";
 import { normalizeSlug, validateSlug } from "@/lib/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import type { ActorPage, FontPair, Headshot, SectionType, TemplateId } from "@/lib/types";
+import type { ActorPage, FontPair, Headshot, Plan, SectionType, TemplateId } from "@/lib/types";
 
 const page = samplePages[0];
 const initialHeadshots = getPageHeadshots(page);
+const betaFullAccess = process.env.NEXT_PUBLIC_PAGES101_BETA_FULL_ACCESS !== "0";
 
 const sectionTipMap: Partial<Record<SectionType, TipKey>> = {
   headshots: "headshots",
@@ -43,6 +44,7 @@ export function DashboardShell() {
 
   const checkedSlug = validateSlug(slug);
   const publicSlug = checkedSlug.ok ? checkedSlug.slug : page.slug;
+  const editorPlan: Plan = betaFullAccess ? "plus" : page.plan;
   const renderedHeadshots = headshots.length > 0 ? headshots : initialHeadshots;
   const realHeadshotCount = renderedHeadshots.filter((headshot) => !isPlaceholderHeadshot(headshot)).length;
 
@@ -101,6 +103,7 @@ export function DashboardShell() {
       ...page,
       displayName,
       slug: publicSlug,
+      plan: editorPlan,
       statusLine,
       unionStatus,
       ageRange,
@@ -119,7 +122,7 @@ export function DashboardShell() {
           : section
       )
     }),
-    [accent, ageRange, displayName, fontPair, market, publicSlug, renderedHeadshots, statusLine, templateId, unionStatus]
+    [accent, ageRange, displayName, editorPlan, fontPair, market, publicSlug, renderedHeadshots, statusLine, templateId, unionStatus]
   );
 
   async function handleAuthSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -127,7 +130,7 @@ export function DashboardShell() {
     setAuthStatus(null);
 
     if (!supabase) {
-      setAuthStatus("Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel first.");
+      setAuthStatus("Set the Supabase URL and anon key to enable sign-in.");
       return;
     }
 
@@ -164,21 +167,8 @@ export function DashboardShell() {
       return;
     }
 
-    if (!supabase) {
-      setUploadStatus("Supabase env vars are missing.");
-      return;
-    }
-
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
-
-    if (!user) {
-      setUploadStatus("Sign in before uploading.");
-      return;
-    }
-
     const existingHeadshots = renderedHeadshots.filter((headshot) => !isPlaceholderHeadshot(headshot));
-    const capacity = page.plan === "free" ? Math.max(0, 6 - existingHeadshots.length) : files.length;
+    const capacity = editorPlan === "free" ? Math.max(0, 6 - existingHeadshots.length) : files.length;
     const selectedFiles = files.slice(0, capacity);
 
     if (selectedFiles.length === 0) {
@@ -195,34 +185,18 @@ export function DashboardShell() {
     setUploading(true);
 
     try {
-      const uploadedHeadshots: Headshot[] = [];
-
-      for (const file of selectedFiles) {
-        const objectPath = `${user.id}/${page.id}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
-        const { error } = await supabase.storage.from("pages101-media").upload(objectPath, file, {
-          cacheControl: "31536000",
-          contentType: file.type,
-          upsert: false
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        const { data: publicUrl } = supabase.storage.from("pages101-media").getPublicUrl(objectPath);
-        uploadedHeadshots.push({
-          id: crypto.randomUUID(),
-          src: publicUrl.publicUrl,
-          alt: `${displayName} headshot`,
-          label: getHeadshotLabel(file.name)
-        });
-      }
+      const uploadedHeadshots: Headshot[] = selectedFiles.map((file) => ({
+        id: crypto.randomUUID(),
+        src: URL.createObjectURL(file),
+        alt: `${displayName} headshot`,
+        label: getHeadshotLabel(file.name)
+      }));
 
       setHeadshots(normalizeHeadshots([...existingHeadshots, ...uploadedHeadshots]));
       setUploadStatus(
         selectedFiles.length < files.length
           ? `Uploaded ${selectedFiles.length}. Free pages show 6 headshots.`
-          : `Uploaded ${selectedFiles.length} headshot${selectedFiles.length === 1 ? "" : "s"}.`
+          : `Added ${selectedFiles.length} headshot${selectedFiles.length === 1 ? "" : "s"} to this preview.`
       );
     } catch (error) {
       setUploadStatus(error instanceof Error ? error.message : "Upload failed.");
@@ -279,11 +253,11 @@ export function DashboardShell() {
           <article className="editor-panel">
             <div className="panel-heading">
               <p>Template &amp; Style</p>
-              <span>Plus templates preview here</span>
+              <span>{betaFullAccess ? "Beta full access" : "Plus templates preview here"}</span>
             </div>
             <div className="template-options" aria-label="Template">
               {Object.values(templateTokens).map((template) => {
-                const locked = page.plan === "free" && template.tier === "plus";
+                const locked = editorPlan === "free" && template.tier === "plus";
                 const selected = template.id === templateId;
 
                 return (
@@ -302,7 +276,7 @@ export function DashboardShell() {
                       <span />
                     </span>
                     <strong>{template.label}</strong>
-                    <small>{locked ? "Preview · Plus" : template.tier === "plus" ? "Plus" : "Free"}</small>
+                    <small>{locked ? "Preview · Plus" : template.tier === "plus" && betaFullAccess ? "Beta" : template.tier === "plus" ? "Plus" : "Free"}</small>
                     {selected ? <span className="check-badge" aria-hidden="true">✓</span> : null}
                   </button>
                 );
@@ -336,10 +310,9 @@ export function DashboardShell() {
 
           <article className="editor-panel">
             <div className="panel-heading">
-              <p>Headshots</p>
-              <span>{realHeadshotCount}/6 free</span>
+              <p>Account</p>
+              <span>{betaFullAccess ? "Full beta enabled" : "Auth ready"}</span>
             </div>
-            <TipDisclosure tipKey="headshots" />
             <AuthControls
               email={authEmail}
               user={authUser}
@@ -348,10 +321,18 @@ export function DashboardShell() {
               onSubmit={handleAuthSubmit}
               onSignOut={handleSignOut}
             />
+          </article>
+
+          <article className="editor-panel">
+            <div className="panel-heading">
+              <p>Headshots</p>
+              <span>{editorPlan === "plus" ? `${realHeadshotCount} uploaded` : `${realHeadshotCount}/6 free`}</span>
+            </div>
+            <TipDisclosure tipKey="headshots" />
             <label className="upload-dropzone">
               Upload photos
-              <input type="file" accept="image/*" multiple disabled={uploading || !authUser} onChange={handleHeadshotUpload} />
-              <span>{uploading ? "Uploading..." : authUser ? "Choose image files" : "Sign in to enable uploads"}</span>
+              <input type="file" accept="image/*" multiple disabled={uploading} onChange={handleHeadshotUpload} />
+              <span>{uploading ? "Adding..." : "Choose image files"}</span>
             </label>
             {uploadStatus ? <p className="panel-note">{uploadStatus}</p> : null}
             <div className="uploaded-headshots" aria-label="Uploaded headshots">
@@ -403,7 +384,7 @@ export function DashboardShell() {
           </article>
         </div>
 
-        <PreviewPane page={previewPage} pageUrl={`${publicSlug}.pages.childactor101.com`} />
+        <PreviewPane page={previewPage} pageUrl={`pages.childactor101.com/p/${publicSlug}`} />
       </section>
 
       <button type="button" className="floating-preview" onClick={() => setPreviewOpen(true)}>
@@ -413,7 +394,7 @@ export function DashboardShell() {
       {previewOpen ? (
         <div className="preview-overlay" role="dialog" aria-label="Page preview" aria-modal="true">
           <div className="preview-overlay-bar">
-            <span>{publicSlug}.pages.childactor101.com</span>
+            <span>pages.childactor101.com/p/{publicSlug}</span>
             <button type="button" onClick={() => setPreviewOpen(false)}>
               Close
             </button>
@@ -425,6 +406,39 @@ export function DashboardShell() {
       ) : null}
     </main>
   );
+}
+
+function EditorToolbar({
+  displayName,
+  previewUrl,
+  onPreview
+}: {
+  displayName: string;
+  previewUrl: string;
+  onPreview: () => void;
+}) {
+  return (
+    <header className="editor-toolbar">
+      <div className="editor-brand">
+        <span>Pages101</span>
+        <strong>·</strong>
+        <p>{displayName}</p>
+      </div>
+      <div className="editor-actions">
+        <span className="save-state">Saved</span>
+        <button className="button-secondary" type="button" onClick={onPreview} data-preview-url={previewUrl}>
+          Preview
+        </button>
+        <button className="button-primary" type="button">
+          Publish
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function StatusPill({ ok, label }: { ok: boolean; label: string }) {
+  return <span className={ok ? "status-pill status-pill--ok" : "status-pill status-pill--error"}>{label}</span>;
 }
 
 function AuthControls({
@@ -465,39 +479,6 @@ function AuthControls({
       {status ? <p className="panel-note">{status}</p> : null}
     </form>
   );
-}
-
-function EditorToolbar({
-  displayName,
-  previewUrl,
-  onPreview
-}: {
-  displayName: string;
-  previewUrl: string;
-  onPreview: () => void;
-}) {
-  return (
-    <header className="editor-toolbar">
-      <div className="editor-brand">
-        <span>Pages101</span>
-        <strong>·</strong>
-        <p>{displayName}</p>
-      </div>
-      <div className="editor-actions">
-        <span className="save-state">Saved</span>
-        <button className="button-secondary" type="button" onClick={onPreview} data-preview-url={previewUrl}>
-          Preview
-        </button>
-        <button className="button-primary" type="button">
-          Publish
-        </button>
-      </div>
-    </header>
-  );
-}
-
-function StatusPill({ ok, label }: { ok: boolean; label: string }) {
-  return <span className={ok ? "status-pill status-pill--ok" : "status-pill status-pill--error"}>{label}</span>;
 }
 
 function TipDisclosure({ tipKey }: { tipKey?: TipKey }) {
@@ -553,15 +534,6 @@ function normalizeHeadshots(headshotsToNormalize: Headshot[]) {
       featured
     };
   });
-}
-
-function sanitizeFileName(fileName: string) {
-  const sanitized = fileName
-    .toLowerCase()
-    .replace(/[^a-z0-9.]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return sanitized || "headshot.jpg";
 }
 
 function getHeadshotLabel(fileName: string) {
