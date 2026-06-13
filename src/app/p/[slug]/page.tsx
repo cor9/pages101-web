@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ActorPageRenderer } from "@/components/public-page/ActorPageRenderer";
 import { getPageBySlug } from "@/lib/sample-data";
+import type { FontPair, TemplateId } from "@/lib/types";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -32,13 +34,61 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PublicActorPage({ params }: PageProps) {
+export default async function PublicActorPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const query = searchParams ? await searchParams : {};
   const page = getPageBySlug(slug);
 
   if (!page) {
     notFound();
   }
 
-  return <ActorPageRenderer page={page} />;
+  const draftPage =
+    query.draft === "1"
+      ? {
+          ...page,
+          displayName: getQueryValue(query.name) ?? page.displayName,
+          statusLine: getQueryValue(query.status) ?? page.statusLine,
+          unionStatus: getQueryValue(query.union) ?? page.unionStatus,
+          ageRange: getQueryValue(query.age) ?? page.ageRange,
+          market: getQueryValue(query.market) ?? page.market,
+          accent: getQueryValue(query.accent) ?? page.accent,
+          fontPair: getFontPair(query.font) ?? page.fontPair,
+          template: getTemplateId(query.template) ?? page.template
+        }
+      : page;
+
+  return <ActorPageRenderer page={draftPage} />;
+}
+
+function getQueryValue(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+}
+
+function getFontPair(value: string | string[] | undefined): FontPair | null {
+  const fontPair = getQueryValue(value);
+  if (
+    fontPair === "template" ||
+    fontPair === "fraunces-inter" ||
+    fontPair === "cormorant-inter" ||
+    fontPair === "bricolage-inter" ||
+    fontPair === "outfit-inter"
+  ) {
+    return fontPair;
+  }
+
+  return null;
+}
+
+function getTemplateId(value: string | string[] | undefined): TemplateId | null {
+  const templateId = getQueryValue(value);
+  if (templateId === "classic" || templateId === "splash" || templateId === "prestige") {
+    return templateId;
+  }
+
+  return null;
 }

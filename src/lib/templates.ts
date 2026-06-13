@@ -26,7 +26,7 @@ export const templateTokens: Record<TemplateId, TemplateTokens> = {
     ink: "#171717",
     muted: "#6b625d",
     displayFont: "Outfit, Inter, system-ui, sans-serif",
-    bodyFont: "Inter, system-ui, sans-serif"
+    bodyFont: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   splash: {
     id: "splash",
@@ -39,7 +39,7 @@ export const templateTokens: Record<TemplateId, TemplateTokens> = {
     ink: "#171717",
     muted: "#59443b",
     displayFont: "Bricolage Grotesque, Inter, system-ui, sans-serif",
-    bodyFont: "Inter, system-ui, sans-serif"
+    bodyFont: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   prestige: {
     id: "prestige",
@@ -51,8 +51,8 @@ export const templateTokens: Record<TemplateId, TemplateTokens> = {
     surface: "#fffaf0",
     ink: "#211d19",
     muted: "#6d6255",
-    displayFont: "Cormorant Garamond, Georgia, serif",
-    bodyFont: "Inter, system-ui, sans-serif"
+    displayFont: "var(--font-fraunces), Cormorant Garamond, Georgia, serif",
+    bodyFont: "var(--font-inter), Inter, system-ui, sans-serif"
   }
 };
 
@@ -75,26 +75,26 @@ export const fontPairOptions: Array<{ id: FontPair; label: string; display: stri
   {
     id: "fraunces-inter",
     label: "Fraunces + Inter",
-    display: "Fraunces, Georgia, serif",
-    body: "Inter, system-ui, sans-serif"
+    display: "var(--font-fraunces), Fraunces, Georgia, serif",
+    body: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   {
     id: "cormorant-inter",
     label: "Cormorant + Inter",
     display: "Cormorant Garamond, Georgia, serif",
-    body: "Inter, system-ui, sans-serif"
+    body: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   {
     id: "bricolage-inter",
     label: "Bricolage + Inter",
     display: "Bricolage Grotesque, Inter, system-ui, sans-serif",
-    body: "Inter, system-ui, sans-serif"
+    body: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   {
     id: "outfit-inter",
     label: "Outfit + Inter",
     display: "Outfit, Inter, system-ui, sans-serif",
-    body: "Inter, system-ui, sans-serif"
+    body: "var(--font-inter), Inter, system-ui, sans-serif"
   }
 ];
 
