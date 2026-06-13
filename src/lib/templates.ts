@@ -33,12 +33,12 @@ export const templateTokens: Record<TemplateId, TemplateTokens> = {
     label: "Splash",
     tier: "plus",
     personality: "Bold, youthful, poster energy",
-    accent: "#f04f91",
-    background: "#fff03f",
+    accent: "#FF4D8D",
+    background: "#FFDE59",
     surface: "#ffffff",
-    ink: "#171717",
-    muted: "#59443b",
-    displayFont: "Bricolage Grotesque, Inter, system-ui, sans-serif",
+    ink: "#221C3A",
+    muted: "rgba(34, 28, 58, 0.75)",
+    displayFont: "var(--font-bricolage), Bricolage Grotesque, Inter, system-ui, sans-serif",
     bodyFont: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   prestige: {
@@ -46,12 +46,12 @@ export const templateTokens: Record<TemplateId, TemplateTokens> = {
     label: "Prestige",
     tier: "plus",
     personality: "Full-bleed, editorial, Squarespace gravitas",
-    accent: "#a97725",
-    background: "#f7f1e6",
-    surface: "#fffaf0",
-    ink: "#211d19",
-    muted: "#6d6255",
-    displayFont: "var(--font-fraunces), Cormorant Garamond, Georgia, serif",
+    accent: "#8A6F47",
+    background: "#FAF8F4",
+    surface: "#ffffff",
+    ink: "#1E1C19",
+    muted: "#6E675E",
+    displayFont: "var(--font-cormorant), Cormorant Garamond, Georgia, serif",
     bodyFont: "var(--font-inter), Inter, system-ui, sans-serif"
   }
 };
@@ -59,7 +59,7 @@ export const templateTokens: Record<TemplateId, TemplateTokens> = {
 export const accentSwatches = [
   { label: "Auto", value: null },
   { label: "Marquee Red", value: "#C8553D" },
-  { label: "Pink", value: "#f04f91" },
+  { label: "Pink", value: "#FF4D8D" },
   { label: "Blue", value: "#2368d8" },
   { label: "Green", value: "#268060" },
   { label: "Gold", value: "#a97725" }
@@ -81,13 +81,13 @@ export const fontPairOptions: Array<{ id: FontPair; label: string; display: stri
   {
     id: "cormorant-inter",
     label: "Cormorant + Inter",
-    display: "Cormorant Garamond, Georgia, serif",
+    display: "var(--font-cormorant), Cormorant Garamond, Georgia, serif",
     body: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   {
     id: "bricolage-inter",
     label: "Bricolage + Inter",
-    display: "Bricolage Grotesque, Inter, system-ui, sans-serif",
+    display: "var(--font-bricolage), Bricolage Grotesque, Inter, system-ui, sans-serif",
     body: "var(--font-inter), Inter, system-ui, sans-serif"
   },
   {

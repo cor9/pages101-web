@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<!-- ===========================================================================
+  Pages101 — PRESTIGE TEMPLATE · CANONICAL REFERENCE (port 1:1)
+
+  Same rules as classic-template-reference.html:
+  - This file IS the design. Port verbatim for template = 'prestige'.
+    Where the implementation differs from this file, the file wins.
+  - [BIND] comments mark dynamic data. 101 Tips never render. Template name
+    never renders. Neutral .ph placeholders only.
+  - PRESTIGE IS PLUS-ONLY: no freebar, no promo footer — small credit only.
+  - Accent default GOLD (#8A6F47); display default Cormorant Garamond;
+    --ua / --ud / --ub override. Ivory bg (#FAF8F4) and charcoal ink are
+    FIXED template colors.
+  - Press quote section renders ONLY when quote content exists. Never show
+    an empty or placeholder quote on a live page.
+  - Hero is full-viewport with the featured headshot as background; the
+    top nav anchors to on-page sections.
+=========================================================================== -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- [BIND] <title>{display_name} — Actor</title> -->
+<title>Maya Ralston — Actor</title>
+<!-- [BIND] if noindex: <meta name="robots" content="noindex,nofollow"> -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:var(--ua, #8A6F47);
+    --display:var(--ud, 'Cormorant Garamond');
+    --bodyf:var(--ub, 'Inter');
+    --ink:#1E1C19;     /* fixed */
+    --bg:#FAF8F4;      /* fixed */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--bodyf),sans-serif}
+  button{font-family:inherit}
+  a{transition:all .15s ease}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+
+  .ph{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+    background:linear-gradient(150deg,#E0D5C3 0%,#CDBFA7 55%,#B9A98D 100%)}
+  .ph::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 28%, rgba(255,255,255,.5), transparent 62%)}
+  .ph span{position:relative;z-index:1;font-family:var(--display),serif;font-weight:600;
+    color:rgba(43,35,32,.22);font-size:30px}
+
+  .vid{position:relative;aspect-ratio:16/9;background:#221C18;
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .vid::before{content:"";width:56px;height:56px;border-radius:50%;
+    border:1.5px solid rgba(245,239,230,.55);position:absolute}
+  .vid::after{content:"";width:0;height:0;border-left:17px solid rgba(245,239,230,.9);
+    border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+
+  /* ---- Full-bleed hero ---- */
+  .hero{position:relative;height:min(92vh,820px);overflow:hidden}
+  .hero .ph{position:absolute;inset:0}
+  /* [BIND] featured headshot as cover image; .ph fallback when empty */
+  .hero .ph span{font-size:clamp(120px,22vw,220px);color:rgba(43,35,32,.18)}
+  .hero::after{content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(to bottom, rgba(18,15,12,.32) 0%, transparent 30%,
+      transparent 45%, rgba(18,15,12,.62) 100%)}
+  .nav{position:absolute;top:0;left:0;right:0;z-index:3;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:26px clamp(22px,5vw,54px)}
+  .nav .wordmark{font-family:var(--display),serif;font-weight:600;font-size:19px;
+    letter-spacing:.12em;text-transform:uppercase;color:#fff;text-decoration:none}
+  .nav ul{display:flex;gap:26px;list-style:none}
+  .nav a{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;
+    color:rgba(255,255,255,.85);text-decoration:none}
+  .nav a:hover{color:#fff}
+  .hero-info{position:absolute;left:0;right:0;bottom:0;z-index:2;
+    padding:0 clamp(22px,5vw,54px) clamp(34px,5vh,56px);text-align:left}
+  .hero-info h1{font-family:var(--display),serif;font-weight:500;
+    font-size:clamp(54px,9vw,96px);line-height:.98;letter-spacing:.01em;color:#fff}
+  .hero-info p{font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;
+    font-weight:600;color:rgba(255,255,255,.85);margin-top:16px}
+  /* [BIND] subtitle: "Actor · {union} · {market}" -->
+  .hero-slate{position:absolute;right:clamp(22px,5vw,54px);bottom:clamp(34px,5vh,56px);
+    z-index:3;display:flex;align-items:center;gap:9px;cursor:pointer;
+    background:rgba(250,248,244,.94);border:none;color:var(--ink);
+    font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
+    padding:14px 22px;border-radius:999px;transition:transform .15s ease}
+  .hero-slate::before{content:"▶";font-size:8px;color:var(--accent)}
+  .hero-slate:hover{transform:scale(1.05)}
+  /* [BIND] hide .hero-slate when slate_url empty */
+  @media (max-width:700px){
+    .nav ul{display:none}
+    .hero-slate{right:50%;transform:translateX(50%)}
+    .hero-slate:hover{transform:translateX(50%) scale(1.05)}
+    .hero-info{text-align:center;padding-bottom:96px}
+  }
+
+  /* ---- Press quote (render ONLY when content exists) ---- */
+  .quote{max-width:760px;margin:0 auto;padding:96px 24px 12px;text-align:center}
+  .quote p{font-family:var(--display),serif;font-style:italic;font-weight:500;
+    font-size:clamp(24px,4vw,31px);line-height:1.45;color:var(--ink)}
+  .quote cite{display:block;margin-top:20px;font-style:normal;font-size:11px;
+    letter-spacing:.26em;text-transform:uppercase;font-weight:600;color:var(--accent)}
+
+  .page{max-width:880px;margin:0 auto;padding:64px 24px 0;text-align:center}
+  .sec{margin-top:84px}
+  .sec-title{font-size:11px;letter-spacing:.34em;text-transform:uppercase;font-weight:600;
+    color:#9C958A;display:flex;align-items:center;gap:18px;margin-bottom:30px}
+  .sec-title::before,.sec-title::after{content:"";flex:1;border-top:1px solid rgba(30,28,25,.14)}
+
+  .reps-block{margin-top:14px;font-size:13px;line-height:2;color:#6E675E}
+  /* [BIND] status_line + reps (mailto) OR parent-btn variant */
+  .reps-block a{color:var(--ink);font-weight:600;text-decoration:underline;
+    text-decoration-color:var(--accent);text-decoration-thickness:1.5px;text-underline-offset:4px}
+  .parent-btn{display:inline-block;margin-top:12px;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;font-weight:700;color:var(--bg);background:var(--ink);
+    text-decoration:none;padding:14px 28px;transition:background .15s ease}
+  .parent-btn:hover{background:var(--accent)}
+  .parent-note{margin-top:12px;font-size:11.5px;color:#9C958A;line-height:1.5}
+
+  .links{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .links a{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;
+    text-decoration:none;color:var(--ink);border:1px solid rgba(30,28,25,.35);
+    padding:13px 24px;border-radius:0}
+  .links a:hover{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .grid3 button{border:none;padding:0;cursor:zoom-in;background:none;transition:transform .18s ease}
+  .grid3 button:hover{transform:translateY(-4px)}
+  .grid3 .ph{aspect-ratio:4/5;width:100%;border-radius:0}
+
+  /* Production stills with captions */
+  .stills{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+  .still{text-align:left}
+  .still .ph{aspect-ratio:16/10}
+  .still figcaption{font-family:var(--display),serif;font-style:italic;font-size:15px;
+    color:#6E675E;margin-top:9px}
+  /* [BIND] stills optional; omit block when none */
+  @media (max-width:600px){.stills{grid-template-columns:1fr}}
+
+  /* Resume sheet — identical paper component across all templates */
+  .sheet{background:#fff;color:#26201C;text-align:left;border-radius:3px;
+    box-shadow:0 1px 2px rgba(20,15,12,.14), 0 16px 42px rgba(20,15,12,.22);
+    padding:44px 46px;font-family:'Inter',sans-serif}
+  .sheet-head{text-align:center;border-bottom:2px solid #26201C;padding-bottom:16px;margin-bottom:8px}
+  .sheet-head h3{font-family:var(--display),serif;font-weight:600;font-size:27px}
+  .sheet-head p{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;
+    color:#7A6E64;margin-top:7px}
+  .sheet h4{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;
+    margin:24px 0 10px;display:flex;align-items:center;gap:12px}
+  .sheet h4::after{content:"";flex:1;border-top:1px solid rgba(38,32,28,.18)}
+  .srow{display:grid;grid-template-columns:1.25fr .9fr 1fr;gap:12px;
+    font-size:13px;line-height:1.5;padding:4px 0}
+  .srow .p{font-weight:600}
+  .srow .r{font-style:italic;color:#5C5048}
+  .srow .d{text-align:right;color:#5C5048}
+  .skills{font-size:13px;line-height:1.7;color:#3D352F}
+  .sheet-sync{margin-top:24px;display:flex;align-items:center;justify-content:space-between;
+    gap:14px;background:#FAF6EE;border:1px dashed rgba(38,32,28,.25);border-radius:8px;
+    padding:14px 18px}
+  .sheet-sync p{font-size:12px;color:#5C5048;text-align:left;line-height:1.5}
+  .sheet-sync p b{color:#26201C}
+  .sheet-sync a{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;
+    white-space:nowrap;color:#fff;background:var(--accent);text-decoration:none;
+    padding:10px 16px;border-radius:999px}
+
+  .clips{display:grid;grid-template-columns:1fr 1fr;gap:18px;text-align:left}
+  .clip p{font-family:var(--display),serif;font-weight:600;font-size:16px;margin-bottom:8px}
+  .clip small{display:block;font-size:11px;font-weight:700;color:var(--accent);
+    margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase}
+
+  .feed{display:grid;gap:16px;text-align:left}
+  .feed-card{padding:22px;display:grid;gap:12px;background:#fff;
+    border:1px solid rgba(30,28,25,.1);border-radius:0}
+  .feed-date{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    font-weight:800;color:var(--accent)}
+  .feed-text{font-size:15px;line-height:1.6;color:#3D3833}
+  .feed-img{aspect-ratio:16/9}
+
+  .footer{margin-top:100px;border-top:1px solid rgba(30,28,25,.14);
+    padding:34px 24px 48px;text-align:center}
+  .footer .fm{font-family:var(--display),serif;font-weight:600;font-size:15px;
+    letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+  .footer small{font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    font-weight:600;color:#9C958A}
+  .footer small b{color:var(--accent)}
+
+  /* Modals — identical across templates */
+  .modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;
+    justify-content:center;background:rgba(15,12,10,.92);padding:24px}
+  .modal.open{display:flex}
+  .m-btn{position:absolute;background:none;border:none;color:rgba(245,239,230,.85);
+    cursor:pointer;font-size:34px;line-height:1;padding:14px}
+  .m-btn:hover{color:#fff}
+  .m-close{top:14px;right:18px;font-size:26px}
+  .m-prev{left:8px;top:50%;transform:translateY(-50%)}
+  .m-next{right:8px;top:50%;transform:translateY(-50%)}
+  .lb-stage{width:min(500px,86vw)}
+  .lb-stage .ph{aspect-ratio:4/5}
+  .lb-stage .ph span{font-size:60px}
+  .m-cap{text-align:center;color:rgba(245,239,230,.75);font-size:12px;
+    letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:14px}
+  .slate-stage{width:min(760px,92vw)}
+  .slate-stage .vid{border-radius:12px}
+
+  @media (max-width:600px){
+    .grid3{grid-template-columns:repeat(2,1fr)}
+    .clips{grid-template-columns:1fr}
+    .page{padding-top:48px}
+    .sheet{padding:30px 22px}
+    .srow{grid-template-columns:1.4fr 1fr}
+    .srow .d{display:none}
+    .sheet-sync{flex-direction:column;align-items:flex-start}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="ph"><span>M</span></div> <!-- [BIND] featured headshot as cover -->
+  <nav class="nav">
+    <a class="wordmark" href="#">Maya Ralston</a> <!-- [BIND] display_name -->
+    <ul>
+      <li><a href="#p-photos">Photos</a></li>
+      <li><a href="#p-resume">Resume</a></li>
+      <li><a href="#p-video">Video</a></li>
+      <li><a href="#p-lately">Lately</a></li>
+      <!-- [BIND] include anchors only for enabled sections -->
+    </ul>
+  </nav>
+  <div class="hero-info">
+    <h1>Maya Ralston</h1> <!-- [BIND] -->
+    <p>Actor · SAG-AFTRA Eligible · Los Angeles</p> <!-- [BIND] union + market -->
+  </div>
+  <button class="hero-slate" data-slate>Play Slate</button>
+</header>
+
+<!-- [BIND] PRESS QUOTE: render this block ONLY when quote exists -->
+<div class="quote">
+  <p>"Quote text."</p>
+  <cite>Attribution</cite>
+</div>
+
+<div class="page">
+
+  <div class="reps-block">
+    Young performer for film, TV, commercial, and voiceover.<br> <!-- [BIND] status_line -->
+    <!-- [BIND] reps OR parent-btn + parent-note -->
+    <a href="mailto:#">Agency Name</a>, Los Angeles · <a href="mailto:#">Manager Name</a>, Manager
+  </div>
+  <div class="links"><a href="#">Actors Access</a><a href="#">IMDb</a></div> <!-- [BIND] -->
+
+  <div class="sec" id="p-photos">
+    <div class="sec-title">Photographs</div>
+    <div class="grid3" data-gallery>
+      <button class="ph" aria-label="View headshot 1"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 2"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 3"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 4"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 5"><span>✦</span></button>
+      <button class="ph" aria-label="View headshot 6"><span>✦</span></button>
+    </div>
+    <!-- [BIND] stills optional -->
+    <div class="stills">
+      <figure class="still"><div class="ph"><span>✦</span></div><figcaption>Production — context</figcaption></figure>
+      <figure class="still"><div class="ph"><span>✦</span></div><figcaption>Production — context</figcaption></figure>
+    </div>
+  </div>
+
+  <div class="sec" id="p-resume">
+    <div class="sec-title">Resume</div>
+    <div class="sheet">
+      <div class="sheet-head"><h3>Maya Ralston</h3><p>SAG-AFTRA Eligible · Portrays 9–12 · Los Angeles</p></div>
+      <h4>Television</h4>
+      <div class="srow"><span class="p">Production</span><span class="r">Role</span><span class="d">Network</span></div>
+      <h4>Training</h4>
+      <div class="srow"><span class="p">Class</span><span class="r">Status</span><span class="d">Cadence</span></div>
+      <h4>Special Skills</h4>
+      <p class="skills">Skills line.</p>
+      <div class="sheet-sync">
+        <p><b>Synced with Resume101</b> · Last updated {date}. Edit once, update everywhere.</p>
+        <a href="#">↓ Download PDF</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec" id="p-video">
+    <div class="sec-title">Video</div>
+    <div class="clips">
+      <div class="clip"><small>Demo Reel</small><p>Theatrical</p><div class="vid"></div></div>
+      <div class="clip"><small>About Me</small><p>Meet Maya</p><div class="vid"></div></div>
+    </div>
+  </div>
+
+  <div class="sec" id="p-lately">
+    <div class="sec-title">Lately</div>
+    <div class="feed">
+      <div class="feed-card"><div class="feed-date">May 2026</div><p class="feed-text">Update text.</p></div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="fm">Maya Ralston</div> <!-- [BIND] -->
+  <small>© 2026 · Made with <b>Pages101</b></small>
+</footer>
+
+<!-- lightbox -->
+<div class="modal" id="lb" role="dialog" aria-modal="true" aria-label="Headshot viewer">
+  <button class="m-btn m-close" aria-label="Close">✕</button>
+  <button class="m-btn m-prev" aria-label="Previous">‹</button>
+  <div class="lb-stage"><div class="ph"><span id="lb-n">1</span></div><div class="m-cap">Headshot <span id="lb-cap-n">1</span></div></div>
+  <button class="m-btn m-next" aria-label="Next">›</button>
+</div>
+
+<!-- slate modal -->
+<div class="modal" id="slate" role="dialog" aria-modal="true" aria-label="Slate video">
+  <button class="m-btn m-close" aria-label="Close">✕</button>
+  <div class="slate-stage"><div class="vid"></div><div class="m-cap">Slate</div></div>
+</div>
+
+<script>
+  const lb = document.getElementById('lb');
+  const lbN = document.getElementById('lb-n');
+  const lbCapN = document.getElementById('lb-cap-n');
+  let idx = 0, total = 6; /* [BIND] */
+  const show = i => { idx = ((i % total) + total) % total;
+    lbN.textContent = idx + 1; lbCapN.textContent = idx + 1; };
+  document.querySelectorAll('[data-gallery] .ph').forEach((p, i) =>
+    p.addEventListener('click', () => { show(i); lb.classList.add('open'); }));
+  const slate = document.getElementById('slate');
+  document.querySelectorAll('[data-slate]').forEach(b =>
+    b.addEventListener('click', () => slate.classList.add('open')));
+  document.querySelectorAll('.modal').forEach(m => {
+    m.querySelector('.m-close').addEventListener('click', () => m.classList.remove('open'));
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+  lb.querySelector('.m-prev').addEventListener('click', () => show(idx - 1));
+  lb.querySelector('.m-next').addEventListener('click', () => show(idx + 1));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
+    if (lb.classList.contains('open')) {
+      if (e.key === 'ArrowLeft') show(idx - 1);
+      if (e.key === 'ArrowRight') show(idx + 1);
+    }
+  });
+</script>
+</body>
+</html>

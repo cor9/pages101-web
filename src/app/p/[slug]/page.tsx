@@ -9,8 +9,9 @@ type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const query = searchParams ? await searchParams : {};
   const page = getPageBySlug(slug);
 
   if (!page) {
@@ -19,8 +20,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
+  const template = query.draft === "1" ? getTemplateId(query.template) ?? page.template : page.template;
+
   return {
-    title: page.template === "classic" ? `${page.displayName} — Young Actor` : `${page.displayName} | Pages101`,
+    title: template === "prestige" ? `${page.displayName} — Actor` : `${page.displayName} — Young Actor`,
     description: page.statusLine,
     robots: page.noindex
       ? {
