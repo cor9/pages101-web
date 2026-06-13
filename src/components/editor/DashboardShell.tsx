@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { ActorPageRenderer } from "@/components/public-page/ActorPageRenderer";
 import { accentSwatches, fontPairOptions, templateTokens } from "@/lib/templates";
 import { samplePages } from "@/lib/sample-data";
 import { tips, type TipKey } from "@/content/tips";
 import { normalizeSlug, validateSlug } from "@/lib/slug";
-import type { FontPair, SectionType, TemplateId } from "@/lib/types";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import type { ActorPage, FontPair, Headshot, SectionType, TemplateId } from "@/lib/types";
 
 const page = samplePages[0];
+const initialHeadshots = getPageHeadshots(page);
 
 const sectionTipMap: Partial<Record<SectionType, TipKey>> = {
   headshots: "headshots",
@@ -27,11 +31,20 @@ export function DashboardShell() {
   const [templateId, setTemplateId] = useState<TemplateId>(page.template);
   const [accent, setAccent] = useState<string | null>(page.accent);
   const [fontPair, setFontPair] = useState<FontPair>(page.fontPair ?? "template");
+  const [headshots, setHeadshots] = useState<Headshot[]>(initialHeadshots);
   const [previewTick, setPreviewTick] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authStatus, setAuthStatus] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const checkedSlug = validateSlug(slug);
   const publicSlug = checkedSlug.ok ? checkedSlug.slug : page.slug;
+  const renderedHeadshots = headshots.length > 0 ? headshots : initialHeadshots;
+  const realHeadshotCount = renderedHeadshots.filter((headshot) => !isPlaceholderHeadshot(headshot)).length;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -39,7 +52,25 @@ export function DashboardShell() {
     }, 350);
 
     return () => window.clearTimeout(timer);
-  }, [displayName, statusLine, unionStatus, ageRange, market, accent, fontPair, publicSlug]);
+  }, [displayName, statusLine, unionStatus, ageRange, market, accent, fontPair, publicSlug, renderedHeadshots]);
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
+    supabase.auth.getUser().then(({ data }) => {
+      setAuthUser(data.user);
+    });
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   const previewUrl = useMemo(() => {
     const params = new URLSearchParams({
@@ -64,6 +95,146 @@ export function DashboardShell() {
 
     return `/p/${publicSlug}?${params.toString()}`;
   }, [accent, ageRange, displayName, fontPair, market, previewTick, publicSlug, statusLine, templateId, unionStatus]);
+
+  const previewPage = useMemo<ActorPage>(
+    () => ({
+      ...page,
+      displayName,
+      slug: publicSlug,
+      statusLine,
+      unionStatus,
+      ageRange,
+      market,
+      template: templateId,
+      accent,
+      fontPair,
+      sections: page.sections.map((section) =>
+        section.type === "headshots"
+          ? {
+              ...section,
+              content: {
+                headshots: renderedHeadshots
+              }
+            }
+          : section
+      )
+    }),
+    [accent, ageRange, displayName, fontPair, market, publicSlug, renderedHeadshots, statusLine, templateId, unionStatus]
+  );
+
+  async function handleAuthSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAuthStatus(null);
+
+    if (!supabase) {
+      setAuthStatus("Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel first.");
+      return;
+    }
+
+    if (!authEmail.trim()) {
+      setAuthStatus("Enter an email address.");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: authEmail.trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/app`
+      }
+    });
+
+    setAuthStatus(error ? error.message : "Check your email for the sign-in link.");
+  }
+
+  async function handleSignOut() {
+    if (!supabase) {
+      return;
+    }
+
+    await supabase.auth.signOut();
+    setAuthStatus("Signed out.");
+  }
+
+  async function handleHeadshotUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.currentTarget.files ?? []);
+    event.currentTarget.value = "";
+    setUploadStatus(null);
+
+    if (files.length === 0) {
+      return;
+    }
+
+    if (!supabase) {
+      setUploadStatus("Supabase env vars are missing.");
+      return;
+    }
+
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+
+    if (!user) {
+      setUploadStatus("Sign in before uploading.");
+      return;
+    }
+
+    const existingHeadshots = renderedHeadshots.filter((headshot) => !isPlaceholderHeadshot(headshot));
+    const capacity = page.plan === "free" ? Math.max(0, 6 - existingHeadshots.length) : files.length;
+    const selectedFiles = files.slice(0, capacity);
+
+    if (selectedFiles.length === 0) {
+      setUploadStatus("Free pages can show up to 6 headshots.");
+      return;
+    }
+
+    const invalidFile = selectedFiles.find((file) => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024);
+    if (invalidFile) {
+      setUploadStatus("Use image files under 10MB.");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const uploadedHeadshots: Headshot[] = [];
+
+      for (const file of selectedFiles) {
+        const objectPath = `${user.id}/${page.id}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+        const { error } = await supabase.storage.from("pages101-media").upload(objectPath, file, {
+          cacheControl: "31536000",
+          contentType: file.type,
+          upsert: false
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        const { data: publicUrl } = supabase.storage.from("pages101-media").getPublicUrl(objectPath);
+        uploadedHeadshots.push({
+          id: crypto.randomUUID(),
+          src: publicUrl.publicUrl,
+          alt: `${displayName} headshot`,
+          label: getHeadshotLabel(file.name)
+        });
+      }
+
+      setHeadshots(normalizeHeadshots([...existingHeadshots, ...uploadedHeadshots]));
+      setUploadStatus(
+        selectedFiles.length < files.length
+          ? `Uploaded ${selectedFiles.length}. Free pages show 6 headshots.`
+          : `Uploaded ${selectedFiles.length} headshot${selectedFiles.length === 1 ? "" : "s"}.`
+      );
+    } catch (error) {
+      setUploadStatus(error instanceof Error ? error.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleRemoveHeadshot(id: string) {
+    const nextHeadshots = renderedHeadshots.filter((headshot) => headshot.id !== id && !isPlaceholderHeadshot(headshot));
+    setHeadshots(normalizeHeadshots(nextHeadshots.length > 0 ? nextHeadshots : initialHeadshots));
+  }
 
   return (
     <main className="dashboard-shell">
@@ -163,6 +334,49 @@ export function DashboardShell() {
             </label>
           </article>
 
+          <article className="editor-panel">
+            <div className="panel-heading">
+              <p>Headshots</p>
+              <span>{realHeadshotCount}/6 free</span>
+            </div>
+            <TipDisclosure tipKey="headshots" />
+            <AuthControls
+              email={authEmail}
+              user={authUser}
+              status={authStatus}
+              onEmailChange={setAuthEmail}
+              onSubmit={handleAuthSubmit}
+              onSignOut={handleSignOut}
+            />
+            <label className="upload-dropzone">
+              Upload photos
+              <input type="file" accept="image/*" multiple disabled={uploading || !authUser} onChange={handleHeadshotUpload} />
+              <span>{uploading ? "Uploading..." : authUser ? "Choose image files" : "Sign in to enable uploads"}</span>
+            </label>
+            {uploadStatus ? <p className="panel-note">{uploadStatus}</p> : null}
+            <div className="uploaded-headshots" aria-label="Uploaded headshots">
+              {renderedHeadshots
+                .filter((headshot) => !isPlaceholderHeadshot(headshot))
+                .map((headshot) => (
+                  <div key={headshot.id} className="uploaded-headshot">
+                    <span
+                      className="uploaded-headshot-thumb"
+                      role="img"
+                      aria-label={headshot.alt}
+                      style={{ backgroundImage: `url("${headshot.src}")` }}
+                    />
+                    <div>
+                      <strong>{headshot.label}</strong>
+                      {headshot.featured ? <span>Featured</span> : null}
+                    </div>
+                    <button type="button" onClick={() => handleRemoveHeadshot(headshot.id)}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+            </div>
+          </article>
+
           <article className="editor-panel section-sorter">
             <div className="panel-heading">
               <p>Sections</p>
@@ -185,11 +399,11 @@ export function DashboardShell() {
                   </div>
                   {sectionTipMap[section.type] ? <TipDisclosure tipKey={sectionTipMap[section.type]} /> : null}
                 </div>
-              ))}
+            ))}
           </article>
         </div>
 
-        <PreviewPane previewUrl={previewUrl} pageUrl={`${publicSlug}.pages.childactor101.com`} />
+        <PreviewPane page={previewPage} pageUrl={`${publicSlug}.pages.childactor101.com`} />
       </section>
 
       <button type="button" className="floating-preview" onClick={() => setPreviewOpen(true)}>
@@ -204,10 +418,52 @@ export function DashboardShell() {
               Close
             </button>
           </div>
-          <iframe title="Pages101 mobile preview" src={previewUrl} />
+          <div className="preview-overlay-surface">
+            <ActorPageRenderer page={previewPage} />
+          </div>
         </div>
       ) : null}
     </main>
+  );
+}
+
+function AuthControls({
+  email,
+  user,
+  status,
+  onEmailChange,
+  onSubmit,
+  onSignOut
+}: {
+  email: string;
+  user: User | null;
+  status: string | null;
+  onEmailChange: (email: string) => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onSignOut: () => void;
+}) {
+  if (user) {
+    return (
+      <div className="auth-strip">
+        <span>{user.email}</span>
+        <button type="button" onClick={onSignOut}>
+          Sign out
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form className="auth-form" onSubmit={onSubmit}>
+      <label>
+        Account email
+        <input type="email" value={email} onChange={(event) => onEmailChange(event.target.value)} />
+      </label>
+      <button className="button-secondary" type="submit">
+        Send link
+      </button>
+      {status ? <p className="panel-note">{status}</p> : null}
+    </form>
   );
 }
 
@@ -259,15 +515,66 @@ function TipDisclosure({ tipKey }: { tipKey?: TipKey }) {
   );
 }
 
-function PreviewPane({ previewUrl, pageUrl }: { previewUrl: string; pageUrl: string }) {
+function PreviewPane({ page, pageUrl }: { page: ActorPage; pageUrl: string }) {
   return (
     <aside className="preview-pane" aria-label="Live page preview">
       <div className="browser-frame">
         <div className="browser-bar">
           <span>{pageUrl}</span>
         </div>
-        <iframe title="Live Pages101 preview" src={previewUrl} />
+        <div className="live-preview-surface">
+          <ActorPageRenderer page={page} />
+        </div>
       </div>
     </aside>
   );
+}
+
+function getPageHeadshots(actorPage: ActorPage) {
+  const section = actorPage.sections.find((candidate) => candidate.type === "headshots");
+  return section?.type === "headshots" ? section.content.headshots : [];
+}
+
+function isPlaceholderHeadshot(headshot: Headshot) {
+  return headshot.src === "/pageslogo.png";
+}
+
+function normalizeHeadshots(headshotsToNormalize: Headshot[]) {
+  let featuredAssigned = false;
+
+  return headshotsToNormalize.map((headshot, index) => {
+    const featured = !featuredAssigned && (headshot.featured || index === 0);
+    if (featured) {
+      featuredAssigned = true;
+    }
+
+    return {
+      ...headshot,
+      featured
+    };
+  });
+}
+
+function sanitizeFileName(fileName: string) {
+  const sanitized = fileName
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return sanitized || "headshot.jpg";
+}
+
+function getHeadshotLabel(fileName: string) {
+  const nameWithoutExtension = fileName.replace(/\.[^.]+$/, "");
+  const words = nameWithoutExtension
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return "Headshot";
+  }
+
+  return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ");
 }
