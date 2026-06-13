@@ -108,7 +108,7 @@ export function DashboardShell() {
           <article className="editor-panel">
             <div className="panel-heading">
               <p>Template &amp; Style</p>
-              <span>Classic publishes free</span>
+              <span>Plus templates preview here</span>
             </div>
             <div className="template-options" aria-label="Template">
               {Object.values(templateTokens).map((template) => {
@@ -121,12 +121,9 @@ export function DashboardShell() {
                     className="template-card"
                     type="button"
                     aria-current={selected ? "true" : undefined}
+                    data-locked={locked ? "true" : undefined}
                     onClick={(event) => {
                       event.preventDefault();
-                      if (locked) {
-                        window.location.href = "/upgrade";
-                        return;
-                      }
                       setTemplateId(template.id);
                     }}
                   >
@@ -134,7 +131,7 @@ export function DashboardShell() {
                       <span />
                     </span>
                     <strong>{template.label}</strong>
-                    <small>{locked ? "Lock · Plus" : template.tier === "plus" ? "Plus" : "Free"}</small>
+                    <small>{locked ? "Preview · Plus" : template.tier === "plus" ? "Plus" : "Free"}</small>
                     {selected ? <span className="check-badge" aria-hidden="true">✓</span> : null}
                   </button>
                 );
