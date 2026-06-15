@@ -712,12 +712,15 @@ export function DashboardShell() {
   async function saveActorPage(actorPage: ActorPage) {
     if (!supabase || !authUser) throw new Error("Sign in to publish.");
 
+    const normalizedFontPair = actorPage.fontPair === "template" ? null : actorPage.fontPair;
+    const normalizedAccent = actorPage.accent ?? null;
+
     const payload = {
       user_id: authUser.id,
       slug: actorPage.slug,
       template: actorPage.template,
-      accent: actorPage.accent ?? null,
-      font_pair: actorPage.fontPair ?? null,
+      accent: normalizedAccent,
+      font_pair: normalizedFontPair,
       display_name: actorPage.displayName,
       status_line: actorPage.statusLine ?? null,
       union_status: actorPage.unionStatus ?? null,
