@@ -86,7 +86,9 @@ function mapSection(section: PageSectionRow): ActorPageSection[] {
         content: {
           syncedWithResume101: Boolean(content.syncedWithResume101),
           updatedAt: getString(content.updatedAt),
-          credits: getArray(content.credits)
+          credits: getArray(content.credits),
+          fileUrl: getOptionalString(content.fileUrl),
+          fileName: getOptionalString(content.fileName)
         }
       }
     ];
@@ -152,4 +154,8 @@ function getArray<T>(value: unknown): T[] {
 
 function getString(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function getOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
 }
