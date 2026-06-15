@@ -790,7 +790,7 @@ export function DashboardShell() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: authEmail.trim(),
-        options: { emailRedirectTo: "https://pages.childactor101.com/auth/callback?next=/app" }
+        options: { emailRedirectTo: "https://pages.childactor101.com/auth/callback?next=/dashboard" }
       });
 
       if (error) {

@@ -59,8 +59,8 @@ export async function POST(request: Request) {
     customer: customerId,
     customer_email: customerId ? undefined : user.email,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/app?upgraded=1`,
-    cancel_url: `${origin}/app`,
+    success_url: `${origin}/dashboard?upgraded=1`,
+    cancel_url: `${origin}/dashboard`,
     metadata: { user_id: user.id },
     subscription_data: { metadata: { user_id: user.id } }
   });
