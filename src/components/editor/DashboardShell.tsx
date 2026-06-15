@@ -8,6 +8,14 @@ import { samplePages } from "@/lib/sample-data";
 import { tips, type TipKey } from "@/content/tips";
 import { normalizeSlug, validateSlug } from "@/lib/slug";
 import { mapActorPageRows, type ActorPageRow, type PageSectionRow } from "@/lib/page-mapping";
+import {
+  formatCooldown,
+  getMagicLinkCooldownRemaining,
+  isMagicLinkRateLimitError,
+  MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS,
+  MAGIC_LINK_SUCCESS_COOLDOWN_MS,
+  setMagicLinkCooldown
+} from "@/lib/auth/magic-link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type {
   ActorPage,
@@ -75,6 +83,8 @@ export function DashboardShell() {
   const [authEmail, setAuthEmail] = useState("");
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authStatus, setAuthStatus] = useState<string | null>(null);
+  const [authCooldownMs, setAuthCooldownMs] = useState(0);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Beta preview");
@@ -104,6 +114,18 @@ export function DashboardShell() {
       testQuery();
     }
   }, [supabase]);
+
+  useEffect(() => {
+    setAuthCooldownMs(getMagicLinkCooldownRemaining(authEmail));
+
+    if (!authEmail.trim()) return;
+
+    const timer = window.setInterval(() => {
+      setAuthCooldownMs(getMagicLinkCooldownRemaining(authEmail));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [authEmail]);
 
   const checkedSlug = validateSlug(slug);
   const publicSlug = checkedSlug.ok ? checkedSlug.slug : page.slug;
@@ -750,15 +772,40 @@ export function DashboardShell() {
     event.preventDefault();
     setAuthStatus(null);
 
+    if (authSubmitting) return;
+
     if (!supabase) { setAuthStatus("Set the Supabase URL and anon key to enable sign-in."); return; }
     if (!authEmail.trim()) { setAuthStatus("Enter an email address."); return; }
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: authEmail.trim(),
-      options: { emailRedirectTo: "https://pages.childactor101.com/auth/callback?next=/app" }
-    });
+    const remainingMs = getMagicLinkCooldownRemaining(authEmail);
+    if (remainingMs > 0) {
+      setAuthStatus(`Please wait ${formatCooldown(remainingMs)} before requesting another link.`);
+      return;
+    }
 
-    setAuthStatus(error ? error.message : "Check your email for the sign-in link.");
+    setAuthSubmitting(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: authEmail.trim(),
+        options: { emailRedirectTo: "https://pages.childactor101.com/auth/callback?next=/app" }
+      });
+
+      if (error) {
+        if (isMagicLinkRateLimitError(error)) {
+          setMagicLinkCooldown(authEmail, MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS);
+          setAuthCooldownMs(MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS);
+          setAuthStatus(`Too many sign-in emails were requested. Please wait ${formatCooldown(MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS)} and try again.`);
+        } else {
+          setAuthStatus(error.message);
+        }
+        return;
+      }
+      setMagicLinkCooldown(authEmail, MAGIC_LINK_SUCCESS_COOLDOWN_MS);
+      setAuthCooldownMs(MAGIC_LINK_SUCCESS_COOLDOWN_MS);
+      setAuthStatus("Check your email for the sign-in link.");
+    } finally {
+      setAuthSubmitting(false);
+    }
   }
 
   async function handleSignOut() {
@@ -1182,6 +1229,8 @@ export function DashboardShell() {
               plan={editorPlan}
               subscription={subscription}
               upgrading={upgrading}
+              submitDisabled={authSubmitting || authCooldownMs > 0}
+              submitLabel={authSubmitting ? "Sending..." : authCooldownMs > 0 ? `Wait ${formatCooldown(authCooldownMs)}` : "Send link"}
               onEmailChange={setAuthEmail}
               onSubmit={handleAuthSubmit}
               onSignOut={handleSignOut}
@@ -1281,6 +1330,7 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 
 function AuthControls({
   email, user, status, plan, subscription, upgrading,
+  submitDisabled, submitLabel,
   onEmailChange, onSubmit, onSignOut, onUpgrade, onManageSubscription
 }: {
   email: string;
@@ -1289,6 +1339,8 @@ function AuthControls({
   plan: Plan;
   subscription: SubscriptionRow | null;
   upgrading: boolean;
+  submitDisabled: boolean;
+  submitLabel: string;
   onEmailChange: (email: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onSignOut: () => void;
@@ -1336,7 +1388,7 @@ function AuthControls({
         Account email
         <input type="email" value={email} onChange={(e) => onEmailChange(e.target.value)} />
       </label>
-      <button className="button-secondary" type="submit">Send link</button>
+      <button className="button-secondary" type="submit" disabled={submitDisabled}>{submitLabel}</button>
       {status ? <p className="panel-note">{status}</p> : null}
     </form>
   );

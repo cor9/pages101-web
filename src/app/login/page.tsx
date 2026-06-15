@@ -1,19 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import {
+  formatCooldown,
+  getMagicLinkCooldownRemaining,
+  isMagicLinkRateLimitError,
+  MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS,
+  MAGIC_LINK_SUCCESS_COOLDOWN_MS,
+  setMagicLinkCooldown
+} from "@/lib/auth/magic-link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [cooldownMs, setCooldownMs] = useState(0);
   
   const supabase = createSupabaseBrowserClient();
+
+  useEffect(() => {
+    setCooldownMs(getMagicLinkCooldownRemaining(email));
+
+    if (!email.trim()) return;
+
+    const timer = window.setInterval(() => {
+      setCooldownMs(getMagicLinkCooldownRemaining(email));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [email]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!supabase) {
       setErrorMessage("Supabase is not configured.");
+      setStatus("error");
+      return;
+    }
+
+    const remainingMs = getMagicLinkCooldownRemaining(email);
+    if (remainingMs > 0) {
+      setErrorMessage(`Please wait ${formatCooldown(remainingMs)} before requesting another link.`);
       setStatus("error");
       return;
     }
@@ -29,9 +57,17 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setErrorMessage(error.message);
+      if (isMagicLinkRateLimitError(error)) {
+        setMagicLinkCooldown(email, MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS);
+        setCooldownMs(MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS);
+        setErrorMessage(`Too many sign-in emails were requested. Please wait ${formatCooldown(MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS)} and try again.`);
+      } else {
+        setErrorMessage(error.message);
+      }
       setStatus("error");
     } else {
+      setMagicLinkCooldown(email, MAGIC_LINK_SUCCESS_COOLDOWN_MS);
+      setCooldownMs(MAGIC_LINK_SUCCESS_COOLDOWN_MS);
       setStatus("success");
     }
   }
@@ -87,7 +123,7 @@ export default function LoginPage() {
             />
             <button
               type="submit"
-              disabled={status === "loading"}
+              disabled={status === "loading" || cooldownMs > 0}
               style={{
                 backgroundColor: "var(--marquee, #c8553d)",
                 color: "#fff",
@@ -96,12 +132,12 @@ export default function LoginPage() {
                 border: "none",
                 fontSize: "16px",
                 fontWeight: "600",
-                cursor: status === "loading" ? "not-allowed" : "pointer",
-                opacity: status === "loading" ? 0.7 : 1,
+                cursor: status === "loading" || cooldownMs > 0 ? "not-allowed" : "pointer",
+                opacity: status === "loading" || cooldownMs > 0 ? 0.7 : 1,
                 width: "100%"
               }}
             >
-              {status === "loading" ? "Sending..." : "Send login link"}
+              {status === "loading" ? "Sending..." : cooldownMs > 0 ? `Wait ${formatCooldown(cooldownMs)}` : "Send login link"}
             </button>
             <p style={{
               margin: 0,
