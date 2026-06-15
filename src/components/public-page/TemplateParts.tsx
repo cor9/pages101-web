@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { ActorPage, Headshot, ResumeCredit, ResumeSection } from "@/lib/types";
+import { normalizeEmbedUrl } from "@/lib/video";
 
 export function TemplateImageSlot({
   image,
@@ -118,7 +119,7 @@ export function TemplateSlateModal({ slateUrl, open, onClose }: { slateUrl: stri
       </button>
       <div className="slate-stage">
         <div className="vid">
-          {slateUrl ? <iframe src={slateUrl} title="Slate video" allow="autoplay; fullscreen; picture-in-picture" /> : null}
+          {slateUrl ? <iframe src={normalizeEmbedUrl(slateUrl)} title="Slate video" allow="autoplay; fullscreen; picture-in-picture" /> : null}
         </div>
         <div className="m-cap">Slate</div>
       </div>

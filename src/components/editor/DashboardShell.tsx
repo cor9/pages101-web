@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { ActorPageRenderer } from "@/components/public-page/ActorPageRenderer";
 import { accentSwatches, fontPairOptions, templateTokens } from "@/lib/templates";
 import { samplePages } from "@/lib/sample-data";
+import { normalizeEmbedUrl } from "@/lib/video";
 import { tips, type TipKey } from "@/content/tips";
 import { normalizeSlug, validateSlug } from "@/lib/slug";
 import { mapActorPageRows, type ActorPageRow, type PageSectionRow } from "@/lib/page-mapping";
@@ -1484,38 +1485,6 @@ function normalizeExternalUrl(url: string) {
   if (!trimmed) return "";
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
-}
-
-function normalizeEmbedUrl(url: string) {
-  const normalized = normalizeExternalUrl(url);
-  if (!normalized) return "";
-
-  try {
-    const parsed = new URL(normalized);
-    const host = parsed.hostname.replace(/^www\./, "");
-
-    if (host === "youtu.be") {
-      const id = parsed.pathname.split("/").filter(Boolean)[0];
-      return id ? `https://www.youtube.com/embed/${id}` : normalized;
-    }
-
-    if (host === "youtube.com" || host === "m.youtube.com") {
-      if (parsed.pathname.startsWith("/embed/")) return normalized;
-      const id = parsed.searchParams.get("v") ?? parsed.pathname.split("/").filter(Boolean).at(-1);
-      return id ? `https://www.youtube.com/embed/${id}` : normalized;
-    }
-
-    if (host === "vimeo.com") {
-      const id = parsed.pathname.split("/").filter(Boolean).at(-1);
-      return id ? `https://player.vimeo.com/video/${id}` : normalized;
-    }
-
-    if (host === "player.vimeo.com") return normalized;
-  } catch {
-    return normalized;
-  }
-
-  return normalized;
 }
 
 function getHeadshotLabel(fileName: string) {

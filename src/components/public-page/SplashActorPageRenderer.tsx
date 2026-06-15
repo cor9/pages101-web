@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getTemplateCss } from "@/lib/templates";
+import { normalizeEmbedUrl } from "@/lib/video";
 import {
   buildPlaceholderHeadshots,
   getHeadshots,
@@ -171,7 +172,7 @@ function SplashClips({ clips }: { clips: Clip[] }) {
             <small>{clip.category}</small>
             <p>{clip.title}</p>
             <div className="vid">
-              <iframe src={clip.embedUrl} title={clip.title} allow="autoplay; fullscreen; picture-in-picture" />
+              <iframe src={normalizeEmbedUrl(clip.embedUrl)} title={clip.title} allow="autoplay; fullscreen; picture-in-picture" />
             </div>
           </div>
         ))}
