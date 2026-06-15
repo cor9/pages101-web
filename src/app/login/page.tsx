@@ -24,7 +24,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: 'https://pages.childactor101.com/dashboard'
+        emailRedirectTo: 'https://pages.childactor101.com/auth/callback?next=/dashboard'
       }
     });
 

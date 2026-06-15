@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000/p/maya-ralston` for the seeded public page or `http://localhost:3000/app` for the editor shell.
+Open the local dev server at `/p/maya-ralston` for the seeded public page or `/app` for the editor shell.
 
 ## Environment
 

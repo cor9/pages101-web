@@ -247,12 +247,12 @@ function ClassicFreePromo() {
       <div className="promo-in">
         <div className="promo-eyebrow">From Child Actor 101</div>
         <div className="promo-cards">
-          <a className="promo-card" href="https://childactor101.com">
+          <a className="promo-card" href="https://pages.childactor101.com">
             <b>Prep101</b>
             <span>Audition prep guides built from 30 years of coaching young actors.</span>
             <i>Explore Prep101 →</i>
           </a>
-          <a className="promo-card" href="https://childactor101.com">
+          <a className="promo-card" href="https://pages.childactor101.com">
             <b>Vendor Directory</b>
             <span>Trusted headshot photographers, coaches, and reel editors — vetted for families.</span>
             <i>Browse the Directory →</i>

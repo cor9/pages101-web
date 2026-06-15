@@ -75,7 +75,7 @@ Single-column page; sections reorder/toggle in the editor (dnd-kit sortable list
 | **Reps / Contact** | Agent + manager names, each `mailto:` linked | If `has_rep=false`: "Contact {Name}'s Parent" relay button + microcopy. Relay form → SES email to parent. No contact details ever rendered. |
 | **Links** | Pill buttons: Instagram, Actors Access, IMDb, etc. | Resume credits live on Actors Access (industry-standard); on-page resume is supplementary. |
 | **Headshots** | Photo grid, lightbox viewer | Free: 6 / Plus: unlimited. Builder tip prescribes look variety. |
-| **Resume** | PDF-styled paper sheet, classic 3-column credit rows, Download PDF | **Resume101 sync:** one-click import from resumes.childactor101.com data; "Synced with Resume101" strip; re-import overwrites resume section only, with confirm. |
+| **Resume** | PDF-styled paper sheet, classic 3-column credit rows, Download PDF | **Resume101 sync:** one-click import from Resume101 data; "Synced with Resume101" strip; re-import overwrites resume section only, with confirm. |
 | **Clips** | Titled embeds with category labels (Booked Work, Demo Reel, About Me, VO Reel, Singing) | Embeds only (YouTube/Vimeo unlisted). |
 | **BTS Feed** (Plus) | Dated cards: text + optional photo | Builder tip enforces safety: no schools, locations, schedules. |
 | **Press Quote** (Prestige) | One quote + attribution | Hidden when empty. |
@@ -110,7 +110,7 @@ Tips stored as a static content map in the repo (not DB) — editable in one fil
 **Stack:** Next.js (App Router) on Vercel · Supabase (Postgres + Auth + Storage) · Stripe · Amazon SES (existing) · dnd-kit.
 
 **Repo:** `cor9/pages101-web` (new), Vercel team `cor9s-projects`.
-**Supabase:** existing project (`omwbjwptmuvyyqsqfpbws`) with a dedicated `pages101` schema — consistent with the unified-ecosystem plan; Pages101 is the second property on shared Supabase Auth after Resume101 (Google, Apple, magic links; cookie domain `.childactor101.com`).
+**Supabase:** existing project (`omwbjwptmuvyyqsqfpbws`) with a dedicated `pages101` schema — consistent with the unified-ecosystem plan; Pages101 is the second property on shared Supabase Auth after Resume101 (Google, Apple, magic links; cookie domain `.pages.childactor101.com`).
 
 ### Routing
 - Public pages: wildcard subdomain `*.pages.childactor101.com` → Next.js middleware reads host, rewrites to `/p/[slug]`.
@@ -205,13 +205,13 @@ Phased so each phase ends with something shippable. Effort assumes solo nights/w
 
 ### Phase 0 — Infrastructure (1 weekend)
 - Create repo `cor9/pages101-web`, Next.js App Router scaffold, Vercel project under `cor9s-projects`.
-- DNS: add `*.pages.childactor101.com` and `pages.childactor101.com` records pointing to Vercel (wherever childactor101.com DNS is hosted — verify current DNS provider first; Squarespace-managed DNS supports wildcard CNAME).
+- DNS: add `*.pages.childactor101.com` and `pages.childactor101.com` records pointing to Vercel (wherever the domain DNS is hosted — verify current DNS provider first; Squarespace-managed DNS supports wildcard CNAME).
 - Run schema migration; write RLS policies; create `pages101-media` bucket.
 - Middleware: host → `/p/[slug]` rewrite, verified with two test slugs.
 - **Done when:** `test.pages.childactor101.com` renders a hello page from the DB.
 
 ### Phase 1 — Auth + Editor + Classic + Publish (2–3 weekends)
-- Supabase Auth wired (magic link first; Google/Apple after), session on `.childactor101.com`.
+- Supabase Auth wired (magic link first; Google/Apple after), session on `.pages.childactor101.com`.
 - Dashboard: create page, claim slug (moderation list), edit hero/reps/links via forms.
 - Section list with dnd-kit reorder + enable toggles; live preview pane.
 - Classic template public renderer with accent/font variables; publish flow with on-demand revalidation; `noindex` default.

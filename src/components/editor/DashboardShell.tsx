@@ -755,7 +755,7 @@ export function DashboardShell() {
 
     const { error } = await supabase.auth.signInWithOtp({
       email: authEmail.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/app` }
+      options: { emailRedirectTo: "https://pages.childactor101.com/auth/callback?next=/app" }
     });
 
     setAuthStatus(error ? error.message : "Check your email for the sign-in link.");
@@ -1046,7 +1046,7 @@ export function DashboardShell() {
             <TipDisclosure tipKey="resume" />
             <div className="resume-import-bar">
               <p>
-                <b>Resume101 Import</b> — pull your credits directly from resumes.childactor101.com.
+                <b>Resume101 Import</b> — pull your credits directly from Resume101.
               </p>
               <button
                 className="btn-import"
@@ -1223,7 +1223,7 @@ export function DashboardShell() {
 
         </div>
 
-        <PreviewPane page={previewPage} pageUrl={`pages.childactor101.com/p/${publicSlug}`} />
+        <PreviewPane page={previewPage} pageUrl={`https://pages.childactor101.com/p/${publicSlug}`} />
       </section>
 
       <button type="button" className="floating-preview" onClick={() => setPreviewOpen(true)}>Preview</button>
@@ -1231,7 +1231,7 @@ export function DashboardShell() {
       {previewOpen ? (
         <div className="preview-overlay" role="dialog" aria-label="Page preview" aria-modal="true">
           <div className="preview-overlay-bar">
-            <span>{`pages.childactor101.com/p/${publicSlug}`}</span>
+            <span>{`https://pages.childactor101.com/p/${publicSlug}`}</span>
             <button type="button" onClick={() => setPreviewOpen(false)}>Close</button>
           </div>
           <div className="preview-overlay-surface">
@@ -1383,11 +1383,6 @@ function getSectionClips(sections: ActorPageSection[]) {
 function getSectionFeedItems(sections: ActorPageSection[]) {
   const section = sections.find((s) => s.type === "feed");
   return section?.type === "feed" ? section.content.items : [];
-}
-
-function getSectionPress(sections: ActorPageSection[]) {
-  const section = sections.find((s) => s.type === "press");
-  return section?.type === "press" ? section.content : null;
 }
 
 function isPlaceholderHeadshot(headshot: Headshot) {

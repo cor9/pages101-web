@@ -9,9 +9,7 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.includes(".") ||
-    host === "localhost" ||
-    host === "127.0.0.1"
+    pathname.includes(".")
   ) {
     return NextResponse.next();
   }
