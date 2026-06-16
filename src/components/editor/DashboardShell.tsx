@@ -778,10 +778,14 @@ export function DashboardShell() {
     setSaving(true);
     try {
       const publishedPage = { ...previewPage, published: true };
-      const savedPageId = await saveActorPage(publishedPage);
+      const { id: savedPageId, savedWithoutBackground } = await saveActorPage(publishedPage);
       await saveSections(savedPageId, previewPage.sections);
       setIsPublished(true);
-      lastSavedSnapshotRef.current = buildPageFingerprint(publishedPage);
+      lastSavedSnapshotRef.current = buildPageFingerprint(savedWithoutBackground ? { ...publishedPage, background: null } : publishedPage);
+      if (savedWithoutBackground) {
+        setSaveStatus(`Published at ${livePageUrl}. Background will apply after the schema refreshes.`);
+        return;
+      }
       setSaveStatus(`Published at ${livePageUrl}`);
     } catch (error) {
       setSaveStatus(error instanceof Error ? error.message : "Publish failed.");
@@ -792,17 +796,55 @@ export function DashboardShell() {
 
   async function saveActorPage(actorPage: ActorPage) {
     if (!supabase || !authUser) throw new Error("Sign in to publish.");
+    const userId = authUser.id;
 
+    const payload = buildActorPagePayload(actorPage, userId, true);
+
+    console.log("SAVE ATTEMPT - user:", authUser.id);
+    console.log("SAVE ATTEMPT - payload:", payload);
+
+    const initialSave = await supabase
+      .from("p101_actor_pages")
+      .upsert(payload, { onConflict: "slug" })
+      .select("id")
+      .single<{ id: string }>();
+
+    console.log("SAVE RESULT - data:", initialSave.data);
+    console.log("SAVE RESULT - error:", JSON.stringify(initialSave.error));
+
+    if (!initialSave.error) {
+      return { id: initialSave.data.id, savedWithoutBackground: false };
+    }
+
+    if (isMissingBackgroundColumnError(initialSave.error)) {
+      const fallbackPayload = buildActorPagePayload(actorPage, userId, false);
+      console.warn("Background column is unavailable; retrying save without background.");
+      const fallbackSave = await supabase
+        .from("p101_actor_pages")
+        .upsert(fallbackPayload, { onConflict: "slug" })
+        .select("id")
+        .single<{ id: string }>();
+
+      console.log("SAVE RESULT (fallback) - data:", fallbackSave.data);
+      console.log("SAVE RESULT (fallback) - error:", JSON.stringify(fallbackSave.error));
+
+      if (fallbackSave.error) throw fallbackSave.error;
+      return { id: fallbackSave.data.id, savedWithoutBackground: true };
+    }
+
+    throw initialSave.error;
+  }
+
+  function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBackground: boolean) {
     const normalizedFontPair = actorPage.fontPair === "template" ? null : actorPage.fontPair;
     const normalizedAccent = actorPage.accent ?? null;
-    const normalizedBackground = actorPage.background ?? null;
 
-    const payload = {
-      user_id: authUser.id,
+    return {
+      user_id: userId,
       slug: actorPage.slug,
       template: actorPage.template,
       accent: normalizedAccent,
-      background: normalizedBackground,
+      ...(includeBackground ? { background: actorPage.background ?? null } : {}),
       font_pair: normalizedFontPair,
       display_name: actorPage.displayName,
       status_line: actorPage.statusLine ?? null,
@@ -816,22 +858,11 @@ export function DashboardShell() {
       published: actorPage.published,
       noindex: actorPage.noindex,
       updated_at: new Date().toISOString()
-    };
+    } as Record<string, unknown> & { user_id: string; slug: string };
+  }
 
-    console.log("SAVE ATTEMPT - user:", authUser.id);
-    console.log("SAVE ATTEMPT - payload:", payload);
-
-    const { data, error } = await supabase
-      .from("p101_actor_pages")
-      .upsert(payload, { onConflict: "slug" })
-      .select("id")
-      .single<{ id: string }>();
-
-    console.log("SAVE RESULT - data:", data);
-    console.log("SAVE RESULT - error:", JSON.stringify(error));
-
-    if (error) throw error;
-    return data.id;
+  function isMissingBackgroundColumnError(error: { code?: string; message?: string } | null | undefined) {
+    return error?.code === "PGRST204" && Boolean(error.message?.includes("background"));
   }
 
   async function autosaveCurrentPage() {
@@ -853,10 +884,10 @@ export function DashboardShell() {
     setSaveStatus("Saving draft...");
     try {
       const currentPage = latestPreviewPageRef.current;
-      const savedPageId = await saveActorPage(currentPage);
+      const { id: savedPageId, savedWithoutBackground } = await saveActorPage(currentPage);
       await saveSections(savedPageId, currentPage.sections);
-      lastSavedSnapshotRef.current = buildPageFingerprint(currentPage);
-      setSaveStatus("Draft saved");
+      lastSavedSnapshotRef.current = buildPageFingerprint(savedWithoutBackground ? { ...currentPage, background: null } : currentPage);
+      setSaveStatus(savedWithoutBackground ? "Draft saved. Background will apply after schema refreshes." : "Draft saved");
     } catch (error) {
       setSaveStatus(error instanceof Error ? error.message : "Autosave failed.");
     } finally {
@@ -923,7 +954,7 @@ export function DashboardShell() {
         },
         body: JSON.stringify({
           pageSlug: publicSlug,
-          domain: action === "attach" ? domain : customDomain.trim().toLowerCase(),
+          domain,
           action
         })
       });
