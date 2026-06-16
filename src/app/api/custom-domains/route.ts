@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { promises as dns } from "dns";
 import { z } from "zod";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
@@ -9,7 +10,7 @@ const domainSchema = z.object({
     .trim()
     .toLowerCase()
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/, "Enter a valid domain"),
-  action: z.enum(["attach", "detach"])
+  action: z.enum(["attach", "detach", "verify"])
 });
 
 export async function POST(request: Request) {
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Could not remove domain." }, { status: 500 });
     }
 
-    return NextResponse.json({ domain: null, verified: false }, { status: 200 });
+    return NextResponse.json({ domain: null, verified: false, message: "Custom domain removed." }, { status: 200 });
   }
 
   const { data: existingDomain, error: existingError } = await serviceClient
@@ -91,29 +92,89 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "That domain is already connected to another page." }, { status: 409 });
   }
 
-  const { error: upsertError } = await serviceClient
-    .from("p101_custom_domains")
-    .upsert({
+  if (parsed.data.action === "attach") {
+    const { error: upsertError } = await serviceClient
+      .from("p101_custom_domains")
+      .upsert({
+        domain: parsed.data.domain,
+        page_id: pageRow.id,
+        verified: false,
+        created_at: new Date().toISOString()
+      }, { onConflict: "domain" });
+
+    if (upsertError) {
+      console.error("Custom domain attach failed:", upsertError);
+      return NextResponse.json({ error: "Could not connect domain." }, { status: 500 });
+    }
+
+    const { error: cleanupError } = await serviceClient
+      .from("p101_custom_domains")
+      .delete()
+      .eq("page_id", pageRow.id)
+      .neq("domain", parsed.data.domain);
+
+    if (cleanupError) {
+      console.error("Custom domain cleanup failed:", cleanupError);
+    }
+
+    return NextResponse.json({
       domain: parsed.data.domain,
-      page_id: pageRow.id,
-      verified: true,
-      created_at: new Date().toISOString()
-    }, { onConflict: "domain" });
-
-  if (upsertError) {
-    console.error("Custom domain attach failed:", upsertError);
-    return NextResponse.json({ error: "Could not connect domain." }, { status: 500 });
+      verified: false,
+      message: `Saved. Add a CNAME record pointing ${parsed.data.domain} to cname.vercel-dns.com, then click Verify.`
+    }, { status: 200 });
   }
 
-  const { error: cleanupError } = await serviceClient
+  const { data: savedDomain, error: savedDomainError } = await serviceClient
     .from("p101_custom_domains")
-    .delete()
+    .select("domain, verified")
     .eq("page_id", pageRow.id)
-    .neq("domain", parsed.data.domain);
+    .eq("domain", parsed.data.domain)
+    .maybeSingle<{ domain: string; verified: boolean }>();
 
-  if (cleanupError) {
-    console.error("Custom domain cleanup failed:", cleanupError);
+  if (savedDomainError) {
+    console.error("Custom domain saved lookup failed:", savedDomainError);
+    return NextResponse.json({ error: "Could not verify domain." }, { status: 500 });
   }
 
-  return NextResponse.json({ domain: parsed.data.domain, verified: true }, { status: 200 });
+  if (!savedDomain) {
+    return NextResponse.json({ error: "Save the domain first." }, { status: 404 });
+  }
+
+  try {
+    const cnameRecords = await dns.resolveCname(parsed.data.domain);
+    const normalizedRecords = cnameRecords.map((record) => record.trim().replace(/\.$/, "").toLowerCase());
+    const isVerified = normalizedRecords.includes("cname.vercel-dns.com");
+
+    if (!isVerified) {
+      return NextResponse.json({
+        domain: parsed.data.domain,
+        verified: false,
+        message: `DNS not verified yet. Add a CNAME record pointing ${parsed.data.domain} to cname.vercel-dns.com.`
+      }, { status: 409 });
+    }
+
+    const { error: verifyError } = await serviceClient
+      .from("p101_custom_domains")
+      .update({ verified: true })
+      .eq("page_id", pageRow.id)
+      .eq("domain", parsed.data.domain);
+
+    if (verifyError) {
+      console.error("Custom domain verify update failed:", verifyError);
+      return NextResponse.json({ error: "Could not verify domain." }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      domain: parsed.data.domain,
+      verified: true,
+      message: "Connected and active."
+    }, { status: 200 });
+  } catch (error) {
+    console.error("DNS verification failed:", error);
+    return NextResponse.json({
+      domain: parsed.data.domain,
+      verified: false,
+      message: `DNS not verified yet. Add a CNAME record pointing ${parsed.data.domain} to cname.vercel-dns.com.`
+    }, { status: 409 });
+  }
 }

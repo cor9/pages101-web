@@ -173,8 +173,7 @@ function PrestigeClips({ clips }: { clips: Clip[] }) {
       <div className="clips">
         {clips.map((clip) => (
           <div className="clip" key={clip.id}>
-            <small>{clip.category}</small>
-            <p>{clip.title}</p>
+            <small>{clip.category.toUpperCase()}</small>
             <div className="vid">
               <iframe src={normalizeEmbedUrl(clip.embedUrl)} title={clip.title} allow="autoplay; fullscreen; picture-in-picture" />
             </div>

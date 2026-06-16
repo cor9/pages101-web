@@ -258,6 +258,13 @@ export function DashboardShell() {
       setCustomDomain(domainRow?.domain ?? "");
       setConnectedDomain(domainRow?.domain ?? "");
       setCustomDomainVerified(Boolean(domainRow?.verified));
+      setCustomDomainStatus(
+        domainRow?.domain
+          ? domainRow.verified
+            ? "Connected and active."
+            : `Add a CNAME record pointing ${domainRow.domain} to cname.vercel-dns.com, then click Verify.`
+          : null
+      );
       setSaveStatus(pageRow.published ? `Published at ${domainRow?.verified && domainRow?.domain ? `https://${domainRow.domain}` : `https://pages.childactor101.com/p/${pageRow.slug}`}` : "Saved draft loaded");
     }
 
@@ -917,7 +924,7 @@ export function DashboardShell() {
     if (error) throw error;
   }
 
-  async function handleCustomDomain(action: "attach" | "detach") {
+  async function handleCustomDomain(action: "attach" | "detach" | "verify") {
     if (!supabase || !authUser) {
       setCustomDomainStatus("Sign in to manage custom domains.");
       return;
@@ -928,9 +935,14 @@ export function DashboardShell() {
       return;
     }
 
-    const domain = action === "attach" ? customDomain.trim().toLowerCase() : (connectedDomain || customDomain.trim().toLowerCase());
+    const inputDomain = customDomain.trim().toLowerCase();
+    const domain = action === "attach" ? inputDomain : (connectedDomain || inputDomain);
     if (action === "attach" && !domain) {
       setCustomDomainStatus("Enter a domain first.");
+      return;
+    }
+    if (action !== "attach" && !domain) {
+      setCustomDomainStatus("Save the domain first.");
       return;
     }
 
@@ -959,21 +971,29 @@ export function DashboardShell() {
         })
       });
 
-      const body = (await response.json()) as { error?: string; domain?: string | null; verified?: boolean };
+      const body = (await response.json()) as { error?: string; message?: string; domain?: string | null; verified?: boolean };
       if (!response.ok) {
-        setCustomDomainStatus(body.error ?? "Could not update the domain.");
+        setCustomDomainStatus(body.error ?? body.message ?? "Could not update the domain.");
         return;
       }
 
       if (action === "attach") {
         setCustomDomain(body.domain ?? domain);
         setConnectedDomain(body.domain ?? domain);
-        setCustomDomainVerified(Boolean(body.verified));
-        setSaveStatus(`Published at ${body.domain ? `https://${body.domain}` : livePageUrl}`);
+        setCustomDomainVerified(false);
+        setCustomDomainStatus(body.message ?? `Add a CNAME record pointing ${body.domain ?? domain} to cname.vercel-dns.com, then click Verify.`);
+        setSaveStatus(`Saved domain ${body.domain ?? domain}`);
+      } else if (action === "verify") {
+        const verified = Boolean(body.verified);
+        setConnectedDomain(body.domain ?? domain);
+        setCustomDomainVerified(verified);
+        setCustomDomainStatus(body.message ?? (verified ? "Connected and active." : `Add a CNAME record pointing ${body.domain ?? domain} to cname.vercel-dns.com, then click Verify.`));
+        setSaveStatus(verified ? `Published at https://${body.domain ?? domain}` : `Domain saved, not verified yet.`);
       } else {
         setCustomDomain("");
         setConnectedDomain("");
         setCustomDomainVerified(false);
+        setCustomDomainStatus(null);
         setSaveStatus(`Custom domain removed. Published at ${publicPageUrl}`);
       }
     } catch {
@@ -1036,6 +1056,8 @@ export function DashboardShell() {
 
   const resumeSection = sections.find((s) => s.type === "resume");
   const resumeContent = resumeSection?.type === "resume" ? resumeSection.content : null;
+  const resumeHasPdf = Boolean(resumeContent?.fileUrl);
+  const resumeHasStructured = (resumeContent?.credits ?? []).length > 0;
 
   const pressSection = sections.find((s) => s.type === "press");
   const pressContent = pressSection?.type === "press" ? pressSection.content : null;
@@ -1274,6 +1296,9 @@ export function DashboardShell() {
                   <button className="button-primary" type="button" disabled={customDomainSaving} onClick={() => void handleCustomDomain("attach")}>
                     {customDomainSaving ? "Saving..." : "Connect domain"}
                   </button>
+                  <button className="button-secondary" type="button" disabled={customDomainSaving || (!connectedDomain && !customDomain)} onClick={() => void handleCustomDomain("verify")}>
+                    Verify
+                  </button>
                   <button className="button-secondary" type="button" disabled={customDomainSaving || (!connectedDomain && !customDomain)} onClick={() => void handleCustomDomain("detach")}>
                     Remove
                   </button>
@@ -1281,7 +1306,7 @@ export function DashboardShell() {
                 <div className="page-location">
                   <span>Domain status</span>
                   <code>{connectedDomain ? `https://${connectedDomain}` : "No custom domain connected"}</code>
-                  <p>{customDomainVerified ? "Connected and active." : "Save a domain to route this page from a custom host."}</p>
+                  <p>{customDomainVerified ? "Connected and active." : connectedDomain ? `Add a CNAME record pointing ${connectedDomain} to cname.vercel-dns.com, then click Verify.` : "Save a domain to route this page from a custom host."}</p>
                 </div>
               </>
             ) : (
@@ -1393,60 +1418,84 @@ export function DashboardShell() {
               <span>{(resumeContent?.credits ?? []).length} credit{(resumeContent?.credits ?? []).length === 1 ? "" : "s"}</span>
             </div>
             <TipDisclosure tipKey="resume" />
-            <div className="resume-import-bar">
-              <p>
-                <b>Resume101 Import</b> — pull your credits directly from Resume101.
-              </p>
-              <button
-                className="btn-import"
-                type="button"
-                disabled={importing || !authUser}
-                onClick={handleResume101Import}
-              >
-                {importing ? "Importing…" : "Import →"}
-              </button>
-            </div>
-            {importStatus ? <p className="panel-note">{importStatus}</p> : null}
-            {!authUser ? <p className="panel-note">Sign in to import from Resume101.</p> : null}
-            
-            <div className="resume-import-bar" style={{ marginTop: 16 }}>
-              <p>
-                <b>Resume Document</b> — {resumeContent?.fileName ? `Current: ${resumeContent.fileName}` : "Upload a PDF or DOC for download."}
-              </p>
-              {resumeContent?.fileUrl ? (
+            {resumeHasPdf ? (
+              <div className="resume-import-bar">
+                <p>
+                  <b>Resume Document</b> — {resumeContent?.fileName ? `Current: ${resumeContent.fileName}` : "Uploaded PDF attached."}
+                </p>
                 <button className="btn-import" type="button" onClick={handleRemoveResumeDocument}>
                   Remove
                 </button>
-              ) : (
-                <label className="btn-import" style={{ cursor: "pointer", textAlign: "center" }}>
-                  {resumeUploading ? "Uploading…" : "Upload →"}
-                  <input type="file" accept=".pdf,.doc,.docx" disabled={resumeUploading} onChange={handleResumeUpload} style={{ display: "none" }} />
-                </label>
-              )}
-            </div>
-            {resumeUploadStatus ? <p className="panel-note">{resumeUploadStatus}</p> : null}
-            <div className="editor-rows" aria-label="Resume credits" style={{ marginTop: 16 }}>
-              {(resumeContent?.credits ?? []).map((credit, index) => (
-                <div className="editor-row" key={`credit-${index}`}>
-                  <div className="field-grid field-grid--credit">
-                    <label>
-                      Project / Production
-                      <input value={credit.project} placeholder="Short film title" onChange={(e) => updateCredit(index, { project: e.target.value })} />
-                    </label>
-                    <label>
-                      Role
-                      <input value={credit.role} placeholder="Supporting" onChange={(e) => updateCredit(index, { role: e.target.value })} />
-                    </label>
-                    <label>
-                      Company / Network
-                      <input value={credit.company} placeholder="Independent" onChange={(e) => updateCredit(index, { company: e.target.value })} />
-                    </label>
-                  </div>
-                  <button className="row-remove" type="button" onClick={() => removeCredit(index)}>Remove</button>
+              </div>
+            ) : resumeHasStructured ? (
+              <>
+                <div className="resume-import-bar">
+                  <p>
+                    <b>Resume101 Import</b> — pull your credits directly from Resume101.
+                  </p>
+                  <button
+                    className="btn-import"
+                    type="button"
+                    disabled={importing || !authUser}
+                    onClick={handleResume101Import}
+                  >
+                    {importing ? "Importing…" : "Import →"}
+                  </button>
                 </div>
-              ))}
-              <button className="button-secondary panel-action" type="button" onClick={addCredit}>Add credit</button>
-            </div>
+                {importStatus ? <p className="panel-note">{importStatus}</p> : null}
+                {!authUser ? <p className="panel-note">Sign in to import from Resume101.</p> : null}
+                <div className="editor-rows" aria-label="Resume credits" style={{ marginTop: 16 }}>
+                  {(resumeContent?.credits ?? []).map((credit, index) => (
+                    <div className="editor-row" key={`credit-${index}`}>
+                      <div className="field-grid field-grid--credit">
+                        <label>
+                          Project / Production
+                          <input value={credit.project} placeholder="Short film title" onChange={(e) => updateCredit(index, { project: e.target.value })} />
+                        </label>
+                        <label>
+                          Role
+                          <input value={credit.role} placeholder="Supporting" onChange={(e) => updateCredit(index, { role: e.target.value })} />
+                        </label>
+                        <label>
+                          Company / Network
+                          <input value={credit.company} placeholder="Independent" onChange={(e) => updateCredit(index, { company: e.target.value })} />
+                        </label>
+                      </div>
+                      <button className="row-remove" type="button" onClick={() => removeCredit(index)}>Remove</button>
+                    </div>
+                  ))}
+                  <button className="button-secondary panel-action" type="button" onClick={addCredit}>Add credit</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="resume-import-bar">
+                  <p>
+                    <b>Import from Resume101</b> — pull your credits directly from Resume101.
+                  </p>
+                  <button
+                    className="btn-import"
+                    type="button"
+                    disabled={importing || !authUser}
+                    onClick={handleResume101Import}
+                  >
+                    {importing ? "Importing…" : "Import →"}
+                  </button>
+                </div>
+                {importStatus ? <p className="panel-note">{importStatus}</p> : null}
+                {!authUser ? <p className="panel-note">Sign in to import from Resume101.</p> : null}
+                <div className="resume-import-bar" style={{ marginTop: 16 }}>
+                  <p>
+                    <b>Resume Document</b> — Upload a PDF or DOC for download.
+                  </p>
+                  <label className="btn-import" style={{ cursor: "pointer", textAlign: "center" }}>
+                    {resumeUploading ? "Uploading…" : "Upload →"}
+                    <input type="file" accept=".pdf,.doc,.docx" disabled={resumeUploading} onChange={handleResumeUpload} style={{ display: "none" }} />
+                  </label>
+                </div>
+                {resumeUploadStatus ? <p className="panel-note">{resumeUploadStatus}</p> : null}
+              </>
+            )}
           </article>
 
           {/* BTS Feed (Plus only) */}

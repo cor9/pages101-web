@@ -37,54 +37,43 @@ export function TemplateImageSlot({
 }
 
 export function TemplateResume({ page, resume }: { page: ActorPage; resume: ResumeSection }) {
+  if (resume.fileUrl) {
+    return (
+      <div className="sheet">
+        <div className="resume-preview">
+          <iframe
+            src={isPdfFile(resume.fileName ?? resume.fileUrl) ? resume.fileUrl : getDocumentViewerUrl(resume.fileUrl)}
+            title={resume.fileName || "Resume preview"}
+            loading="lazy"
+            allow="fullscreen"
+          />
+        </div>
+        <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer">
+          ↓ Download PDF
+        </a>
+      </div>
+    );
+  }
+
+  if (resume.credits.length === 0) {
+    return null;
+  }
+
   return (
     <div className="sheet">
       <div className="sheet-head">
         <h3>{page.displayName}</h3>
         <p>{[page.unionStatus, page.ageRange, page.market].filter(Boolean).join(" · ")}</p>
       </div>
-      <h4>Television</h4>
-      {resume.credits.length > 0 ? (
-        resume.credits.map((credit) => <ResumeRow key={`${credit.project}-${credit.role}`} credit={credit} />)
-      ) : (
-        <div className="srow">
-          <span className="p">Production</span>
-          <span className="r">Role</span>
-          <span className="d">Network</span>
-        </div>
-      )}
-      <h4>Training</h4>
-      <div className="srow">
-        <span className="p">Class</span>
-        <span className="r">Status</span>
-        <span className="d">Cadence</span>
-      </div>
-      <h4>Special Skills</h4>
-      <p className="skills">Skills line.</p>
-      {resume.syncedWithResume101 || resume.fileUrl ? (
+      {resume.syncedWithResume101 ? (
         <div className="sheet-sync">
-          {resume.syncedWithResume101 ? (
-            <p>
-              <b>Synced with Resume101</b> · Last updated {resume.updatedAt}. Edit once, update everywhere.
-            </p>
-          ) : null}
-          {resume.fileUrl ? (
-            <>
-              <div className="resume-preview">
-                <iframe
-                  src={isPdfFile(resume.fileName ?? resume.fileUrl) ? resume.fileUrl : getDocumentViewerUrl(resume.fileUrl)}
-                  title={resume.fileName || "Resume preview"}
-                  loading="lazy"
-                  allow="fullscreen"
-                />
-              </div>
-              <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer">
-                ↓ Download {resume.fileName || "Document"}
-              </a>
-            </>
-          ) : null}
+          <p>
+            <b>Synced with Resume101</b> · Last updated {resume.updatedAt}. Edit once, update everywhere.
+          </p>
         </div>
       ) : null}
+      <h4>Television</h4>
+      {resume.credits.map((credit) => <ResumeRow key={`${credit.project}-${credit.role}`} credit={credit} />)}
     </div>
   );
 }
