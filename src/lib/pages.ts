@@ -16,11 +16,23 @@ export async function getPublicPageBySlug(slug: string) {
     .eq("published", true)
     .single();
 
+  let plan: "free" | "plus" = "free";
+
   if (!error && data) {
+    const { data: subData } = await supabase
+      .from("p101_subscriptions")
+      .select("plan, status")
+      .eq("user_id", data.user_id)
+      .maybeSingle();
+
+    if (subData?.plan === "plus" && (subData?.status === "active" || subData?.status === "trialing")) {
+      plan = "plus";
+    }
+
     return mapActorPageRows(
       data as ActorPageRow,
       getJoinedSections(data),
-      "free"
+      plan
     );
   }
 
@@ -41,10 +53,20 @@ export async function getPublicPageBySlug(slug: string) {
 
   const mappedPage = domainData?.p101_actor_pages;
   if (mappedPage) {
+    const { data: subData } = await supabase
+      .from("p101_subscriptions")
+      .select("plan, status")
+      .eq("user_id", mappedPage.user_id)
+      .maybeSingle();
+
+    if (subData?.plan === "plus" && (subData?.status === "active" || subData?.status === "trialing")) {
+      plan = "plus";
+    }
+
     return mapActorPageRows(
       mappedPage as ActorPageRow,
       getJoinedSections(mappedPage),
-      "free"
+      plan
     );
   }
 
