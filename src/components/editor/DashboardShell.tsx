@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { ActorPageRenderer } from "@/components/public-page/ActorPageRenderer";
 import { accentSwatches, backgroundSwatches, fontPairOptions, templateTokens } from "@/lib/templates";
@@ -59,6 +59,36 @@ type SubscriptionRow = {
 function isActivePlus(sub: SubscriptionRow | null): boolean {
   if (!sub) return false;
   return sub.plan === "plus" && (sub.status === "active" || sub.status === "trialing");
+}
+
+function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBackground: boolean) {
+  const normalizedFontPair = actorPage.fontPair === "template" ? null : actorPage.fontPair;
+  const normalizedAccent = actorPage.accent ?? null;
+
+  return {
+    user_id: userId,
+    slug: actorPage.slug,
+    template: actorPage.template,
+    accent: normalizedAccent,
+    ...(includeBackground ? { background: actorPage.background ?? null } : {}),
+    font_pair: normalizedFontPair,
+    display_name: actorPage.displayName,
+    status_line: actorPage.statusLine ?? null,
+    union_status: actorPage.unionStatus ?? null,
+    age_range: actorPage.ageRange ?? null,
+    market: actorPage.market ?? null,
+    has_rep: actorPage.hasRep ?? true,
+    reps: actorPage.reps ?? [],
+    links: actorPage.links ?? [],
+    slate_url: actorPage.slateUrl ?? null,
+    published: actorPage.published,
+    noindex: actorPage.noindex,
+    updated_at: new Date().toISOString()
+  } as Record<string, unknown> & { user_id: string; slug: string };
+}
+
+function isMissingBackgroundColumnError(error: { code?: string; message?: string } | null | undefined) {
+  return error?.code === "PGRST204" && Boolean(error.message?.includes("background"));
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -340,31 +370,6 @@ export function DashboardShell() {
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (!authUser || !supabase || !checkedSlug.ok) {
-      return;
-    }
-
-    const snapshot = buildPageFingerprint(previewPage);
-    if (snapshot === lastSavedSnapshotRef.current) {
-      return;
-    }
-
-    if (autoSaveTimerRef.current) {
-      window.clearTimeout(autoSaveTimerRef.current);
-    }
-
-    autoSaveTimerRef.current = window.setTimeout(() => {
-      void autosaveCurrentPage();
-    }, 700);
-
-    return () => {
-      if (autoSaveTimerRef.current) {
-        window.clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [authUser, checkedSlug.ok, previewPage, supabase]);
 
   // ─── Apply loaded page ─────────────────────────────────────────────────────
 
@@ -801,7 +806,7 @@ export function DashboardShell() {
     }
   }
 
-  async function saveActorPage(actorPage: ActorPage) {
+  const saveActorPage = useCallback(async (actorPage: ActorPage) => {
     if (!supabase || !authUser) throw new Error("Sign in to publish.");
     const userId = authUser.id;
 
@@ -840,39 +845,27 @@ export function DashboardShell() {
     }
 
     throw initialSave.error;
-  }
+  }, [authUser, supabase]);
 
-  function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBackground: boolean) {
-    const normalizedFontPair = actorPage.fontPair === "template" ? null : actorPage.fontPair;
-    const normalizedAccent = actorPage.accent ?? null;
+  const saveSections = useCallback(async (pageId: string, pageSections: ActorPage["sections"]) => {
+    if (!supabase) throw new Error("Supabase env vars are missing.");
 
-    return {
-      user_id: userId,
-      slug: actorPage.slug,
-      template: actorPage.template,
-      accent: normalizedAccent,
-      ...(includeBackground ? { background: actorPage.background ?? null } : {}),
-      font_pair: normalizedFontPair,
-      display_name: actorPage.displayName,
-      status_line: actorPage.statusLine ?? null,
-      union_status: actorPage.unionStatus ?? null,
-      age_range: actorPage.ageRange ?? null,
-      market: actorPage.market ?? null,
-      has_rep: actorPage.hasRep ?? true,
-      reps: actorPage.reps ?? [],
-      links: actorPage.links ?? [],
-      slate_url: actorPage.slateUrl ?? null,
-      published: actorPage.published,
-      noindex: actorPage.noindex,
-      updated_at: new Date().toISOString()
-    } as Record<string, unknown> & { user_id: string; slug: string };
-  }
+    const rows = pageSections.map((section) => ({
+      page_id: pageId,
+      type: section.type,
+      enabled: section.enabled,
+      sort_order: section.sortOrder,
+      content: section.content
+    }));
 
-  function isMissingBackgroundColumnError(error: { code?: string; message?: string } | null | undefined) {
-    return error?.code === "PGRST204" && Boolean(error.message?.includes("background"));
-  }
+    const { error } = await supabase
+      .from("p101_page_sections")
+      .upsert(rows, { onConflict: "page_id,type" });
 
-  async function autosaveCurrentPage() {
+    if (error) throw error;
+  }, [supabase]);
+
+  const autosaveCurrentPage = useCallback(async () => {
     if (!supabase || !authUser || !checkedSlug.ok) {
       return;
     }
@@ -904,25 +897,32 @@ export function DashboardShell() {
         void autosaveCurrentPage();
       }
     }
-  }
+  }, [authUser, checkedSlug.ok, saveActorPage, saveSections, supabase]);
 
-  async function saveSections(pageId: string, pageSections: ActorPage["sections"]) {
-    if (!supabase) throw new Error("Supabase env vars are missing.");
+  useEffect(() => {
+    if (!authUser || !supabase || !checkedSlug.ok) {
+      return;
+    }
 
-    const rows = pageSections.map((section) => ({
-      page_id: pageId,
-      type: section.type,
-      enabled: section.enabled,
-      sort_order: section.sortOrder,
-      content: section.content
-    }));
+    const snapshot = buildPageFingerprint(previewPage);
+    if (snapshot === lastSavedSnapshotRef.current) {
+      return;
+    }
 
-    const { error } = await supabase
-      .from("p101_page_sections")
-      .upsert(rows, { onConflict: "page_id,type" });
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+    }
 
-    if (error) throw error;
-  }
+    autoSaveTimerRef.current = window.setTimeout(() => {
+      void autosaveCurrentPage();
+    }, 700);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        window.clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [authUser, autosaveCurrentPage, checkedSlug.ok, previewPage, supabase]);
 
   async function handleCustomDomain(action: "attach" | "detach" | "verify") {
     if (!supabase || !authUser) {

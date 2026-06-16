@@ -5,6 +5,12 @@ import Image from "next/image";
 import type { ActorPage, Headshot, ResumeCredit, ResumeSection } from "@/lib/types";
 import { isPdfFile } from "@/lib/media";
 import { normalizeEmbedUrl } from "@/lib/video";
+import type {
+  PDFDocumentLoadingTask,
+  PDFDocumentProxy,
+  PDFPageProxy,
+  RenderTask
+} from "pdfjs-dist/types/src/display/api";
 
 export function TemplateImageSlot({
   image,
@@ -93,8 +99,9 @@ function ResumePdfPreview({ fileUrl, fileName }: { fileUrl: string; fileName?: s
 
   useEffect(() => {
     let cancelled = false;
-    let renderTask: any = null;
-    let pdfDocument: any = null;
+    let renderTask: RenderTask | null = null;
+    let loadingTask: PDFDocumentLoadingTask | null = null;
+    let pdfDocument: PDFDocumentProxy | null = null;
 
     async function renderPreview() {
       try {
@@ -102,7 +109,7 @@ function ResumePdfPreview({ fileUrl, fileName }: { fileUrl: string; fileName?: s
         setError(null);
 
         const [{ getDocument }, response] = await Promise.all([
-          import("pdfjs-dist/webpack.mjs") as Promise<any>,
+          import("pdfjs-dist/webpack.mjs"),
           fetch(fileUrl, { mode: "cors" })
         ]);
 
@@ -111,7 +118,7 @@ function ResumePdfPreview({ fileUrl, fileName }: { fileUrl: string; fileName?: s
         }
 
         const arrayBuffer = await response.arrayBuffer();
-        const loadingTask: any = getDocument({
+        loadingTask = getDocument({
           data: arrayBuffer,
           useWorkerFetch: false,
           disableRange: true,
@@ -121,13 +128,13 @@ function ResumePdfPreview({ fileUrl, fileName }: { fileUrl: string; fileName?: s
         pdfDocument = await loadingTask.promise;
 
         if (cancelled) {
-          await pdfDocument.destroy();
+          void loadingTask.destroy();
           return;
         }
 
-        const page = await pdfDocument.getPage(1);
+        const page: PDFPageProxy = await pdfDocument.getPage(1);
         if (cancelled) {
-          await pdfDocument.destroy();
+          void loadingTask.destroy();
           return;
         }
 
@@ -149,7 +156,7 @@ function ResumePdfPreview({ fileUrl, fileName }: { fileUrl: string; fileName?: s
         canvas.style.width = "100%";
         canvas.style.height = "auto";
 
-        renderTask = page.render({ canvasContext: context, viewport });
+        renderTask = page.render({ canvasContext: context, canvas, viewport });
         await renderTask.promise;
 
         if (!cancelled) {
@@ -168,7 +175,8 @@ function ResumePdfPreview({ fileUrl, fileName }: { fileUrl: string; fileName?: s
     return () => {
       cancelled = true;
       renderTask?.cancel();
-      void pdfDocument?.destroy();
+      loadingTask?.destroy();
+      pdfDocument?.cleanup();
     };
   }, [fileUrl]);
 
