@@ -64,7 +64,7 @@ export default function DashboardPage() {
 
       // 2. Get subscription
       const { data: subData, error: subErr } = await supabase
-        .from("subscriptions")
+        .from("p101_subscriptions")
         .select("plan, status, current_period_end")
         .eq("user_id", userId)
         .maybeSingle();

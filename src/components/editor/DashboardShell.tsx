@@ -256,7 +256,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
 
       // Load subscription plan
       const { data: subRow } = await supabase
-        .from("subscriptions")
+        .from("p101_subscriptions")
         .select("plan, status, current_period_end")
         .eq("user_id", authUser.id)
         .maybeSingle<SubscriptionRow>();

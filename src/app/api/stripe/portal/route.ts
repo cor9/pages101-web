@@ -24,8 +24,7 @@ export async function POST(request: Request) {
   }
 
   const { data: sub } = await serviceClient
-    .schema("pages101")
-    .from("subscriptions")
+    .from("p101_subscriptions")
     .select("stripe_customer_id")
     .eq("user_id", user.id)
     .maybeSingle<{ stripe_customer_id: string | null }>();

@@ -122,8 +122,7 @@ async function upsertSubscription(
   }
 ) {
   const { error } = await supabase
-    .schema("pages101")
-    .from("subscriptions")
+    .from("p101_subscriptions")
     .upsert(
       {
         user_id: userId,
