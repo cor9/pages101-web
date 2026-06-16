@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       extracted_slug: rows[0]?.verified && rows[0].p101_actor_pages?.slug ? rows[0].p101_actor_pages.slug : null
     });
 
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
