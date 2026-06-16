@@ -958,7 +958,8 @@ export function DashboardShell() {
         return;
       }
 
-      const response = await fetch("/api/custom-domains", {
+      const endpoint = action === "attach" ? "/api/domains/connect" : action === "verify" ? "/api/domains/verify" : "/api/custom-domains";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -971,23 +972,31 @@ export function DashboardShell() {
         })
       });
 
-      const body = (await response.json()) as { error?: string; message?: string; domain?: string | null; verified?: boolean };
+      const body = (await response.json()) as {
+        error?: string;
+        message?: string;
+        domain?: string | null;
+        verified?: boolean;
+        verification?: Array<{ type: string; domain: string; value: string; reason?: string }>;
+      };
       if (!response.ok) {
         setCustomDomainStatus(body.error ?? body.message ?? "Could not update the domain.");
         return;
       }
 
       if (action === "attach") {
-        setCustomDomain(body.domain ?? domain);
-        setConnectedDomain(body.domain ?? domain);
-        setCustomDomainVerified(false);
-        setCustomDomainStatus(body.message ?? `Next: open the DNS settings where ${body.domain ?? domain} is managed and add a CNAME record that points it to cname.vercel-dns.com.`);
-        setSaveStatus(`Saved domain ${body.domain ?? domain}.`);
+        const connectedDomainName = body.domain ?? domain;
+        const verified = Boolean(body.verified);
+        setCustomDomain(connectedDomainName);
+        setConnectedDomain(connectedDomainName);
+        setCustomDomainVerified(verified);
+        setCustomDomainStatus(body.message ?? (verified ? "Connected and active." : `Next: open the DNS settings where ${connectedDomainName} is managed and add the record shown by Vercel.`));
+        setSaveStatus(verified ? `Published at https://${connectedDomainName}` : `Saved domain ${connectedDomainName}.`);
       } else if (action === "verify") {
         const verified = Boolean(body.verified);
         setConnectedDomain(body.domain ?? domain);
         setCustomDomainVerified(verified);
-        setCustomDomainStatus(body.message ?? (verified ? "Your domain is live." : `Check the DNS settings where ${body.domain ?? domain} is managed, then click Verify again.`));
+        setCustomDomainStatus(body.message ?? (verified ? "Connected and active." : `Check the DNS settings where ${body.domain ?? domain} is managed, then click Verify again.`));
         setSaveStatus(verified ? `Published at https://${body.domain ?? domain}` : `Domain saved, not verified yet.`);
       } else {
         setCustomDomain("");
@@ -1060,8 +1069,8 @@ export function DashboardShell() {
   const resumeHasStructured = (resumeContent?.credits ?? []).length > 0;
   const domainHelpDomain = connectedDomain || customDomain.trim().toLowerCase();
   const domainHelpMessage = domainHelpDomain
-    ? `Open the DNS settings where ${domainHelpDomain} is managed. Add a CNAME record that points it to cname.vercel-dns.com, then come back and click Verify.`
-    : "Type your domain and click Connect domain. Then open the DNS settings at your domain provider and add the CNAME record there.";
+    ? `Open the DNS settings where ${domainHelpDomain} is managed - Squarespace, GoDaddy, Cloudflare, Namecheap, or whoever hosts the DNS. Add the exact record Vercel shows, then click Verify.`
+    : "Type your domain and click Connect domain. We’ll show the exact DNS record after you save it.";
 
   const pressSection = sections.find((s) => s.type === "press");
   const pressContent = pressSection?.type === "press" ? pressSection.content : null;
@@ -1283,7 +1292,7 @@ export function DashboardShell() {
             {editorPlan === "plus" ? (
               <>
                 <p className="panel-note">
-                  Connect a domain like <b>yourname.com</b>. We only store the domain here. You still need to add one DNS record at the company that manages the domain, then click Verify.
+                  Connect a domain like <b>yourname.com</b>. We’ll tell you exactly what DNS record to add and where to add it, then you can verify from here.
                 </p>
                 <div className="domain-help">
                   <p>
@@ -1292,7 +1301,7 @@ export function DashboardShell() {
                   <ol>
                     <li>Type the domain and click <b>Connect domain</b>.</li>
                     <li>Open the DNS settings at your domain provider.</li>
-                    <li>Add a <b>CNAME</b> record that points to <code>cname.vercel-dns.com</code>.</li>
+                    <li>Add the record Vercel gives you.</li>
                     <li>Come back here and click <b>Verify</b>.</li>
                   </ol>
                   <p className="panel-note">{domainHelpMessage}</p>
