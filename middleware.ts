@@ -1,86 +1,44 @@
-import { type NextRequest, NextResponse } from "next/server";
-
-const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "pages.childactor101.com";
-const previewHosts = new Set(["vercel.app", "vercel.sh"]);
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const host = request.headers.get("host")?.split(":")[0] ?? "";
-  const { pathname } = request.nextUrl;
-
+  const host = request.headers.get('host')?.split(':')[0]
+  
+  // Skip for the main app domain, localhost, and Vercel previews
   if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
+    host === 'pages.childactor101.com' ||
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host?.endsWith('.vercel.app')
   ) {
-    return NextResponse.next();
+    return NextResponse.next()
   }
 
-  if (host === rootDomain) {
-    return NextResponse.next();
+  // Custom domain — look up slug
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  
+  const { data } = await supabase
+    .from('p101_custom_domains')
+    .select('page_id, p101_actor_pages(slug)')
+    .eq('domain', host)
+    .eq('verified', true)
+    .single()
+
+  const slug = (data as any)?.p101_actor_pages?.slug
+
+  if (slug) {
+    return NextResponse.rewrite(
+      new URL(`/p/${slug}`, request.url)
+    )
   }
 
-  if (isPreviewHost(host) || isLocalHost(host)) {
-    return NextResponse.next();
-  }
-
-  if (host.endsWith(`.${rootDomain}`)) {
-    const slug = host.replace(`.${rootDomain}`, "");
-    const url = request.nextUrl.clone();
-    url.pathname = `/p/${slug}`;
-    return NextResponse.rewrite(url);
-  }
-
-  if (host.includes(".")) {
-    const slug = await getSlugForDomain(host);
-    const url = request.nextUrl.clone();
-    url.pathname = slug ? `/p/${slug}` : `/p/${host}`;
-    return NextResponse.rewrite(url);
-  }
-
-  return NextResponse.next();
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
-};
-
-function isPreviewHost(host: string) {
-  return Array.from(previewHosts).some((suffix) => host.endsWith(`.${suffix}`) || host === suffix);
-}
-
-function isLocalHost(host: string) {
-  return host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".local");
-}
-
-async function getSlugForDomain(domain: string) {
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    return null;
-  }
-
-  const url = new URL(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/p101_custom_domains`);
-  url.searchParams.set("select", "verified,p101_actor_pages!inner(slug)");
-  url.searchParams.set("domain", `eq.${domain.toLowerCase()}`);
-  url.searchParams.set("verified", "eq.true");
-  url.searchParams.set("limit", "1");
-
-  const response = await fetch(url, {
-    headers: {
-      apikey: supabaseServiceRoleKey,
-      Authorization: `Bearer ${supabaseServiceRoleKey}`,
-      Accept: "application/json"
-    }
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const rows = (await response.json()) as Array<{
-    verified?: boolean;
-    p101_actor_pages?: { slug?: string } | null;
-  }>;
-
-  return rows[0]?.verified && rows[0].p101_actor_pages?.slug ? rows[0].p101_actor_pages.slug : null;
+  matcher: ['/((?!api|_next|favicon.ico).*)'],
 }
