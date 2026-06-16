@@ -104,25 +104,6 @@ export default function HomePage() {
     }
   }
 
-  async function handleOAuthLogin(provider: "google" | "apple") {
-    if (!supabase) {
-      alert("Supabase is not configured.");
-      return;
-    }
-
-    const redirectTo = `${window.location.origin}/auth/callback?next=/dashboard`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo
-      }
-    });
-
-    if (error) {
-      alert(`OAuth login failed: ${error.message}`);
-    }
-  }
-
   const handleScrollToLogin = () => {
     const el = document.getElementById("login-section");
     if (el) {
@@ -132,6 +113,19 @@ export default function HomePage() {
 
   return (
     <div className="landing-page">
+      {/* Ecosystem Top Banner */}
+      <div className="landing-top-banner" style={{
+        background: "var(--ink)",
+        color: "var(--cream)",
+        fontSize: "12px",
+        padding: "10px 24px",
+        textAlign: "center",
+        fontWeight: "500",
+        borderBottom: "1px solid var(--hairline)"
+      }}>
+        Part of the <a href="https://childactor101.com" target="_blank" rel="noreferrer" style={{ color: "var(--marquee)", textDecoration: "underline", fontWeight: "600" }}>Child Actor 101</a> family &bull; Build your resume at <a href="https://resumes.childactor101.com" target="_blank" rel="noreferrer" style={{ color: "var(--marquee)", textDecoration: "underline", fontWeight: "600" }}>resumes.childactor101.com</a>
+      </div>
+
       {/* Navigation */}
       <header className="landing-nav">
         <div className="landing-nav-container">
@@ -163,10 +157,10 @@ export default function HomePage() {
         <div className="landing-hero-container">
           <div className="landing-hero-content">
             <h1 className="landing-hero-title">
-              The 10-Minute Page for Young Performers.
+              The Free 10-Minute Marketing Page for Young Actors
             </h1>
             <p className="landing-hero-subtitle">
-              Built by talent managers. Safe-by-default. Showcase headshots, clips, resumes, and news in a stunning casting-ready web page.
+              Built with Industry Experience. Safe-by-default. Showcase headshots, reels, clips, resume, important links, Contact info and a curated newsfeed in a stunning casting-ready web page.
             </p>
             <div className="landing-hero-ctas">
               {user ? (
@@ -221,13 +215,13 @@ export default function HomePage() {
 
       {/* Social Proof */}
       <section className="landing-social" aria-label="Social Proof">
-        <p>Pages101 actors have booked roles on Disney, Netflix, Nickelodeon, Broadway, and more.</p>
+        <p>Built by a talent manager with 30 years in the industry.</p>
       </section>
 
       {/* Features Section */}
       <section id="features" className="landing-features" aria-label="Features">
         <div className="landing-section-header">
-          <h2>Carrd for Child Actors, with a Talent Manager Built In.</h2>
+          <h2>The promotional page your child&apos;s team actually wants to use.</h2>
           <p>Everything you need to showcase your child&apos;s talent professionally, safely, and quickly.</p>
         </div>
         
@@ -290,14 +284,21 @@ export default function HomePage() {
           <div className="template-mock-display">
             {activeTemplate === "classic" && (
               <div className="mock-display-canvas classic-style">
-                <div className="mock-canvas-header">
-                  <h3>Mia Rose</h3>
-                  <p>Classic Style &bull; Outfit Typography</p>
+                <div className="mock-canvas-header" style={{ textAlign: "center", marginBottom: "16px" }}>
+                  <div style={{ width: "50px", height: "50px", borderRadius: "50%", background: "var(--cream)", border: "1px solid var(--hairline)", margin: "0 auto 8px auto" }}></div>
+                  <h3 style={{ margin: 0, fontFamily: "var(--font-fraunces), serif", fontSize: "18px" }}>Mia Rose</h3>
+                  <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "var(--ink-soft)" }}>SAG-AFTRA Eligible &bull; Age 9-12</p>
                 </div>
                 <div className="mock-canvas-body">
-                  <div className="mock-canvas-accent-bar"></div>
-                  <div className="mock-canvas-text">Clean, light, Carrd-style minimalist page with elegant structure. Perfect for any auditions.</div>
-                  <div className="mock-canvas-buttons">
+                  <div className="mock-canvas-accent-bar" style={{ margin: "0 auto 12px auto" }}></div>
+                  <div style={{ border: "1px solid var(--hairline)", padding: "10px", borderRadius: "6px", fontSize: "11px", marginBottom: "12px", background: "#fcfbfa" }}>
+                    <div style={{ fontWeight: 600, borderBottom: "1px solid var(--hairline)", paddingBottom: "4px", marginBottom: "6px" }}>Selected Credits</div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>The Library Door</span>
+                      <span style={{ color: "var(--ink-soft)" }}>Supporting</span>
+                    </div>
+                  </div>
+                  <div className="mock-canvas-buttons" style={{ justifyContent: "center" }}>
                     <span className="mock-btn">Actors Access</span>
                     <span className="mock-btn">IMDb</span>
                   </div>
@@ -307,30 +308,34 @@ export default function HomePage() {
             
             {activeTemplate === "splash" && (
               <div className="mock-display-canvas splash-style">
-                <div className="mock-canvas-header">
-                  <h3>MIA ROSE! ☀️</h3>
-                  <p>Splash Style &bull; Bold Sticker Energy</p>
+                <div className="mock-canvas-header" style={{ transform: "rotate(-2deg)" }}>
+                  <div style={{ width: "48px", height: "48px", background: "#e3c84f", borderRadius: "8px", border: "2px solid #2b2320", marginBottom: "8px" }}></div>
+                  <h3 style={{ margin: 0, fontFamily: "var(--font-inter), sans-serif", fontWeight: 900, fontSize: "20px", color: "#ff69b4" }}>MIA ROSE! ☀️</h3>
+                  <span style={{ background: "#2b2320", color: "white", fontSize: "9px", padding: "2px 6px", borderRadius: "4px", display: "inline-block", marginTop: "2px" }}>SAG-AFTRA Eligible</span>
                 </div>
-                <div className="mock-canvas-body">
-                  <div className="mock-canvas-text">Vibrant, bold colors, sticker margins, and Bricolage Grotesque headline pairing. Exploding with personality.</div>
-                  <div className="mock-canvas-buttons">
-                    <span className="mock-btn-badge">Watch Demo Reels</span>
-                    <span className="mock-btn-badge">Voice Reels</span>
+                <div className="mock-canvas-body" style={{ marginTop: "12px" }}>
+                  <div className="mock-canvas-buttons" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <span className="mock-btn-badge" style={{ background: "#ff69b4", border: "2px solid #2b2320", textAlign: "center", boxShadow: "2px 2px 0 #2b2320" }}>Watch Reels ↗</span>
+                    <span className="mock-btn-badge" style={{ background: "#e3c84f", color: "#2b2320", border: "2px solid #2b2320", textAlign: "center", boxShadow: "2px 2px 0 #2b2320" }}>Voice Reels ↗</span>
                   </div>
                 </div>
               </div>
             )}
 
             {activeTemplate === "prestige" && (
-              <div className="mock-display-canvas prestige-style">
-                <div className="mock-canvas-header">
-                  <h3>Mia Rose</h3>
-                  <p>Prestige Style &bull; Full-Bleed Drama</p>
+              <div className="mock-display-canvas prestige-style" style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ height: "90px", background: "linear-gradient(135deg, #2b2320, #6b5f56)", display: "flex", alignItems: "flex-end", padding: "12px", color: "white" }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontFamily: "var(--font-fraunces), serif", fontSize: "18px" }}>Mia Rose</h3>
+                    <p style={{ margin: 0, fontSize: "10px", opacity: 0.8 }}>SAG-AFTRA Eligible &bull; Age 9-12</p>
+                  </div>
                 </div>
-                <div className="mock-canvas-body">
-                  <div className="mock-canvas-text">Squarespace gravitas, Cormorant Garamond typography, full-bleed cinematic banner, production credits, and top bar nav. Premium casting appeal.</div>
+                <div className="mock-canvas-body" style={{ padding: "12px" }}>
+                  <div style={{ fontStyle: "italic", fontSize: "11px", borderLeft: "2px solid #d4af37", paddingLeft: "8px", marginBottom: "12px", color: "var(--ink-soft)" }}>
+                    &ldquo;A bright new screen presence with immense dramatic focus.&rdquo;
+                  </div>
                   <div className="mock-canvas-buttons">
-                    <span className="mock-btn-prestige">View Press Kit</span>
+                    <span className="mock-btn-prestige" style={{ border: "1px solid #d4af37", padding: "6px 12px", fontSize: "9px", display: "inline-block" }}>View Press Kit</span>
                   </div>
                 </div>
               </div>
@@ -356,55 +361,32 @@ export default function HomePage() {
                 </button>
               </div>
             ) : (
-              <>
-                <form onSubmit={handleMagicLinkLogin} className="login-form">
-                  <div className="input-group">
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter parent email address"
-                      required
-                      className="login-input"
-                    />
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={status === "loading" || cooldownMs > 0}
-                    className="btn-login"
-                  >
-                    {status === "loading" ? "Sending link..." : cooldownMs > 0 ? `Wait ${formatCooldown(cooldownMs)}` : "Send magic link"}
-                  </button>
-
-                  {status === "error" && (
-                    <p className="error-message">
-                      {errorMessage}
-                    </p>
-                  )}
-                </form>
-
-                <div className="oauth-separator">
-                  <span>or sign in with</span>
+              <form onSubmit={handleMagicLinkLogin} className="login-form">
+                <div className="input-group">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter parent email address"
+                    required
+                    className="login-input"
+                  />
                 </div>
+                
+                <button
+                  type="submit"
+                  disabled={status === "loading" || cooldownMs > 0}
+                  className="btn-login"
+                >
+                  {status === "loading" ? "Sending link..." : cooldownMs > 0 ? `Wait ${formatCooldown(cooldownMs)}` : "Send magic link"}
+                </button>
 
-                <div className="oauth-buttons">
-                  <button 
-                    onClick={() => handleOAuthLogin("google")} 
-                    className="btn-oauth oauth-google"
-                    type="button"
-                  >
-                    <span className="oauth-icon">🔑</span> Google
-                  </button>
-                  <button 
-                    onClick={() => handleOAuthLogin("apple")} 
-                    className="btn-oauth oauth-apple"
-                    type="button"
-                  >
-                    <span className="oauth-icon">🍎</span> Apple
-                  </button>
-                </div>
-              </>
+                {status === "error" && (
+                  <p className="error-message">
+                    {errorMessage}
+                  </p>
+                )}
+              </form>
             )}
           </div>
         </div>
@@ -423,13 +405,13 @@ export default function HomePage() {
             <div className="tier-price">$0 <span>/ forever</span></div>
             <p className="tier-desc">Great for getting started and setting up a basic profile.</p>
             <ul className="tier-features">
-              <li>&check; Classic Template</li>
-              <li>&check; Custom Accent Colors & Fonts</li>
-              <li>&check; Up to 6 headshots</li>
-              <li>&check; Up to 2 clip embeds</li>
-              <li>&check; Resume101 copy import</li>
-              <li>&check; Safety relays & default noindex</li>
-              <li>&check; 1 performer page</li>
+              <li>✓ Classic Template</li>
+              <li>✓ Custom Accent Colors & Fonts</li>
+              <li>✓ 3 free images & 2 video link uploads</li>
+              <li>✓ Included safety controls</li>
+              <li>✓ Resume101 copy import</li>
+              <li>✓ Safety relays & default noindex</li>
+              <li>✓ 1 performer page</li>
             </ul>
           </div>
 
@@ -439,13 +421,13 @@ export default function HomePage() {
             <div className="tier-price">$49 <span>/ year</span></div>
             <p className="tier-desc">Perfect for active performers and multi-sibling families.</p>
             <ul className="tier-features">
-              <li>&check; Classic + Splash + Prestige templates</li>
-              <li>&check; Connect your own custom domain</li>
-              <li>&check; Unlimited headshots & clips</li>
-              <li>&check; Behind-the-Scenes updates feed</li>
-              <li>&check; Sibling support (up to 4 performer pages)</li>
-              <li>&check; Microcredit credit footer</li>
-              <li>&check; Syncs live with Resume101</li>
+              <li>✓ Classic + Splash + Prestige templates</li>
+              <li>✓ Connect your own custom domain</li>
+              <li>✓ Unlimited headshots & clips</li>
+              <li>✓ Behind-the-Scenes updates feed</li>
+              <li>✓ Sibling support (up to 4 performer pages)</li>
+              <li>✓ Minimal Pages101 credit (no ads)</li>
+              <li>✓ Syncs live with Resume101</li>
             </ul>
           </div>
         </div>
@@ -459,7 +441,7 @@ export default function HomePage() {
           </div>
           <div className="footer-links">
             <a href="https://childactor101.com" target="_blank" rel="noreferrer">Child Actor 101</a>
-            <a href="https://resume101.com" target="_blank" rel="noreferrer">Resume101</a>
+            <a href="https://resumes.childactor101.com" target="_blank" rel="noreferrer">Resume101</a>
             <a href="#features">Features</a>
             <a href="#login-section">Login</a>
           </div>

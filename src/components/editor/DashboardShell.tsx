@@ -489,6 +489,10 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
     );
   }
   function addClip() {
+    if (editorPlan === "free" && clips.length >= 2) {
+      alert("Free pages are limited to 2 video link uploads.");
+      return;
+    }
     setSections((secs) =>
       secs.map((section) => {
         if (section.type !== "clips") return section;
@@ -604,11 +608,11 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
     if (files.length === 0) return;
 
     const existingHeadshots = renderedHeadshots.filter((h) => !isPlaceholderHeadshot(h));
-    const capacity = editorPlan === "free" ? Math.max(0, 6 - existingHeadshots.length) : files.length;
+    const capacity = editorPlan === "free" ? Math.max(0, 3 - existingHeadshots.length) : files.length;
     const selectedFiles = files.slice(0, capacity);
 
     if (selectedFiles.length === 0) {
-      setUploadStatus("Free pages can show up to 6 headshots.");
+      setUploadStatus("Free pages can show up to 3 headshots.");
       return;
     }
 
@@ -629,7 +633,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
       setHeadshots(normalizeHeadshots([...existingHeadshots, ...uploadedHeadshots]));
       setUploadStatus(
         selectedFiles.length < files.length
-          ? `Uploaded ${selectedFiles.length}. Free pages show 6 headshots.`
+          ? `Uploaded ${selectedFiles.length}. Free pages show 3 headshots.`
           : authUser
             ? `Uploaded ${selectedFiles.length} headshot${selectedFiles.length === 1 ? "" : "s"}.`
             : `Added ${selectedFiles.length} preview headshot${selectedFiles.length === 1 ? "" : "s"}.`
@@ -1396,7 +1400,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
           <article className="editor-panel" data-testid="headshots-panel">
             <div className="panel-heading">
               <p>Headshots</p>
-              <span>{editorPlan === "plus" ? `${realHeadshotCount} uploaded` : `${realHeadshotCount}/6 free`}</span>
+              <span>{editorPlan === "plus" ? `${realHeadshotCount} uploaded` : `${realHeadshotCount}/3 free`}</span>
             </div>
             <TipDisclosure tipKey="headshots" />
             <label className="upload-dropzone">
@@ -1481,7 +1485,14 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                   <button className="row-remove" type="button" onClick={() => removeClip(index)}>Remove</button>
                 </div>
               ))}
-              <button className="button-secondary panel-action" type="button" onClick={addClip}>Add clip</button>
+              <button 
+                className="button-secondary panel-action" 
+                type="button" 
+                onClick={addClip}
+                disabled={editorPlan === "free" && clips.length >= 2}
+              >
+                Add clip
+              </button>
             </div>
           </article>
 

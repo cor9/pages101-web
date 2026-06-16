@@ -480,7 +480,7 @@ export default function DashboardPage() {
                           rel="noreferrer" 
                           className="performer-slug-link"
                         >
-                          {pageItem.slug}.pages.childactor101.com &nearr;
+                          {pageItem.slug}.pages.childactor101.com ↗
                         </a>
                         <div className="performer-meta">
                           <span className="meta-item">Template: <strong>{pageItem.template}</strong></span>
@@ -530,21 +530,30 @@ export default function DashboardPage() {
               </div>
 
               <div className="limits-progress">
-                <div className="limits-header">
-                  <span>Performers limit:</span>
-                  <strong>{pages.length} / {siblingLimit} pages</strong>
-                </div>
-                <div className="progress-bar-container">
+                {pages.length > siblingLimit ? (
+                  <div className="limit-overflow-warning" style={{ color: "var(--marquee-deep)", fontSize: "12px", fontWeight: "600", marginBottom: "8px", lineHeight: "1.4" }}>
+                    You&apos;re over the free limit &mdash; upgrade to Plus to manage {pages.length === 2 ? "both" : "all"} pages.
+                  </div>
+                ) : (
+                  <div className="limits-header">
+                    <span>Performers limit:</span>
+                    <strong>{pages.length} / {siblingLimit} pages</strong>
+                  </div>
+                )}
+                <div className="progress-bar-container" style={{ borderColor: pages.length > siblingLimit ? "var(--marquee-deep)" : undefined }}>
                   <div 
                     className="progress-bar-fill"
-                    style={{ width: `${(pages.length / siblingLimit) * 100}%` }}
+                    style={{ 
+                      width: `${Math.min(100, (pages.length / siblingLimit) * 100)}%`,
+                      backgroundColor: pages.length > siblingLimit ? "var(--marquee-deep)" : undefined
+                    }}
                   ></div>
                 </div>
               </div>
 
               {isPlusActive ? (
                 <div className="plus-active-box">
-                  <p className="plus-features-note">&check; Custom Domains &bull; &check; Prestige/Splash templates &bull; &check; Unlimited headshots & clips</p>
+                  <p className="plus-features-note">✓ Custom Domains &bull; ✓ Prestige/Splash templates &bull; ✓ Unlimited headshots & clips</p>
                   <button 
                     onClick={handleManageBilling} 
                     disabled={billingLoading}
