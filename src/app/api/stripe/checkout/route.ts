@@ -53,16 +53,25 @@ export async function POST(request: Request) {
   const customerId = sub?.stripe_customer_id ?? undefined;
   const origin = request.headers.get("origin") ?? "https://pages.childactor101.com";
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    customer_email: customerId ? undefined : user.email,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/dashboard?upgraded=1`,
-    cancel_url: `${origin}/dashboard`,
-    metadata: { user_id: user.id },
-    subscription_data: { metadata: { user_id: user.id } }
-  });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${origin}/dashboard?upgraded=1`,
+      cancel_url: `${origin}/dashboard`,
+      metadata: { user_id: user.id },
+      subscription_data: { metadata: { user_id: user.id } }
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (err: unknown) {
+    console.error("Stripe checkout session creation failed:", err);
+    const message = err instanceof Error ? err.message : "Failed to initiate checkout session";
+    return NextResponse.json(
+      { error: message },
+      { status: 400 }
+    );
+  }
 }

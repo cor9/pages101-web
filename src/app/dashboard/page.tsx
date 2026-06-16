@@ -136,7 +136,8 @@ export default function DashboardPage() {
       } else {
         alert(body.error ?? "Failed to initiate Checkout session.");
       }
-    } catch {
+    } catch (err) {
+      console.error("Billing upgrade session request failed:", err);
       alert("Failed to connect to billing server.");
     } finally {
       setBillingLoading(false);
@@ -161,7 +162,8 @@ export default function DashboardPage() {
       } else {
         alert(body.error ?? "Failed to open Billing Customer Portal.");
       }
-    } catch {
+    } catch (err) {
+      console.error("Billing portal session request failed:", err);
       alert("Failed to connect to billing server.");
     } finally {
       setBillingLoading(false);
