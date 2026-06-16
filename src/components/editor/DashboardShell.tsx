@@ -48,6 +48,14 @@ const sectionTipMap: Partial<Record<SectionType, TipKey>> = {
 
 const clipCategories: Clip["category"][] = ["Booked Work", "Demo Reel", "About Me", "VO Reel", "Singing"];
 
+type DomainApiResponse = {
+  error?: string;
+  message?: string;
+  domain?: string | null;
+  verified?: boolean;
+  verification?: Array<{ type: string; domain: string; value: string; reason?: string }>;
+};
+
 // ─── Plan subscription state ──────────────────────────────────────────────────
 
 type SubscriptionRow = {
@@ -287,15 +295,48 @@ export function DashboardShell() {
       applyActorPage(mapActorPageRows(pageRow, sectionRows ?? [], isActivePlus(subRow ?? null) ? "plus" : "free"));
       setCustomDomain(domainRow?.domain ?? "");
       setConnectedDomain(domainRow?.domain ?? "");
-      setCustomDomainVerified(Boolean(domainRow?.verified));
-      setCustomDomainStatus(
-        domainRow?.domain
-          ? domainRow.verified
-            ? "Connected and active."
-            : `Add a CNAME record pointing ${domainRow.domain} to cname.vercel-dns.com, then click Verify.`
-          : null
-      );
-      setSaveStatus(pageRow.published ? `Published at ${domainRow?.verified && domainRow?.domain ? `https://${domainRow.domain}` : `https://pages.childactor101.com/p/${pageRow.slug}`}` : "Saved draft loaded");
+      setCustomDomainVerified(false);
+      setCustomDomainStatus(domainRow?.domain ? "Checking domain status..." : null);
+      setSaveStatus(pageRow.published ? `Published at https://pages.childactor101.com/p/${pageRow.slug}` : "Saved draft loaded");
+
+      if (domainRow?.domain) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        if (!token) {
+          if (!cancelled) setCustomDomainStatus("Sign in again to check domain status.");
+          return;
+        }
+
+        const statusResponse = await fetch("/api/domains/status", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            pageSlug: pageRow.slug,
+            domain: domainRow.domain
+          })
+        });
+        const statusBody = (await statusResponse.json()) as DomainApiResponse;
+
+        if (cancelled) return;
+
+        if (!statusResponse.ok) {
+          setCustomDomainVerified(false);
+          setCustomDomainStatus(statusBody.error ?? statusBody.message ?? "Could not check domain status. Click Verify to try again.");
+          return;
+        }
+
+        const verified = Boolean(statusBody.verified);
+        const checkedDomain = statusBody.domain ?? domainRow.domain;
+        setCustomDomain(checkedDomain);
+        setConnectedDomain(checkedDomain);
+        setCustomDomainVerified(verified);
+        setCustomDomainStatus(statusBody.message ?? (verified ? "Connected and active." : `Check the DNS settings where ${checkedDomain} is managed, then click Verify again.`));
+        setSaveStatus(pageRow.published && verified ? `Published at https://${checkedDomain}` : pageRow.published ? `Published at https://pages.childactor101.com/p/${pageRow.slug}` : "Saved draft loaded");
+      }
     }
 
     loadSavedPage();
@@ -972,13 +1013,7 @@ export function DashboardShell() {
         })
       });
 
-      const body = (await response.json()) as {
-        error?: string;
-        message?: string;
-        domain?: string | null;
-        verified?: boolean;
-        verification?: Array<{ type: string; domain: string; value: string; reason?: string }>;
-      };
+      const body = (await response.json()) as DomainApiResponse;
       if (!response.ok) {
         setCustomDomainStatus(body.error ?? body.message ?? "Could not update the domain.");
         return;
