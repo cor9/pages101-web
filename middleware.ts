@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
 export async function middleware(request: NextRequest) {
   const host = request.headers.get('host')?.split(':')[0]?.toLowerCase()
   
@@ -22,9 +19,9 @@ export async function middleware(request: NextRequest) {
     const slug = await getSlugForDomain(host);
 
     if (slug) {
-      return NextResponse.rewrite(
-        new URL(`/p/${slug}`, request.url)
-      )
+      const url = request.nextUrl.clone();
+      url.pathname = `/p/${slug}`;
+      return NextResponse.rewrite(url);
     }
   } catch (error) {
     console.error("Middleware domain lookup error:", error);
@@ -34,10 +31,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
 
 async function getSlugForDomain(domain: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     console.error("Missing Supabase credentials in middleware");
     return null;
