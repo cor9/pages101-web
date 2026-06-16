@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import type { ActorPage, Headshot, ResumeCredit, ResumeSection } from "@/lib/types";
-import { getDocumentViewerUrl, isPdfFile } from "@/lib/media";
+import { isPdfFile } from "@/lib/media";
 import { normalizeEmbedUrl } from "@/lib/video";
 
 export function TemplateImageSlot({
@@ -37,19 +37,26 @@ export function TemplateImageSlot({
 }
 
 export function TemplateResume({ page, resume }: { page: ActorPage; resume: ResumeSection }) {
+  if (resume.fileUrl && isPdfFile(resume.fileName ?? resume.fileUrl)) {
+    return (
+      <div className="sheet">
+        <ResumePdfPreview fileUrl={resume.fileUrl} fileName={resume.fileName} />
+        <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer">
+          ↓ Download Resume PDF
+        </a>
+      </div>
+    );
+  }
+
   if (resume.fileUrl) {
     return (
       <div className="sheet">
-        <div className="resume-preview">
-          <iframe
-            src={isPdfFile(resume.fileName ?? resume.fileUrl) ? resume.fileUrl : getDocumentViewerUrl(resume.fileUrl)}
-            title={resume.fileName || "Resume preview"}
-            loading="lazy"
-            allow="fullscreen"
-          />
+        <div className="resume-file-card">
+          <div className="resume-file-badge">Resume file attached</div>
+          <p>{resume.fileName || "Resume document"}</p>
         </div>
         <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer">
-          ↓ Download PDF
+          ↓ Download Resume File
         </a>
       </div>
     );
@@ -74,6 +81,102 @@ export function TemplateResume({ page, resume }: { page: ActorPage; resume: Resu
       ) : null}
       <h4>Television</h4>
       {resume.credits.map((credit) => <ResumeRow key={`${credit.project}-${credit.role}`} credit={credit} />)}
+    </div>
+  );
+}
+
+function ResumePdfPreview({ fileUrl, fileName }: { fileUrl: string; fileName?: string }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let renderTask: any = null;
+    let pdfDocument: any = null;
+
+    async function renderPreview() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [{ getDocument }, response] = await Promise.all([
+          import("pdfjs-dist/webpack.mjs") as Promise<any>,
+          fetch(fileUrl, { mode: "cors" })
+        ]);
+
+        if (!response.ok) {
+          throw new Error("Unable to load the resume PDF.");
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const loadingTask: any = getDocument({
+          data: arrayBuffer,
+          useWorkerFetch: false,
+          disableRange: true,
+          disableStream: true,
+          disableAutoFetch: true
+        });
+        pdfDocument = await loadingTask.promise;
+
+        if (cancelled) {
+          await pdfDocument.destroy();
+          return;
+        }
+
+        const page = await pdfDocument.getPage(1);
+        if (cancelled) {
+          await pdfDocument.destroy();
+          return;
+        }
+
+        const canvas = canvasRef.current;
+        const wrapWidth = wrapRef.current?.clientWidth ?? 0;
+        const baseViewport = page.getViewport({ scale: 1 });
+        const targetWidth = wrapWidth > 0 ? wrapWidth : baseViewport.width;
+        const scale = targetWidth / baseViewport.width;
+        const deviceScale = window.devicePixelRatio || 1;
+        const viewport = page.getViewport({ scale: scale * deviceScale });
+        const context = canvas?.getContext("2d", { alpha: false });
+
+        if (!canvas || !context) {
+          throw new Error("Unable to prepare the resume preview.");
+        }
+
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        canvas.style.width = "100%";
+        canvas.style.height = "auto";
+
+        renderTask = page.render({ canvasContext: context, viewport });
+        await renderTask.promise;
+
+        if (!cancelled) {
+          setLoading(false);
+        }
+      } catch (previewError) {
+        if (!cancelled) {
+          setError(previewError instanceof Error ? previewError.message : "Unable to render the resume preview.");
+          setLoading(false);
+        }
+      }
+    }
+
+    void renderPreview();
+
+    return () => {
+      cancelled = true;
+      renderTask?.cancel();
+      void pdfDocument?.destroy();
+    };
+  }, [fileUrl]);
+
+  return (
+    <div className="resume-preview" ref={wrapRef} aria-label={fileName ? `Resume preview for ${fileName}` : "Resume preview"} aria-busy={loading}>
+      <canvas ref={canvasRef} />
+      {loading ? <div className="resume-preview-state">Rendering resume preview…</div> : null}
+      {error ? <div className="resume-preview-state resume-preview-state--error">{error}</div> : null}
     </div>
   );
 }
