@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import type { ActorPage, Headshot, ResumeCredit, ResumeSection } from "@/lib/types";
 import { getDocumentViewerUrl, isPdfFile } from "@/lib/media";
@@ -137,6 +138,86 @@ export function TemplateSlateModal({ slateUrl, open, onClose }: { slateUrl: stri
         <div className="m-cap">Slate</div>
       </div>
     </div>
+  );
+}
+
+export function TemplateRelayForm({ pageSlug, pageName }: { pageSlug: string; pageName: string }) {
+  const [senderName, setSenderName] = useState("");
+  const [senderEmail, setSenderEmail] = useState("");
+  const [body, setBody] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [website, setWebsite] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (sending) return;
+
+    setSending(true);
+    setStatus(null);
+
+    try {
+      const response = await fetch("/api/relay", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          slug: pageSlug,
+          senderName,
+          senderEmail,
+          body,
+          website
+        })
+      });
+
+      const payload = (await response.json()) as { error?: string; message?: string };
+      if (!response.ok) {
+        setStatus(payload.error ?? "We could not send that message.");
+        return;
+      }
+
+      setSenderName("");
+      setSenderEmail("");
+      setBody("");
+      setWebsite("");
+      setStatus(payload.message ?? "Message sent. The parent relay has it.");
+    } catch {
+      setStatus("We could not send that message.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <section className="relay-card" id="contact" aria-label={`Contact ${pageName}'s parent`}>
+      <div className="relay-copy">
+        <h2>Contact {pageName}&apos;s Parent</h2>
+        <p>This message goes through a private relay. Parent contact details stay off the page.</p>
+      </div>
+      <form className="relay-form" onSubmit={handleSubmit}>
+        <label>
+          Your name
+          <input value={senderName} onChange={(event) => setSenderName(event.target.value)} required />
+        </label>
+        <label>
+          Your email
+          <input type="email" value={senderEmail} onChange={(event) => setSenderEmail(event.target.value)} required />
+        </label>
+        <label className="relay-honeypot" aria-hidden="true">
+          Website
+          <input value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" />
+        </label>
+        <label>
+          Message
+          <textarea value={body} onChange={(event) => setBody(event.target.value)} required rows={5} />
+        </label>
+        <button type="submit" disabled={sending}>
+          {sending ? "Sending..." : "Send relay message"}
+        </button>
+        {status ? <p className="relay-status">{status}</p> : null}
+      </form>
+    </section>
   );
 }
 

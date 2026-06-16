@@ -10,6 +10,7 @@ import {
   splitDisplayName,
   TemplateImageSlot,
   TemplateLightbox,
+  TemplateRelayForm,
   TemplateResume,
   TemplateSlateModal
 } from "@/components/public-page/TemplateParts";
@@ -81,7 +82,12 @@ export function SplashActorPageRenderer({ page }: { page: ActorPage }) {
             </a>
           )}
         </p>
-        {!page.hasRep ? <p className="parent-note">Messages go through a private relay. No contact details are published on this page.</p> : null}
+        {!page.hasRep ? (
+          <>
+            <p className="parent-note">Messages go through a private relay. No contact details are published on this page.</p>
+            <TemplateRelayForm pageSlug={page.slug} pageName={page.displayName} />
+          </>
+        ) : null}
 
         <TemplateLinks page={page} />
 

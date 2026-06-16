@@ -9,6 +9,7 @@ import {
   hasRenderableImage,
   TemplateImageSlot,
   TemplateLightbox,
+  TemplateRelayForm,
   TemplateResume,
   TemplateSlateModal
 } from "@/components/public-page/TemplateParts";
@@ -82,6 +83,7 @@ export function PrestigeActorPageRenderer({ page }: { page: ActorPage }) {
             </>
           )}
         </div>
+        {!page.hasRep ? <TemplateRelayForm pageSlug={page.slug} pageName={page.displayName} /> : null}
         <TemplateLinks page={page} />
 
         {sortedSections.map((section) => (
@@ -142,7 +144,7 @@ function PrestigeHeadshots({ headshots, onHeadshotClick }: { headshots: Headshot
 
   return (
     <div className="sec" id="p-photos">
-      <div className="sec-title">Photographs</div>
+      <div className="sec-title">Headshots</div>
       <div className="grid3" data-gallery>
         {slots.map((headshot, index) => (
           <button

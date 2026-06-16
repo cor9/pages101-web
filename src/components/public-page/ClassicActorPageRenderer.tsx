@@ -10,6 +10,7 @@ import {
   splitDisplayName,
   TemplateImageSlot,
   TemplateLightbox,
+  TemplateRelayForm,
   TemplateResume,
   TemplateSlateModal
 } from "@/components/public-page/TemplateParts";
@@ -94,7 +95,10 @@ export function ClassicActorPageRenderer({ page }: ClassicActorPageRendererProps
           )}
         </p>
         {!page.hasRep ? (
-          <p className="parent-note">Messages go through a private relay. No contact details are published on this page.</p>
+          <>
+            <p className="parent-note">Messages go through a private relay. No contact details are published on this page.</p>
+            <TemplateRelayForm pageSlug={page.slug} pageName={page.displayName} />
+          </>
         ) : null}
 
         {page.links.length > 0 ? (
