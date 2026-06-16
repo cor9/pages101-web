@@ -118,30 +118,9 @@ export default function DashboardPage() {
   };
 
   // Billing Actions
-  const handleUpgrade = async () => {
-    if (!supabase || !user) return;
-    setBillingLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token ?? "";
-
-      const response = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const body = (await response.json()) as { url?: string; error?: string };
-      if (body.url) {
-        window.location.href = body.url;
-      } else {
-        alert(body.error ?? "Failed to initiate Checkout session.");
-      }
-    } catch (err) {
-      console.error("Billing upgrade session request failed:", err);
-      alert("Failed to connect to billing server.");
-    } finally {
-      setBillingLoading(false);
-    }
+  const handleUpgrade = () => {
+    const paymentLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || "https://buy.stripe.com/3cI7sL4lVaPR9QFccy2wV0m";
+    window.location.href = paymentLink;
   };
 
   const handleManageBilling = async () => {
