@@ -3,6 +3,7 @@ import {
   addVercelProjectDomain,
   customDomainRequestSchema,
   formatVerificationMessage,
+  getActiveDomainStatus,
   getVercelProjectDomain,
   loadExistingDomainRow,
   requireAuthenticatedPage,
@@ -65,19 +66,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not connect domain." }, { status: 500 });
   }
 
-  const saveResult = await saveDomainRow(supabase, pageRow.id, parsed.data.domain, Boolean(vercelDomain.verified));
+  const activeStatus = await getActiveDomainStatus(vercelDomain, parsed.data.domain);
+  const saveResult = await saveDomainRow(supabase, pageRow.id, parsed.data.domain, activeStatus.active);
   if ("error" in saveResult) {
     return NextResponse.json({ error: saveResult.error }, { status: saveResult.status });
   }
 
-  const message = vercelDomain.verified
+  const message = activeStatus.active
     ? "Connected and active."
-    : formatVerificationMessage(parsed.data.domain, vercelDomain.verification);
+    : vercelDomain.verification?.length
+      ? formatVerificationMessage(parsed.data.domain, vercelDomain.verification)
+      : activeStatus.message;
 
   return NextResponse.json({
     domain: vercelDomain.name ?? parsed.data.domain,
-    verified: Boolean(vercelDomain.verified),
+    verified: activeStatus.active,
     verification: vercelDomain.verification ?? [],
+    dns: activeStatus.routingStatus,
     apexName: vercelDomain.apexName ?? null,
     projectId: vercelDomain.projectId ?? null,
     message

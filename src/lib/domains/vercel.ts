@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { promises as dns } from "dns";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 const domainPattern = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
@@ -36,6 +37,14 @@ export type CustomDomainActionResult = {
   verification?: VercelProjectDomainChallenge[];
   apexName?: string | null;
   projectId?: string | null;
+};
+
+export type DomainRoutingStatus = {
+  configured: boolean;
+  requiredType: "A" | "CNAME";
+  requiredName: string;
+  requiredValue: string;
+  foundValues: string[];
 };
 
 type PageRow = {
@@ -242,9 +251,56 @@ export async function verifyVercelProjectDomain(domain: string): Promise<{ data:
   return parseVercelJson<VercelProjectDomain>(response);
 }
 
+export async function getDomainRoutingStatus(domain: string): Promise<DomainRoutingStatus> {
+  const requiredRecord = getRequiredDnsRecord(domain);
+
+  if (requiredRecord.type === "A") {
+    try {
+      const records = await dns.resolve4(domain);
+      return {
+        configured: records.includes(requiredRecord.value),
+        requiredType: requiredRecord.type,
+        requiredName: requiredRecord.name,
+        requiredValue: requiredRecord.value,
+        foundValues: records
+      };
+    } catch {
+      return {
+        configured: false,
+        requiredType: requiredRecord.type,
+        requiredName: requiredRecord.name,
+        requiredValue: requiredRecord.value,
+        foundValues: []
+      };
+    }
+  }
+
+  try {
+    const records = await dns.resolveCname(domain);
+    const normalizedRecords = records.map((record) => record.trim().replace(/\.$/, "").toLowerCase());
+
+    return {
+      configured: normalizedRecords.includes(requiredRecord.value),
+      requiredType: requiredRecord.type,
+      requiredName: requiredRecord.name,
+      requiredValue: requiredRecord.value,
+      foundValues: normalizedRecords
+    };
+  } catch {
+    return {
+      configured: false,
+      requiredType: requiredRecord.type,
+      requiredName: requiredRecord.name,
+      requiredValue: requiredRecord.value,
+      foundValues: []
+    };
+  }
+}
+
 export function formatVerificationMessage(domain: string, verification?: VercelProjectDomainChallenge[]) {
   if (!verification || verification.length === 0) {
-    return `Open the DNS settings where ${domain} is managed, add the record Vercel returned, then click Verify.`;
+    const requiredRecord = getRequiredDnsRecord(domain);
+    return `Open the DNS settings where ${domain} is managed, add ${requiredRecord.type} ${requiredRecord.name} ${requiredRecord.value}, then click Verify.`;
   }
 
   const intro = `Open the DNS settings where ${domain} is managed, then add the record Vercel returned:`;
@@ -266,6 +322,25 @@ export function formatVerificationMessage(domain: string, verification?: VercelP
   return `${intro} ${lines.join("; ")}.`;
 }
 
+export function formatDnsNotReadyMessage(domain: string, routingStatus: DomainRoutingStatus) {
+  const foundRecords = routingStatus.foundValues.length > 0
+    ? ` Current value found: ${routingStatus.foundValues.join(", ")}.`
+    : " No matching DNS record is visible yet.";
+
+  return `DNS is not active yet. Add ${routingStatus.requiredType} ${routingStatus.requiredName} ${routingStatus.requiredValue} where ${domain} is managed, then click Verify.${foundRecords}`;
+}
+
+export async function getActiveDomainStatus(vercelDomain: VercelProjectDomain, domain: string) {
+  const routingStatus = await getDomainRoutingStatus(domain);
+  const active = Boolean(vercelDomain.verified) && routingStatus.configured;
+
+  return {
+    active,
+    routingStatus,
+    message: active ? "Connected and active." : formatDnsNotReadyMessage(domain, routingStatus)
+  };
+}
+
 function getVercelConfig() {
   const projectId = process.env.VERCEL_PROJECT_ID;
   const token = process.env.VERCEL_API_TOKEN;
@@ -275,6 +350,15 @@ function getVercelConfig() {
   }
 
   return { projectId, token };
+}
+
+function getRequiredDnsRecord(domain: string) {
+  const labels = domain.split(".");
+  const isApex = labels.length === 2;
+
+  return isApex
+    ? { type: "A" as const, name: domain, value: "76.76.21.21" }
+    : { type: "CNAME" as const, name: domain, value: "cname.vercel-dns.com" };
 }
 
 async function parseVercelJson<T>(response: Response): Promise<{ data: T | null; error?: string; status: number }> {

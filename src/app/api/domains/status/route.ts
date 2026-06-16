@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   customDomainRequestSchema,
-  formatVerificationMessage,
+  getActiveDomainStatus,
   getVercelProjectDomain,
   loadDomainRow,
   requireAuthenticatedPage,
@@ -55,20 +55,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: vercelDomain.error ?? "Could not check domain status." }, { status: vercelDomain.status ?? 500 });
   }
 
-  const verified = Boolean(vercelDomain.data.verified);
-  const saveResult = await saveDomainRow(supabase, pageRow.id, parsed.data.domain, verified);
+  const activeStatus = await getActiveDomainStatus(vercelDomain.data, parsed.data.domain);
+  const saveResult = await saveDomainRow(supabase, pageRow.id, parsed.data.domain, activeStatus.active);
   if ("error" in saveResult) {
     return NextResponse.json({ error: saveResult.error }, { status: saveResult.status });
   }
 
   return NextResponse.json({
     domain: vercelDomain.data.name ?? parsed.data.domain,
-    verified,
+    verified: activeStatus.active,
     verification: vercelDomain.data.verification ?? [],
+    dns: activeStatus.routingStatus,
     apexName: vercelDomain.data.apexName ?? null,
     projectId: vercelDomain.data.projectId ?? null,
-    message: verified
-      ? "Connected and active."
-      : formatVerificationMessage(parsed.data.domain, vercelDomain.data.verification)
+    message: activeStatus.message
   });
 }
