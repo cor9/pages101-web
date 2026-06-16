@@ -34,6 +34,9 @@ export function PrestigeActorPageRenderer({ page }: { page: ActorPage }) {
       <header className="hero">
         <TemplateImageSlot className="ph" image={featured} fallbackLabel={page.displayName.trim().charAt(0).toUpperCase() || "P"} sizes="100vw" priority />
         <nav className="nav" aria-label="Page sections">
+          <a className="wordmark" href="#">
+            {page.displayName}
+          </a>
           <ul>
             {anchors.map((anchor) => (
               <li key={anchor.href}>
