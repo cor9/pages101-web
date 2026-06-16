@@ -31,7 +31,7 @@ export function SplashActorPageRenderer({ page }: { page: ActorPage }) {
   const hasSlate = Boolean(page.slateUrl);
 
   return (
-    <main className="splash-template" style={getTemplateCss("splash", page.accent, page.fontPair)}>
+    <main className="splash-template" style={getTemplateCss("splash", page.accent, page.fontPair, page.background)}>
       <div className="page">
         <button
           className="feature"

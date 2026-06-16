@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { ActorPage, Headshot, ResumeCredit, ResumeSection } from "@/lib/types";
+import { getDocumentViewerUrl, isPdfFile } from "@/lib/media";
 import { normalizeEmbedUrl } from "@/lib/video";
 
 export function TemplateImageSlot({
@@ -22,7 +23,7 @@ export function TemplateImageSlot({
     const wrapClass = className ? className.replace(/\bph\b/, "img-wrap").trim() || "img-wrap" : "img-wrap";
     return (
       <div className={wrapClass}>
-        <Image src={image.src} alt={image.alt} fill priority={priority} sizes={sizes} />
+        <Image src={image.src} alt={image.alt} fill priority={priority} sizes={sizes} style={{ objectPosition: image.focus ?? "center center" }} />
       </div>
     );
   }
@@ -67,7 +68,19 @@ export function TemplateResume({ page, resume }: { page: ActorPage; resume: Resu
             </p>
           ) : null}
           {resume.fileUrl ? (
-            <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer">↓ Download {resume.fileName || "Document"}</a>
+            <>
+              <div className="resume-preview">
+                <iframe
+                  src={isPdfFile(resume.fileName ?? resume.fileUrl) ? resume.fileUrl : getDocumentViewerUrl(resume.fileUrl)}
+                  title={resume.fileName || "Resume preview"}
+                  loading="lazy"
+                  allow="fullscreen"
+                />
+              </div>
+              <a href={resume.fileUrl} target="_blank" rel="noopener noreferrer">
+                ↓ Download {resume.fileName || "Document"}
+              </a>
+            </>
           ) : null}
         </div>
       ) : null}

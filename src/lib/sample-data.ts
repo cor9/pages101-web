@@ -10,6 +10,7 @@ export const samplePages: ActorPage[] = [
     plan: "free",
     template: "classic",
     accent: null,
+    background: null,
     fontPair: null,
     displayName: "Maya Ralston",
     statusLine: "Young performer for film, TV, commercial, and voiceover",

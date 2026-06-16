@@ -36,7 +36,7 @@ export function ClassicActorPageRenderer({ page }: ClassicActorPageRendererProps
   const hasSlate = Boolean(page.slateUrl);
 
   return (
-    <main className="classic-template" style={getTemplateCss("classic", page.accent, page.fontPair)}>
+    <main className="classic-template" style={getTemplateCss("classic", page.accent, page.fontPair, page.background)}>
       {page.plan === "free" ? (
         <div className="freebar">
           ✦ This page is hosted free on <b>Pages101</b> by Child Actor 101{" "}

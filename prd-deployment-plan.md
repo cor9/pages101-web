@@ -215,6 +215,7 @@ Phased so each phase ends with something shippable. Effort assumes solo nights/w
 - Dashboard: create page, claim slug (moderation list), edit hero/reps/links via forms.
 - Section list with dnd-kit reorder + enable toggles; live preview pane.
 - Classic template public renderer with accent/font variables; publish flow with on-demand revalidation; `noindex` default.
+- Editor must show the full live page URL in plain language after publish, e.g. `https://pages.childactor101.com/p/{slug}`, so parents can share it without knowing the `/p/[slug]` route template.
 - 101 Tips content map rendered beside each editor panel.
 - **Done when:** a real parent (beta tester from the community) publishes a complete Classic page unassisted.
 

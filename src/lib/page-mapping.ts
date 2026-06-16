@@ -14,6 +14,7 @@ export type ActorPageRow = {
   slug: string;
   template: string;
   accent: string | null;
+  background: string | null;
   font_pair: string | null;
   display_name: string;
   status_line: string | null;
@@ -44,6 +45,7 @@ export function mapActorPageRows(page: ActorPageRow, sections: PageSectionRow[],
     plan,
     template: getTemplateId(page.template),
     accent: page.accent,
+    background: page.background ?? null,
     fontPair: getFontPair(page.font_pair),
     displayName: page.display_name,
     statusLine: page.status_line ?? "",

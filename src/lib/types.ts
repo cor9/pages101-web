@@ -28,6 +28,7 @@ export type Headshot = {
   alt: string;
   label: string;
   featured?: boolean;
+  focus?: string;
 };
 
 export type ResumeCredit = {
@@ -86,6 +87,7 @@ export type ActorPage = {
   plan: Plan;
   template: TemplateId;
   accent: string | null;
+  background: string | null;
   fontPair: FontPair | null;
   displayName: string;
   statusLine: string;

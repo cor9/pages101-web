@@ -29,13 +29,10 @@ export function PrestigeActorPageRenderer({ page }: { page: ActorPage }) {
   const hasSlate = Boolean(page.slateUrl);
 
   return (
-    <main className="prestige-template" style={getTemplateCss("prestige", page.accent, page.fontPair)}>
+    <main className="prestige-template" style={getTemplateCss("prestige", page.accent, page.fontPair, page.background)}>
       <header className="hero">
         <TemplateImageSlot className="ph" image={featured} fallbackLabel={page.displayName.trim().charAt(0).toUpperCase() || "P"} sizes="100vw" priority />
-        <nav className="nav">
-          <a className="wordmark" href="#">
-            {page.displayName}
-          </a>
+        <nav className="nav" aria-label="Page sections">
           <ul>
             {anchors.map((anchor) => (
               <li key={anchor.href}>
@@ -244,9 +241,6 @@ function getPrestigeAnchors(sections: EnabledSection[]) {
   }
   if (sections.some((section) => section.type === "clips")) {
     anchors.push({ href: "#p-video", label: "Video" });
-  }
-  if (sections.some((section) => section.type === "feed")) {
-    anchors.push({ href: "#p-lately", label: "Lately" });
   }
   return anchors;
 }

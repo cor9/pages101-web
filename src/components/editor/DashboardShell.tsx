@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { ActorPageRenderer } from "@/components/public-page/ActorPageRenderer";
-import { accentSwatches, fontPairOptions, templateTokens } from "@/lib/templates";
+import { accentSwatches, backgroundSwatches, fontPairOptions, templateTokens } from "@/lib/templates";
 import { samplePages } from "@/lib/sample-data";
 import { normalizeEmbedUrl } from "@/lib/video";
 import { tips, type TipKey } from "@/content/tips";
@@ -72,6 +72,7 @@ export function DashboardShell() {
   const [market, setMarket] = useState(page.market);
   const [templateId, setTemplateId] = useState<TemplateId>(page.template);
   const [accent, setAccent] = useState<string | null>(page.accent);
+  const [background, setBackground] = useState<string | null>(page.background);
   const [fontPair, setFontPair] = useState<FontPair>(page.fontPair ?? "template");
   const [hasRep, setHasRep] = useState(page.hasRep);
   const [reps, setReps] = useState<Rep[]>(page.reps);
@@ -96,7 +97,13 @@ export function DashboardShell() {
   const [importing, setImporting] = useState(false);
   const [resumeUploadStatus, setResumeUploadStatus] = useState<string | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const autoSaveTimerRef = useRef<number | null>(null);
+  const autoSaveInFlightRef = useRef(false);
+  const autoSaveQueuedRef = useRef(false);
+  const latestPreviewPageRef = useRef<ActorPage>({ ...page, background: page.background ?? null, published: false });
+  const lastSavedSnapshotRef = useRef(buildPageFingerprint({ ...page, background: page.background ?? null, published: false }));
 
   useEffect(() => {
     console.log('SUPABASE URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
@@ -130,6 +137,7 @@ export function DashboardShell() {
 
   const checkedSlug = validateSlug(slug);
   const publicSlug = checkedSlug.ok ? checkedSlug.slug : page.slug;
+  const publicPageUrl = `https://pages.childactor101.com/p/${publicSlug}`;
 
   // Plan: use real subscription when signed in
   const editorPlan: Plan = useMemo(() => {
@@ -231,7 +239,7 @@ export function DashboardShell() {
       if (sectionError) { setSaveStatus(sectionError.message); return; }
 
       applyActorPage(mapActorPageRows(pageRow, sectionRows ?? [], isActivePlus(subRow ?? null) ? "plus" : "free"));
-      setSaveStatus(pageRow.published ? `Published /p/${pageRow.slug}` : "Saved draft loaded");
+      setSaveStatus(pageRow.published ? `Published at https://pages.childactor101.com/p/${pageRow.slug}` : "Saved draft loaded");
     }
 
     loadSavedPage();
@@ -274,7 +282,9 @@ export function DashboardShell() {
       slateUrl: slateUrl.trim() ? normalizeEmbedUrl(slateUrl.trim()) : null,
       template: templateId,
       accent,
+      background,
       fontPair,
+      published: isPublished,
       sections: sections.map((section) => {
         if (section.type === "headshots") {
           return { ...section, content: { headshots: renderedHeadshots } };
@@ -286,11 +296,48 @@ export function DashboardShell() {
       })
     }),
     [
-      accent, ageRange, displayName, editorPlan, fontPair, hasRep,
-      links, market, publicSlug, renderedHeadshots, reps, sections,
+      accent, ageRange, displayName, editorPlan, fontPair, hasRep, isPublished,
+      background, links, market, publicSlug, renderedHeadshots, reps, sections,
       slateUrl, statusLine, templateId, unionStatus
     ]
   );
+
+  useEffect(() => {
+    latestPreviewPageRef.current = previewPage;
+  }, [previewPage]);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        window.clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authUser || !supabase || !checkedSlug.ok) {
+      return;
+    }
+
+    const snapshot = buildPageFingerprint(previewPage);
+    if (snapshot === lastSavedSnapshotRef.current) {
+      return;
+    }
+
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = window.setTimeout(() => {
+      void autosaveCurrentPage();
+    }, 700);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        window.clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [authUser, checkedSlug.ok, previewPage, supabase]);
 
   // ─── Apply loaded page ─────────────────────────────────────────────────────
 
@@ -310,9 +357,12 @@ export function DashboardShell() {
     setSlateUrl(actorPage.slateUrl ?? "");
     setTemplateId(actorPage.template);
     setAccent(actorPage.accent);
+    setBackground(actorPage.background);
     setFontPair(actorPage.fontPair ?? "template");
+    setIsPublished(actorPage.published);
     setSections(loadedSections);
     setHeadshots(normalizeHeadshots(loadedHeadshots.length > 0 ? loadedHeadshots : initialHeadshots));
+    lastSavedSnapshotRef.current = buildPageFingerprint({ ...actorPage, sections: loadedSections });
   }
 
   // ─── Reps / Links ──────────────────────────────────────────────────────────
@@ -516,6 +566,12 @@ export function DashboardShell() {
     setHeadshots(normalizeHeadshots(next));
   }
 
+  function updateHeadshot(index: number, patch: Partial<Headshot>) {
+    setHeadshots((current) =>
+      current.map((headshot, i) => (i === index ? { ...headshot, ...patch } : headshot))
+    );
+  }
+
   async function uploadHeadshot(file: File): Promise<Headshot> {
     if (!supabase || !authUser) {
       return {
@@ -700,9 +756,12 @@ export function DashboardShell() {
 
     setSaving(true);
     try {
-      const savedPageId = await saveActorPage(previewPage);
+      const publishedPage = { ...previewPage, published: true };
+      const savedPageId = await saveActorPage(publishedPage);
       await saveSections(savedPageId, previewPage.sections);
-      setSaveStatus(`Published /p/${publicSlug}`);
+      setIsPublished(true);
+      lastSavedSnapshotRef.current = buildPageFingerprint(publishedPage);
+      setSaveStatus(`Published at ${publicPageUrl}`);
     } catch (error) {
       setSaveStatus(error instanceof Error ? error.message : "Publish failed.");
     } finally {
@@ -715,12 +774,14 @@ export function DashboardShell() {
 
     const normalizedFontPair = actorPage.fontPair === "template" ? null : actorPage.fontPair;
     const normalizedAccent = actorPage.accent ?? null;
+    const normalizedBackground = actorPage.background ?? null;
 
     const payload = {
       user_id: authUser.id,
       slug: actorPage.slug,
       template: actorPage.template,
       accent: normalizedAccent,
+      background: normalizedBackground,
       font_pair: normalizedFontPair,
       display_name: actorPage.displayName,
       status_line: actorPage.statusLine ?? null,
@@ -731,7 +792,7 @@ export function DashboardShell() {
       reps: actorPage.reps ?? [],
       links: actorPage.links ?? [],
       slate_url: actorPage.slateUrl ?? null,
-      published: true,
+      published: actorPage.published,
       noindex: actorPage.noindex,
       updated_at: new Date().toISOString()
     };
@@ -750,6 +811,40 @@ export function DashboardShell() {
 
     if (error) throw error;
     return data.id;
+  }
+
+  async function autosaveCurrentPage() {
+    if (!supabase || !authUser || !checkedSlug.ok) {
+      return;
+    }
+
+    const snapshot = buildPageFingerprint(latestPreviewPageRef.current);
+    if (snapshot === lastSavedSnapshotRef.current) {
+      return;
+    }
+
+    if (autoSaveInFlightRef.current) {
+      autoSaveQueuedRef.current = true;
+      return;
+    }
+
+    autoSaveInFlightRef.current = true;
+    setSaveStatus("Saving draft...");
+    try {
+      const currentPage = latestPreviewPageRef.current;
+      const savedPageId = await saveActorPage(currentPage);
+      await saveSections(savedPageId, currentPage.sections);
+      lastSavedSnapshotRef.current = buildPageFingerprint(currentPage);
+      setSaveStatus("Draft saved");
+    } catch (error) {
+      setSaveStatus(error instanceof Error ? error.message : "Autosave failed.");
+    } finally {
+      autoSaveInFlightRef.current = false;
+      if (autoSaveQueuedRef.current) {
+        autoSaveQueuedRef.current = false;
+        void autosaveCurrentPage();
+      }
+    }
   }
 
   async function saveSections(pageId: string, pageSections: ActorPage["sections"]) {
@@ -856,6 +951,11 @@ export function DashboardShell() {
               Safe URL
               <input value={slug} onChange={(e) => setSlug(normalizeSlug(e.target.value))} />
             </label>
+            <div className="page-location">
+              <span>Live page</span>
+              <code>{publicPageUrl}</code>
+              <p>Share this link after publishing. Parents do not need to know the route format.</p>
+            </div>
             <label>
               Status line
               <input value={statusLine} onChange={(e) => setStatusLine(e.target.value)} />
@@ -998,6 +1098,22 @@ export function DashboardShell() {
                 />
               ))}
             </div>
+            {templateId !== "classic" ? (
+              <div className="swatches" aria-label="Background color">
+                {backgroundSwatches.map((swatch) => (
+                  <button
+                    key={swatch.label}
+                    type="button"
+                    aria-label={swatch.label}
+                    title={swatch.label}
+                    aria-pressed={swatch.value === background || (!swatch.value && !background)}
+                    className={swatch.value ? undefined : "swatch-auto"}
+                    style={{ "--swatch": swatch.value ?? "#f5efe6" } as React.CSSProperties}
+                    onClick={() => setBackground(swatch.value)}
+                  />
+                ))}
+              </div>
+            ) : null}
             <label>
               Font pairing
               <select value={fontPair} onChange={(e) => setFontPair(e.target.value as FontPair)}>
@@ -1024,7 +1140,7 @@ export function DashboardShell() {
             <div className="uploaded-headshots" aria-label="Uploaded headshots">
               {renderedHeadshots
                 .filter((h) => !isPlaceholderHeadshot(h))
-                .map((headshot) => (
+                .map((headshot, index) => (
                   <div key={headshot.id} className="uploaded-headshot">
                     <span
                       className="uploaded-headshot-thumb"
@@ -1036,7 +1152,15 @@ export function DashboardShell() {
                       <strong>{headshot.label}</strong>
                       {headshot.featured ? <span>Featured</span> : null}
                     </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <div className="uploaded-headshot-controls">
+                      <label>
+                        Crop
+                        <select value={headshot.focus ?? "center center"} onChange={(e) => updateHeadshot(index, { focus: e.target.value })}>
+                          <option value="center center">Center</option>
+                          <option value="center top">Top</option>
+                          <option value="center bottom">Bottom</option>
+                        </select>
+                      </label>
                       {!headshot.featured ? (
                         <button type="button" className="btn-set-featured" onClick={() => handleSetFeatured(headshot.id)}>
                           Set featured
@@ -1060,6 +1184,11 @@ export function DashboardShell() {
               Slate video URL
               <input value={slateUrl} placeholder="YouTube or Vimeo URL" onChange={(e) => setSlateUrl(e.target.value)} />
             </label>
+            {slateUrl.trim() ? (
+              <button className="button-secondary panel-action" type="button" onClick={() => setSlateUrl("")}>
+                Remove slate video
+              </button>
+            ) : null}
             <div className="editor-rows" aria-label="Clip and reel links">
               {clips.map((clip, index) => (
                 <div className="editor-row" key={clip.id}>
@@ -1276,7 +1405,7 @@ export function DashboardShell() {
 
         </div>
 
-        <PreviewPane page={previewPage} pageUrl={`https://pages.childactor101.com/p/${publicSlug}`} />
+        <PreviewPane page={previewPage} pageUrl={publicPageUrl} />
       </section>
 
       <button type="button" className="floating-preview" onClick={() => setPreviewOpen(true)}>Preview</button>
@@ -1284,7 +1413,7 @@ export function DashboardShell() {
       {previewOpen ? (
         <div className="preview-overlay" role="dialog" aria-label="Page preview" aria-modal="true">
           <div className="preview-overlay-bar">
-            <span>{`https://pages.childactor101.com/p/${publicSlug}`}</span>
+            <span>{publicPageUrl}</span>
             <button type="button" onClick={() => setPreviewOpen(false)}>Close</button>
           </div>
           <div className="preview-overlay-surface">
@@ -1422,6 +1551,10 @@ function PreviewPane({ page, pageUrl }: { page: ActorPage; pageUrl: string }) {
       </div>
     </aside>
   );
+}
+
+function buildPageFingerprint(actorPage: ActorPage) {
+  return JSON.stringify(actorPage);
 }
 
 // ─── Utility helpers ───────────────────────────────────────────────────────────

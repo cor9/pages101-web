@@ -65,6 +65,15 @@ export const accentSwatches = [
   { label: "Gold", value: "#a97725" }
 ] as const;
 
+export const backgroundSwatches = [
+  { label: "Auto", value: null },
+  { label: "White", value: "#ffffff" },
+  { label: "Ivory", value: "#FAF8F4" },
+  { label: "Sand", value: "#F5EFE6" },
+  { label: "Blush", value: "#FCE8EF" },
+  { label: "Sunshine", value: "#FFDE59" }
+] as const;
+
 export const fontPairOptions: Array<{ id: FontPair; label: string; display: string; body: string }> = [
   {
     id: "template",
@@ -98,7 +107,12 @@ export const fontPairOptions: Array<{ id: FontPair; label: string; display: stri
   }
 ];
 
-export function getTemplateCss(templateId: TemplateId, accent: string | null, fontPair: FontPair | null) {
+export function getTemplateCss(
+  templateId: TemplateId,
+  accent: string | null,
+  fontPair: FontPair | null,
+  background: string | null
+) {
   const template = templateTokens[templateId];
   const pair = fontPairOptions.find((option) => option.id === fontPair);
 
@@ -106,7 +120,7 @@ export function getTemplateCss(templateId: TemplateId, accent: string | null, fo
     "--ua": accent ?? template.accent,
     "--ub": pair && pair.id !== "template" ? pair.body : template.bodyFont,
     "--ud": pair && pair.id !== "template" ? pair.display : template.displayFont,
-    "--page-bg": template.background,
+    "--page-bg": background ?? template.background,
     "--page-surface": template.surface,
     "--page-ink": template.ink,
     "--page-muted": template.muted
