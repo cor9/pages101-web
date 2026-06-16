@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -283,60 +284,43 @@ export default function HomePage() {
 
           <div className="template-mock-display">
             {activeTemplate === "classic" && (
-              <div className="mock-display-canvas classic-style">
-                <div className="mock-canvas-header" style={{ textAlign: "center", marginBottom: "16px" }}>
-                  <div style={{ width: "50px", height: "50px", borderRadius: "50%", background: "var(--cream)", border: "1px solid var(--hairline)", margin: "0 auto 8px auto" }}></div>
-                  <h3 style={{ margin: 0, fontFamily: "var(--font-fraunces), serif", fontSize: "18px" }}>Mia Rose</h3>
-                  <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "var(--ink-soft)" }}>SAG-AFTRA Eligible &bull; Age 9-12</p>
+              <div className="browser-mockup">
+                <div className="browser-mockup-header">
+                  <span className="browser-mockup-dot red"></span>
+                  <span className="browser-mockup-dot yellow"></span>
+                  <span className="browser-mockup-dot green"></span>
+                  <span className="browser-mockup-address">billy.childactor101.com</span>
                 </div>
-                <div className="mock-canvas-body">
-                  <div className="mock-canvas-accent-bar" style={{ margin: "0 auto 12px auto" }}></div>
-                  <div style={{ border: "1px solid var(--hairline)", padding: "10px", borderRadius: "6px", fontSize: "11px", marginBottom: "12px", background: "#fcfbfa" }}>
-                    <div style={{ fontWeight: 600, borderBottom: "1px solid var(--hairline)", paddingBottom: "4px", marginBottom: "6px" }}>Selected Credits</div>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>The Library Door</span>
-                      <span style={{ color: "var(--ink-soft)" }}>Supporting</span>
-                    </div>
-                  </div>
-                  <div className="mock-canvas-buttons" style={{ justifyContent: "center" }}>
-                    <span className="mock-btn">Actors Access</span>
-                    <span className="mock-btn">IMDb</span>
-                  </div>
+                <div className="browser-mockup-body" style={{ position: "relative" }}>
+                  <Image src="/classicexample.jpg" alt="Classic Template Preview" width={500} height={833} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
             )}
             
             {activeTemplate === "splash" && (
-              <div className="mock-display-canvas splash-style">
-                <div className="mock-canvas-header" style={{ transform: "rotate(-2deg)" }}>
-                  <div style={{ width: "48px", height: "48px", background: "#e3c84f", borderRadius: "8px", border: "2px solid #2b2320", marginBottom: "8px" }}></div>
-                  <h3 style={{ margin: 0, fontFamily: "var(--font-inter), sans-serif", fontWeight: 900, fontSize: "20px", color: "#ff69b4" }}>MIA ROSE! ☀️</h3>
-                  <span style={{ background: "#2b2320", color: "white", fontSize: "9px", padding: "2px 6px", borderRadius: "4px", display: "inline-block", marginTop: "2px" }}>SAG-AFTRA Eligible</span>
+              <div className="browser-mockup">
+                <div className="browser-mockup-header">
+                  <span className="browser-mockup-dot red"></span>
+                  <span className="browser-mockup-dot yellow"></span>
+                  <span className="browser-mockup-dot green"></span>
+                  <span className="browser-mockup-address">mia.childactor101.com</span>
                 </div>
-                <div className="mock-canvas-body" style={{ marginTop: "12px" }}>
-                  <div className="mock-canvas-buttons" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <span className="mock-btn-badge" style={{ background: "#ff69b4", border: "2px solid #2b2320", textAlign: "center", boxShadow: "2px 2px 0 #2b2320" }}>Watch Reels ↗</span>
-                    <span className="mock-btn-badge" style={{ background: "#e3c84f", color: "#2b2320", border: "2px solid #2b2320", textAlign: "center", boxShadow: "2px 2px 0 #2b2320" }}>Voice Reels ↗</span>
-                  </div>
+                <div className="browser-mockup-body" style={{ position: "relative" }}>
+                  <Image src="/splashexample.jpg" alt="Splash Template Preview" width={500} height={633} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
             )}
 
             {activeTemplate === "prestige" && (
-              <div className="mock-display-canvas prestige-style" style={{ padding: 0, overflow: "hidden" }}>
-                <div style={{ height: "90px", background: "linear-gradient(135deg, #2b2320, #6b5f56)", display: "flex", alignItems: "flex-end", padding: "12px", color: "white" }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontFamily: "var(--font-fraunces), serif", fontSize: "18px" }}>Mia Rose</h3>
-                    <p style={{ margin: 0, fontSize: "10px", opacity: 0.8 }}>SAG-AFTRA Eligible &bull; Age 9-12</p>
-                  </div>
+              <div className="browser-mockup">
+                <div className="browser-mockup-header">
+                  <span className="browser-mockup-dot red"></span>
+                  <span className="browser-mockup-dot yellow"></span>
+                  <span className="browser-mockup-dot green"></span>
+                  <span className="browser-mockup-address">corey.childactor101.com</span>
                 </div>
-                <div className="mock-canvas-body" style={{ padding: "12px" }}>
-                  <div style={{ fontStyle: "italic", fontSize: "11px", borderLeft: "2px solid #d4af37", paddingLeft: "8px", marginBottom: "12px", color: "var(--ink-soft)" }}>
-                    &ldquo;A bright new screen presence with immense dramatic focus.&rdquo;
-                  </div>
-                  <div className="mock-canvas-buttons">
-                    <span className="mock-btn-prestige" style={{ border: "1px solid #d4af37", padding: "6px 12px", fontSize: "9px", display: "inline-block" }}>View Press Kit</span>
-                  </div>
+                <div className="browser-mockup-body" style={{ position: "relative" }}>
+                  <Image src="/prestigeexample.jpg" alt="Prestige Template Preview" width={500} height={806} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
             )}
