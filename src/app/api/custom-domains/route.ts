@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       domain: parsed.data.domain,
       verified: false,
-      message: `Saved. Add a CNAME record pointing ${parsed.data.domain} to cname.vercel-dns.com, then click Verify.`
+      message: `Saved. Open the DNS settings where ${parsed.data.domain} is managed, add a CNAME record that points it to cname.vercel-dns.com, then come back and click Verify.`
     }, { status: 200 });
   }
 
@@ -149,7 +149,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         domain: parsed.data.domain,
         verified: false,
-        message: `DNS not verified yet. Add a CNAME record pointing ${parsed.data.domain} to cname.vercel-dns.com.`
+        message: `DNS not verified yet. Check the DNS settings where ${parsed.data.domain} is managed, then click Verify again.`
       }, { status: 409 });
     }
 
@@ -167,14 +167,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       domain: parsed.data.domain,
       verified: true,
-      message: "Connected and active."
+      message: "Your domain is live."
     }, { status: 200 });
   } catch (error) {
     console.error("DNS verification failed:", error);
     return NextResponse.json({
       domain: parsed.data.domain,
       verified: false,
-      message: `DNS not verified yet. Add a CNAME record pointing ${parsed.data.domain} to cname.vercel-dns.com.`
+      message: `DNS not verified yet. Check the DNS settings where ${parsed.data.domain} is managed, then click Verify again.`
     }, { status: 409 });
   }
 }

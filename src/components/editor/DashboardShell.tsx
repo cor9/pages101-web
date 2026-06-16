@@ -981,13 +981,13 @@ export function DashboardShell() {
         setCustomDomain(body.domain ?? domain);
         setConnectedDomain(body.domain ?? domain);
         setCustomDomainVerified(false);
-        setCustomDomainStatus(body.message ?? `Add a CNAME record pointing ${body.domain ?? domain} to cname.vercel-dns.com, then click Verify.`);
-        setSaveStatus(`Saved domain ${body.domain ?? domain}`);
+        setCustomDomainStatus(body.message ?? `Next: open the DNS settings where ${body.domain ?? domain} is managed and add a CNAME record that points it to cname.vercel-dns.com.`);
+        setSaveStatus(`Saved domain ${body.domain ?? domain}.`);
       } else if (action === "verify") {
         const verified = Boolean(body.verified);
         setConnectedDomain(body.domain ?? domain);
         setCustomDomainVerified(verified);
-        setCustomDomainStatus(body.message ?? (verified ? "Connected and active." : `Add a CNAME record pointing ${body.domain ?? domain} to cname.vercel-dns.com, then click Verify.`));
+        setCustomDomainStatus(body.message ?? (verified ? "Your domain is live." : `Check the DNS settings where ${body.domain ?? domain} is managed, then click Verify again.`));
         setSaveStatus(verified ? `Published at https://${body.domain ?? domain}` : `Domain saved, not verified yet.`);
       } else {
         setCustomDomain("");
@@ -1058,6 +1058,10 @@ export function DashboardShell() {
   const resumeContent = resumeSection?.type === "resume" ? resumeSection.content : null;
   const resumeHasPdf = Boolean(resumeContent?.fileUrl);
   const resumeHasStructured = (resumeContent?.credits ?? []).length > 0;
+  const domainHelpDomain = connectedDomain || customDomain.trim().toLowerCase();
+  const domainHelpMessage = domainHelpDomain
+    ? `Open the DNS settings where ${domainHelpDomain} is managed. Add a CNAME record that points it to cname.vercel-dns.com, then come back and click Verify.`
+    : "Type your domain and click Connect domain. Then open the DNS settings at your domain provider and add the CNAME record there.";
 
   const pressSection = sections.find((s) => s.type === "press");
   const pressContent = pressSection?.type === "press" ? pressSection.content : null;
@@ -1279,8 +1283,20 @@ export function DashboardShell() {
             {editorPlan === "plus" ? (
               <>
                 <p className="panel-note">
-                  Connect a domain like <b>yourname.com</b>. This saves the mapping now and resolves it on the public route.
+                  Connect a domain like <b>yourname.com</b>. We only store the domain here. You still need to add one DNS record at the company that manages the domain, then click Verify.
                 </p>
+                <div className="domain-help">
+                  <p>
+                    <b>Where do I add it?</b> In the DNS settings for the company that manages the domain, such as Squarespace, GoDaddy, Cloudflare, Namecheap, or the person who sold you the domain.
+                  </p>
+                  <ol>
+                    <li>Type the domain and click <b>Connect domain</b>.</li>
+                    <li>Open the DNS settings at your domain provider.</li>
+                    <li>Add a <b>CNAME</b> record that points to <code>cname.vercel-dns.com</code>.</li>
+                    <li>Come back here and click <b>Verify</b>.</li>
+                  </ol>
+                  <p className="panel-note">{domainHelpMessage}</p>
+                </div>
                 <label>
                   Domain
                   <input
@@ -1306,7 +1322,7 @@ export function DashboardShell() {
                 <div className="page-location">
                   <span>Domain status</span>
                   <code>{connectedDomain ? `https://${connectedDomain}` : "No custom domain connected"}</code>
-                  <p>{customDomainVerified ? "Connected and active." : connectedDomain ? `Add a CNAME record pointing ${connectedDomain} to cname.vercel-dns.com, then click Verify.` : "Save a domain to route this page from a custom host."}</p>
+                  <p>{customDomainVerified ? "Your domain is live." : connectedDomain ? `Waiting for the DNS record. ${domainHelpDomain ? `The record must be added where ${domainHelpDomain} is managed.` : ""}` : "Save a domain to see the DNS instructions."}</p>
                 </div>
               </>
             ) : (
