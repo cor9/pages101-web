@@ -234,7 +234,7 @@ Phased so each phase ends with something shippable. Effort assumes solo nights/w
 - **Done when:** test account can upgrade, switch to Prestige, lapse (Stripe test clock), and fall back gracefully.
 
 ### Phase 4 — Custom Domains + Launch (1–2 weekends)
-- "Connect your domain": Vercel Domains API attach + verification UI + `custom_domains` mapping (Plus only).
+- "Connect your domain": custom-domain attach/remove UI, host rewrite, and `custom_domains` mapping (Plus only). Vercel attach stays the deployment step.
 - QA pass: mobile, accessibility (focus states, reduced motion, alt text on uploads), Lighthouse, slug-squatting check.
 - Seed 3–5 real pages with willing Bohemia/community families as showcases.
 - Launch: Child Actor 101 email list, Facebook community post, blog post (reuse Resume101 launch-post format), Resume101 cross-promo banner.

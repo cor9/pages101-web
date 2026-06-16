@@ -21,6 +21,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
+  if (host === rootDomain) {
+    return NextResponse.next();
+  }
+
+  if (host.includes(".")) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/p/${host}`;
+    return NextResponse.rewrite(url);
+  }
+
   return NextResponse.next();
 }
 

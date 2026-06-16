@@ -74,6 +74,7 @@ export function DashboardShell() {
   const [accent, setAccent] = useState<string | null>(page.accent);
   const [background, setBackground] = useState<string | null>(page.background);
   const [fontPair, setFontPair] = useState<FontPair>(page.fontPair ?? "template");
+  const [noindex, setNoindex] = useState(page.noindex);
   const [hasRep, setHasRep] = useState(page.hasRep);
   const [reps, setReps] = useState<Rep[]>(page.reps);
   const [links, setLinks] = useState<PageLink[]>(page.links);
@@ -97,6 +98,11 @@ export function DashboardShell() {
   const [importing, setImporting] = useState(false);
   const [resumeUploadStatus, setResumeUploadStatus] = useState<string | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
+  const [customDomain, setCustomDomain] = useState("");
+  const [connectedDomain, setConnectedDomain] = useState("");
+  const [customDomainVerified, setCustomDomainVerified] = useState(false);
+  const [customDomainSaving, setCustomDomainSaving] = useState(false);
+  const [customDomainStatus, setCustomDomainStatus] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(false);
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const autoSaveTimerRef = useRef<number | null>(null);
@@ -138,6 +144,7 @@ export function DashboardShell() {
   const checkedSlug = validateSlug(slug);
   const publicSlug = checkedSlug.ok ? checkedSlug.slug : page.slug;
   const publicPageUrl = `https://pages.childactor101.com/p/${publicSlug}`;
+  const livePageUrl = customDomainVerified && connectedDomain ? `https://${connectedDomain}` : publicPageUrl;
 
   // Plan: use real subscription when signed in
   const editorPlan: Plan = useMemo(() => {
@@ -238,8 +245,20 @@ export function DashboardShell() {
       if (cancelled) return;
       if (sectionError) { setSaveStatus(sectionError.message); return; }
 
+      const { data: domainRow, error: domainError } = await supabase
+        .from("p101_custom_domains")
+        .select("domain, verified")
+        .eq("page_id", pageRow.id)
+        .maybeSingle<{ domain: string; verified: boolean }>();
+
+      if (cancelled) return;
+      if (domainError) { setSaveStatus(domainError.message); return; }
+
       applyActorPage(mapActorPageRows(pageRow, sectionRows ?? [], isActivePlus(subRow ?? null) ? "plus" : "free"));
-      setSaveStatus(pageRow.published ? `Published at https://pages.childactor101.com/p/${pageRow.slug}` : "Saved draft loaded");
+      setCustomDomain(domainRow?.domain ?? "");
+      setConnectedDomain(domainRow?.domain ?? "");
+      setCustomDomainVerified(Boolean(domainRow?.verified));
+      setSaveStatus(pageRow.published ? `Published at ${domainRow?.verified && domainRow?.domain ? `https://${domainRow.domain}` : `https://pages.childactor101.com/p/${pageRow.slug}`}` : "Saved draft loaded");
     }
 
     loadSavedPage();
@@ -284,6 +303,7 @@ export function DashboardShell() {
       accent,
       background,
       fontPair,
+      noindex,
       published: isPublished,
       sections: sections.map((section) => {
         if (section.type === "headshots") {
@@ -296,7 +316,7 @@ export function DashboardShell() {
       })
     }),
     [
-      accent, ageRange, displayName, editorPlan, fontPair, hasRep, isPublished,
+      accent, ageRange, displayName, editorPlan, fontPair, hasRep, isPublished, noindex,
       background, links, market, publicSlug, renderedHeadshots, reps, sections,
       slateUrl, statusLine, templateId, unionStatus
     ]
@@ -359,6 +379,7 @@ export function DashboardShell() {
     setAccent(actorPage.accent);
     setBackground(actorPage.background);
     setFontPair(actorPage.fontPair ?? "template");
+    setNoindex(actorPage.noindex);
     setIsPublished(actorPage.published);
     setSections(loadedSections);
     setHeadshots(normalizeHeadshots(loadedHeadshots.length > 0 ? loadedHeadshots : initialHeadshots));
@@ -761,7 +782,7 @@ export function DashboardShell() {
       await saveSections(savedPageId, previewPage.sections);
       setIsPublished(true);
       lastSavedSnapshotRef.current = buildPageFingerprint(publishedPage);
-      setSaveStatus(`Published at ${publicPageUrl}`);
+      setSaveStatus(`Published at ${livePageUrl}`);
     } catch (error) {
       setSaveStatus(error instanceof Error ? error.message : "Publish failed.");
     } finally {
@@ -865,6 +886,72 @@ export function DashboardShell() {
     if (error) throw error;
   }
 
+  async function handleCustomDomain(action: "attach" | "detach") {
+    if (!supabase || !authUser) {
+      setCustomDomainStatus("Sign in to manage custom domains.");
+      return;
+    }
+
+    if (!checkedSlug.ok) {
+      setCustomDomainStatus(checkedSlug.reason);
+      return;
+    }
+
+    const domain = action === "attach" ? customDomain.trim().toLowerCase() : (connectedDomain || customDomain.trim().toLowerCase());
+    if (action === "attach" && !domain) {
+      setCustomDomainStatus("Enter a domain first.");
+      return;
+    }
+
+    setCustomDomainSaving(true);
+    setCustomDomainStatus(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        setCustomDomainStatus("Sign in again to manage domains.");
+        return;
+      }
+
+      const response = await fetch("/api/custom-domains", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          pageSlug: publicSlug,
+          domain: action === "attach" ? domain : customDomain.trim().toLowerCase(),
+          action
+        })
+      });
+
+      const body = (await response.json()) as { error?: string; domain?: string | null; verified?: boolean };
+      if (!response.ok) {
+        setCustomDomainStatus(body.error ?? "Could not update the domain.");
+        return;
+      }
+
+      if (action === "attach") {
+        setCustomDomain(body.domain ?? domain);
+        setConnectedDomain(body.domain ?? domain);
+        setCustomDomainVerified(Boolean(body.verified));
+        setSaveStatus(`Published at ${body.domain ? `https://${body.domain}` : livePageUrl}`);
+      } else {
+        setCustomDomain("");
+        setConnectedDomain("");
+        setCustomDomainVerified(false);
+        setSaveStatus(`Custom domain removed. Published at ${publicPageUrl}`);
+      }
+    } catch {
+      setCustomDomainStatus("Could not update the domain.");
+    } finally {
+      setCustomDomainSaving(false);
+    }
+  }
+
   // ─── Auth ──────────────────────────────────────────────────────────────────
 
   async function handleAuthSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -956,6 +1043,10 @@ export function DashboardShell() {
               <code>{publicPageUrl}</code>
               <p>Share this link after publishing. Parents do not need to know the route format.</p>
             </div>
+            <label className="checkbox-line">
+              <input type="checkbox" checked={noindex} onChange={(e) => setNoindex(e.target.checked)} />
+              <span>Keep page out of search engines</span>
+            </label>
             <label>
               Status line
               <input value={statusLine} onChange={(e) => setStatusLine(e.target.value)} />
@@ -1122,6 +1213,53 @@ export function DashboardShell() {
                 ))}
               </select>
             </label>
+          </article>
+
+          {/* Custom Domain */}
+          <article className="editor-panel" data-testid="domain-panel">
+            <div className="panel-heading">
+              <p>Custom Domain</p>
+              <span className={editorPlan === "plus" ? "plus-badge" : "plan-badge plan-badge--free"}>
+                {editorPlan === "plus" ? "Plus" : "Upgrade"}
+              </span>
+            </div>
+            {editorPlan === "plus" ? (
+              <>
+                <p className="panel-note">
+                  Connect a domain like <b>yourname.com</b>. This saves the mapping now and resolves it on the public route.
+                </p>
+                <label>
+                  Domain
+                  <input
+                    value={customDomain}
+                    placeholder="yourname.com"
+                    onChange={(e) => {
+                      setCustomDomain(e.target.value);
+                      setCustomDomainVerified(false);
+                    }}
+                  />
+                </label>
+                <div className="domain-actions">
+                  <button className="button-primary" type="button" disabled={customDomainSaving} onClick={() => void handleCustomDomain("attach")}>
+                    {customDomainSaving ? "Saving..." : "Connect domain"}
+                  </button>
+                  <button className="button-secondary" type="button" disabled={customDomainSaving || (!connectedDomain && !customDomain)} onClick={() => void handleCustomDomain("detach")}>
+                    Remove
+                  </button>
+                </div>
+                <div className="page-location">
+                  <span>Domain status</span>
+                  <code>{connectedDomain ? `https://${connectedDomain}` : "No custom domain connected"}</code>
+                  <p>{customDomainVerified ? "Connected and active." : "Save a domain to route this page from a custom host."}</p>
+                </div>
+              </>
+            ) : (
+              <div className="plus-gate-strip">
+                <span className="plus-badge">Plus</span>
+                <p>Custom domains are part of Plus. Upgrade to connect your own domain.</p>
+              </div>
+            )}
+            {customDomainStatus ? <p className="panel-note">{customDomainStatus}</p> : null}
           </article>
 
           {/* Headshots */}
@@ -1405,7 +1543,7 @@ export function DashboardShell() {
 
         </div>
 
-        <PreviewPane page={previewPage} pageUrl={publicPageUrl} />
+        <PreviewPane page={previewPage} pageUrl={livePageUrl} />
       </section>
 
       <button type="button" className="floating-preview" onClick={() => setPreviewOpen(true)}>Preview</button>
@@ -1413,7 +1551,7 @@ export function DashboardShell() {
       {previewOpen ? (
         <div className="preview-overlay" role="dialog" aria-label="Page preview" aria-modal="true">
           <div className="preview-overlay-bar">
-            <span>{publicPageUrl}</span>
+            <span>{livePageUrl}</span>
             <button type="button" onClick={() => setPreviewOpen(false)}>Close</button>
           </div>
           <div className="preview-overlay-surface">

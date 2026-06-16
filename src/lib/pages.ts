@@ -16,20 +16,48 @@ export async function getPublicPageBySlug(slug: string) {
     .eq("published", true)
     .single();
 
-  if (error) {
-    console.error("Pages101 public page query failed", error);
-    return process.env.NODE_ENV === "production" ? null : getSamplePageBySlug(slug);
+  if (!error && data) {
+    return mapActorPageRows(
+      data as ActorPageRow,
+      getJoinedSections(data),
+      "free"
+    );
   }
 
-  return mapActorPageRows(
-    data as ActorPageRow,
-    getJoinedSections(data),
-    "free"
-  );
+  if (error) {
+    console.error("Pages101 public page query failed", error);
+  }
+
+  const { data: domainData, error: domainError } = await supabase
+    .from("p101_custom_domains")
+    .select("verified, p101_actor_pages(*, p101_page_sections(*))")
+    .eq("domain", slug)
+    .eq("verified", true)
+    .maybeSingle<JoinedCustomDomainRow>();
+
+  if (domainError) {
+    console.error("Pages101 custom domain query failed", domainError);
+  }
+
+  const mappedPage = domainData?.p101_actor_pages;
+  if (mappedPage) {
+    return mapActorPageRows(
+      mappedPage as ActorPageRow,
+      getJoinedSections(mappedPage),
+      "free"
+    );
+  }
+
+  return process.env.NODE_ENV === "production" ? null : getSamplePageBySlug(slug);
 }
 
 type JoinedPageRow = ActorPageRow & {
   p101_page_sections?: PageSectionRow[] | null;
+};
+
+type JoinedCustomDomainRow = {
+  verified: boolean;
+  p101_actor_pages?: JoinedPageRow | null;
 };
 
 function getJoinedSections(pageRow: unknown): PageSectionRow[] {
