@@ -74,6 +74,7 @@ function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBack
   const normalizedAccent = actorPage.accent ?? null;
 
   return {
+    id: actorPage.id,
     user_id: userId,
     slug: actorPage.slug,
     template: actorPage.template,
@@ -92,7 +93,7 @@ function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBack
     published: actorPage.published,
     noindex: actorPage.noindex,
     updated_at: new Date().toISOString()
-  } as Record<string, unknown> & { user_id: string; slug: string };
+  } as Record<string, unknown> & { id: string; user_id: string; slug: string };
 }
 
 function isMissingBackgroundColumnError(error: { code?: string; message?: string } | null | undefined) {
@@ -101,7 +102,8 @@ function isMissingBackgroundColumnError(error: { code?: string; message?: string
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function DashboardShell() {
+export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: () => void }) {
+  const [currentPageId, setCurrentPageId] = useState<string | null>(pageId || null);
   const [displayName, setDisplayName] = useState(page.displayName);
   const [slug, setSlug] = useState(page.slug);
   const [statusLine, setStatusLine] = useState(page.statusLine);
@@ -261,17 +263,26 @@ export function DashboardShell() {
 
       if (!cancelled) setSubscription(subRow ?? null);
 
-      const { data: pageRow, error: pageError } = await supabase
+      const query = supabase
         .from("p101_actor_pages")
         .select("*")
-        .eq("user_id", authUser.id)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle<ActorPageRow>();
+        .eq("user_id", authUser.id);
+
+      if (pageId) {
+        query.eq("id", pageId);
+      } else {
+        query.order("updated_at", { ascending: false }).limit(1);
+      }
+
+      const { data: pageRow, error: pageError } = await query.maybeSingle<ActorPageRow>();
 
       if (cancelled) return;
       if (pageError) { setSaveStatus(pageError.message); return; }
-      if (!pageRow) { setSaveStatus("Beta preview"); return; }
+      if (!pageRow) {
+        setCurrentPageId(null);
+        setSaveStatus("Beta preview");
+        return;
+      }
 
       const { data: sectionRows, error: sectionError } = await supabase
         .from("p101_page_sections")
@@ -341,7 +352,7 @@ export function DashboardShell() {
 
     loadSavedPage();
     return () => { cancelled = true; };
-  }, [authUser, supabase]);
+  }, [authUser, supabase, pageId]);
 
   // ─── Preview URL & page object ─────────────────────────────────────────────
 
@@ -366,6 +377,7 @@ export function DashboardShell() {
   const previewPage = useMemo<ActorPage>(
     () => ({
       ...page,
+      id: currentPageId || page.id,
       displayName,
       slug: publicSlug,
       plan: editorPlan,
@@ -394,7 +406,7 @@ export function DashboardShell() {
       })
     }),
     [
-      accent, ageRange, displayName, editorPlan, fontPair, hasRep, isPublished, noindex,
+      currentPageId, accent, ageRange, displayName, editorPlan, fontPair, hasRep, isPublished, noindex,
       background, links, market, publicSlug, renderedHeadshots, reps, sections,
       slateUrl, statusLine, templateId, unionStatus
     ]
@@ -418,6 +430,7 @@ export function DashboardShell() {
     const loadedSections = actorPage.sections.length > 0 ? actorPage.sections : page.sections;
     const loadedHeadshots = getPageHeadshots({ ...actorPage, sections: loadedSections });
 
+    setCurrentPageId(actorPage.id);
     setDisplayName(actorPage.displayName);
     setSlug(actorPage.slug);
     setStatusLine(actorPage.statusLine);
@@ -858,7 +871,7 @@ export function DashboardShell() {
 
     const initialSave = await supabase
       .from("p101_actor_pages")
-      .upsert(payload, { onConflict: "slug" })
+      .upsert(payload, { onConflict: "id" })
       .select("id")
       .single<{ id: string }>();
 
@@ -874,7 +887,7 @@ export function DashboardShell() {
       console.warn("Background column is unavailable; retrying save without background.");
       const fallbackSave = await supabase
         .from("p101_actor_pages")
-        .upsert(fallbackPayload, { onConflict: "slug" })
+        .upsert(fallbackPayload, { onConflict: "id" })
         .select("id")
         .single<{ id: string }>();
 
@@ -1119,6 +1132,7 @@ export function DashboardShell() {
         saving={saving}
         onPreview={() => setPreviewOpen(true)}
         onPublish={handlePublish}
+        onBack={onBack}
       />
 
       <section className="editor-workspace" aria-label="Pages101 editor workspace">
@@ -1706,7 +1720,7 @@ export function DashboardShell() {
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
 function EditorToolbar({
-  displayName, previewUrl, saveStatus, saving, onPreview, onPublish
+  displayName, previewUrl, saveStatus, saving, onPreview, onPublish, onBack
 }: {
   displayName: string;
   previewUrl: string;
@@ -1714,13 +1728,33 @@ function EditorToolbar({
   saving: boolean;
   onPreview: () => void;
   onPublish: () => void;
+  onBack?: () => void;
 }) {
   return (
     <header className="editor-toolbar">
-      <div className="editor-brand">
-        <span>Pages101</span>
-        <strong>·</strong>
-        <p>{displayName}</p>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+        {onBack && (
+          <button 
+            className="button-secondary button-back" 
+            type="button" 
+            onClick={onBack}
+            style={{ 
+              padding: "6px 12px", 
+              fontSize: "13px", 
+              height: "32px", 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "4px" 
+            }}
+          >
+            &larr; Back
+          </button>
+        )}
+        <div className="editor-brand">
+          <span>Pages101</span>
+          <strong>·</strong>
+          <p>{displayName}</p>
+        </div>
       </div>
       <div className="editor-actions">
         <span className="save-state">{saveStatus}</span>
