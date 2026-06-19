@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -24,7 +24,39 @@ type SubscriptionState = {
   current_period_end: string | null;
 } | null;
 
-export default function DashboardPage() {
+function DashboardLoading() {
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "100vh",
+      background: "var(--cream)",
+      color: "var(--ink-soft)",
+      fontFamily: "var(--font-inter), sans-serif"
+    }}>
+      <div style={{ textAlign: "center" }}>
+        <div className="spinner" style={{
+          width: "40px",
+          height: "40px",
+          border: "3px solid rgba(43,35,32,0.1)",
+          borderTopColor: "var(--marquee)",
+          borderRadius: "50%",
+          animation: "spin 1s linear infinite",
+          margin: "0 auto 16px auto"
+        }}></div>
+        <p>Loading your account...</p>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+}
+
+function DashboardPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createSupabaseBrowserClient();
@@ -286,35 +318,7 @@ export default function DashboardPage() {
 
   // Loader state
   if (loading) {
-    return (
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        background: "var(--cream)",
-        color: "var(--ink-soft)",
-        fontFamily: "var(--font-inter), sans-serif"
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <div className="spinner" style={{
-            width: "40px",
-            height: "40px",
-            border: "3px solid rgba(43,35,32,0.1)",
-            borderTopColor: "var(--marquee)",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-            margin: "0 auto 16px auto"
-          }}></div>
-          <p>Loading your account...</p>
-          <style>{`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-      </div>
-    );
+    return <DashboardLoading />;
   }
 
   // If in page editor view, render the DashboardShell
@@ -563,5 +567,13 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardPageClient />
+    </Suspense>
   );
 }
