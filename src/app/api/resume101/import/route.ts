@@ -12,7 +12,7 @@ import type { ResumeCredit } from "@/lib/types";
  *   AIRTABLE_API_KEY       — personal access token with read access on the Resume101 base
  *   AIRTABLE_BASE_ID       — the base ID (e.g. "appXXXXXXXXXX")
  *   AIRTABLE_CREDITS_TABLE — table name / ID for credits (default: "Credits")
- *   AIRTABLE_TABLE_NAME    — legacy alias for the credits table name / ID
+ *   AIRTABLE_TABLE_NAME    — Resume101 table name / ID (often the leads table)
  *
  * The Airtable record is looked up by the user's email address stored in a "Email" field.
  * Adjust field names below to match your actual Airtable schema.
@@ -50,10 +50,11 @@ async function handleImport(request: Request) {
     return NextResponse.json({ error: "Resume101 import is not configured" }, { status: 503 });
   }
 
-  // Filter Airtable credits by the user's email
-  // Adjust the filterByFormula field names to match your actual Airtable schema
+  // Resume101 currently persists either:
+  // 1. individual credit rows with Project/Role/Company fields, or
+  // 2. a single lead row containing a serialized RESUME JSON blob.
   const filterFormula = encodeURIComponent(`{Email} = "${user.email}"`);
-  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_CREDITS_TABLE)}?filterByFormula=${filterFormula}&fields[]=Project&fields[]=Role&fields[]=Company&fields[]=Category`;
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_CREDITS_TABLE)}?filterByFormula=${filterFormula}&fields[]=Project&fields[]=Role&fields[]=Company&fields[]=Category&fields[]=RESUME%20JSON&fields[]=Submitted%20at&pageSize=25`;
 
   const response = await fetch(url, {
     headers: {
@@ -72,16 +73,19 @@ async function handleImport(request: Request) {
   const data = (await response.json()) as {
     records: Array<{
       id: string;
+      createdTime?: string;
       fields: {
         Project?: string;
         Role?: string;
         Company?: string;
         Category?: string;
+        "RESUME JSON"?: string;
+        "Submitted at"?: string;
       };
     }>;
   };
 
-  const credits: ResumeCredit[] = data.records
+  const directCredits = data.records
     .filter((record) => record.fields.Project)
     .map((record) => ({
       project: record.fields.Project ?? "",
@@ -89,7 +93,71 @@ async function handleImport(request: Request) {
       company: record.fields.Company ?? ""
     }));
 
+  const credits = directCredits.length > 0 ? directCredits : extractCreditsFromResumeJson(data.records);
+
   return NextResponse.json({ credits, updatedAt: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }) });
+}
+
+type ResumeJsonSectionItem = {
+  project?: string;
+  role?: string;
+  studio?: string;
+};
+
+type ResumeJsonPayload = {
+  television?: ResumeJsonSectionItem[];
+  film?: ResumeJsonSectionItem[];
+  theatre?: ResumeJsonSectionItem[];
+  commercial?: ResumeJsonSectionItem[];
+  newMedia?: ResumeJsonSectionItem[];
+  voiceover?: ResumeJsonSectionItem[];
+};
+
+function extractCreditsFromResumeJson(
+  records: Array<{
+    createdTime?: string;
+    fields: {
+      "RESUME JSON"?: string;
+      "Submitted at"?: string;
+    };
+  }>
+): ResumeCredit[] {
+  const latestRecord = [...records]
+    .filter((record) => record.fields["RESUME JSON"])
+    .sort((a, b) => {
+      const aTime = Date.parse(a.fields["Submitted at"] ?? a.createdTime ?? "");
+      const bTime = Date.parse(b.fields["Submitted at"] ?? b.createdTime ?? "");
+      return bTime - aTime;
+    })[0];
+
+  const raw = latestRecord?.fields["RESUME JSON"];
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const resume = JSON.parse(raw) as ResumeJsonPayload;
+    const sections = [
+      resume.television,
+      resume.film,
+      resume.theatre,
+      resume.commercial,
+      resume.newMedia,
+      resume.voiceover
+    ];
+
+    return sections
+      .flatMap((section) => section ?? [])
+      .filter((item) => item.project)
+      .map((item) => ({
+        project: item.project ?? "",
+        role: item.role ?? "",
+        company: item.studio ?? ""
+      }));
+  } catch (error) {
+    console.error("Resume101 JSON parse failed:", error);
+    return [];
+  }
 }
 
 export async function GET(request: Request) {
