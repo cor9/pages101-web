@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { DashboardShell } from "@/components/editor/DashboardShell";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { normalizeSlug, validateSlug } from "@/lib/slug";
 
 type ActorPageListItem = {
@@ -25,6 +26,7 @@ type SubscriptionState = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createSupabaseBrowserClient();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,6 @@ export default function DashboardPage() {
   // Pages & Subscription lists
   const [pages, setPages] = useState<ActorPageListItem[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionState>(null);
-  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   
   // Page Creation form states
   const [isCreating, setIsCreating] = useState(false);
@@ -273,13 +274,15 @@ export default function DashboardPage() {
       setIsCreating(false);
       
       // Select the new page and load the editor directly
-      setSelectedPageId(newPage.id);
+      router.push(`/dashboard?page=${newPage.id}`);
     } catch {
       setFormError("Failed to create performer page.");
     } finally {
       setCreatingPage(false);
     }
   };
+
+  const selectedPageId = searchParams.get("page");
 
   // Loader state
   if (loading) {
@@ -320,7 +323,7 @@ export default function DashboardPage() {
       <DashboardShell 
         pageId={selectedPageId} 
         onBack={() => {
-          setSelectedPageId(null);
+          router.replace("/dashboard");
           if (user) fetchPagesAndSub(user.id);
         }}
       />
@@ -334,20 +337,7 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-page">
-      {/* Navigation Header */}
-      <header className="dashboard-nav-header">
-        <div className="nav-header-container">
-          <div className="nav-brand">
-            Pages<span>101</span>
-          </div>
-          <div className="nav-user-controls">
-            <span className="user-email">{user?.email}</span>
-            <button onClick={handleSignOut} className="btn-signout">
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader activeTab="performers" userEmail={user?.email} onSignOut={handleSignOut} />
 
       {/* Dashboard Main Area */}
       <main className="dashboard-container">
@@ -470,7 +460,7 @@ export default function DashboardPage() {
                       
                       <div className="performer-actions">
                         <button
-                          onClick={() => setSelectedPageId(pageItem.id)}
+                          onClick={() => router.push(`/dashboard?page=${pageItem.id}`)}
                           className="btn-action-edit"
                         >
                           Edit Profile
