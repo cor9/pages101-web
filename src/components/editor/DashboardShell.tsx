@@ -765,8 +765,14 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
         throw new Error((body as { error?: string }).error ?? "Import failed");
       }
 
-      const { credits, updatedAt } = (await response.json()) as { credits: ResumeCredit[]; updatedAt: string };
-      updateResume({ credits, syncedWithResume101: true, updatedAt });
+      const { credits, groups, training, skills, updatedAt } = (await response.json()) as {
+        credits: ResumeCredit[];
+        groups?: ResumeSection["groups"];
+        training?: ResumeSection["training"];
+        skills?: ResumeSection["skills"];
+        updatedAt: string;
+      };
+      updateResume({ credits, groups, training, skills, syncedWithResume101: true, updatedAt });
       setImportStatus(`Imported ${credits.length} credit${credits.length === 1 ? "" : "s"} from Resume101.`);
     } catch (error) {
       setImportStatus(error instanceof Error ? error.message : "Import failed.");

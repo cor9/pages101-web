@@ -49,11 +49,29 @@ export const samplePages: ActorPage[] = [
         content: {
           syncedWithResume101: true,
           updatedAt: "June 2026",
+          groups: [
+            {
+              title: "Television",
+              credits: [{ project: "The Library Door", role: "Supporting", company: "Independent Short" }]
+            },
+            {
+              title: "Commercial",
+              credits: [{ project: "BrightMart Back to School", role: "Principal", company: "Commercial" }]
+            },
+            {
+              title: "Theatre",
+              credits: [{ project: "Matilda Jr.", role: "Lavender", company: "Community Theatre" }]
+            }
+          ],
           credits: [
             { project: "The Library Door", role: "Supporting", company: "Independent Short" },
             { project: "BrightMart Back to School", role: "Principal", company: "Commercial" },
             { project: "Matilda Jr.", role: "Lavender", company: "Community Theatre" }
-          ]
+          ],
+          training: [
+            { class: "On-Camera Scene Study", instructor: "Corey Ralston", location: "Los Angeles / Zoom" }
+          ],
+          skills: "Soccer, piano, strong reader, basic tumbling"
         }
       },
       {

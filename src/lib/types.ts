@@ -37,10 +37,24 @@ export type ResumeCredit = {
   company: string;
 };
 
+export type ResumeCreditGroup = {
+  title: string;
+  credits: ResumeCredit[];
+};
+
+export type ResumeTraining = {
+  class: string;
+  instructor: string;
+  location: string;
+};
+
 export type ResumeSection = {
   syncedWithResume101: boolean;
   updatedAt: string;
   credits: ResumeCredit[];
+  groups?: ResumeCreditGroup[];
+  training?: ResumeTraining[];
+  skills?: string;
   fileUrl?: string;
   fileName?: string;
 };

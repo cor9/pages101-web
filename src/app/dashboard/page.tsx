@@ -287,7 +287,7 @@ function DashboardPageClient() {
       // 3. Create default page sections (sort orders match dashboard configuration)
       const defaultSections = [
         { page_id: newPage.id, type: "headshots", enabled: true, sort_order: 10, content: { headshots: [] } },
-        { page_id: newPage.id, type: "resume", enabled: true, sort_order: 20, content: { credits: [], syncedWithResume101: false, updatedAt: "" } },
+        { page_id: newPage.id, type: "resume", enabled: true, sort_order: 20, content: { credits: [], groups: [], training: [], skills: "", syncedWithResume101: false, updatedAt: "" } },
         { page_id: newPage.id, type: "clips", enabled: true, sort_order: 30, content: { clips: [] } },
         { page_id: newPage.id, type: "feed", enabled: false, sort_order: 40, content: { items: [] } },
         { page_id: newPage.id, type: "press", enabled: false, sort_order: 50, content: { quote: "", attribution: "" } }

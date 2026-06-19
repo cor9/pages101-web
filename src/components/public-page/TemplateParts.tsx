@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
-import type { ActorPage, Headshot, ResumeCredit, ResumeSection } from "@/lib/types";
+import type { ActorPage, Headshot, ResumeCredit, ResumeCreditGroup, ResumeSection, ResumeTraining } from "@/lib/types";
 import { isPdfFile } from "@/lib/media";
 import { normalizeEmbedUrl } from "@/lib/video";
 import type {
@@ -68,7 +68,11 @@ export function TemplateResume({ page, resume }: { page: ActorPage; resume: Resu
     );
   }
 
-  if (resume.credits.length === 0) {
+  const groups = getResumeGroups(resume);
+  const training = resume.training ?? [];
+  const skills = resume.skills?.trim() ?? "";
+
+  if (groups.length === 0 && training.length === 0 && !skills) {
     return null;
   }
 
@@ -85,10 +89,38 @@ export function TemplateResume({ page, resume }: { page: ActorPage; resume: Resu
           </p>
         </div>
       ) : null}
-      <h4>Television</h4>
-      {resume.credits.map((credit) => <ResumeRow key={`${credit.project}-${credit.role}`} credit={credit} />)}
+      {groups.map((group) => (
+        <div key={group.title}>
+          <h4>{group.title}</h4>
+          {group.credits.map((credit) => <ResumeRow key={`${group.title}-${credit.project}-${credit.role}`} credit={credit} />)}
+        </div>
+      ))}
+      {training.length > 0 ? (
+        <>
+          <h4>Training</h4>
+          {training.map((entry, index) => <TrainingRow key={`${entry.class}-${entry.instructor}-${index}`} entry={entry} />)}
+        </>
+      ) : null}
+      {skills ? (
+        <>
+          <h4>Special Skills</h4>
+          <p className="skills">{skills}</p>
+        </>
+      ) : null}
     </div>
   );
+}
+
+function getResumeGroups(resume: ResumeSection): ResumeCreditGroup[] {
+  if ((resume.groups?.length ?? 0) > 0) {
+    return (resume.groups ?? []).filter((group) => group.credits.length > 0);
+  }
+
+  if (resume.credits.length === 0) {
+    return [];
+  }
+
+  return [{ title: "Credits", credits: resume.credits }];
 }
 
 function ResumePdfPreview({ fileUrl, fileName }: { fileUrl: string; fileName?: string }) {
@@ -359,6 +391,16 @@ function ResumeRow({ credit }: { credit: ResumeCredit }) {
       <span className="p">{credit.project}</span>
       <span className="r">{credit.role}</span>
       <span className="d">{credit.company}</span>
+    </div>
+  );
+}
+
+function TrainingRow({ entry }: { entry: ResumeTraining }) {
+  return (
+    <div className="srow">
+      <span className="p">{entry.class}</span>
+      <span className="r">{entry.instructor}</span>
+      <span className="d">{entry.location}</span>
     </div>
   );
 }

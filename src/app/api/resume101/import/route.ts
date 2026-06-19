@@ -1,6 +1,6 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import type { ResumeCredit } from "@/lib/types";
+import type { ResumeCredit, ResumeCreditGroup, ResumeTraining } from "@/lib/types";
 
 /**
  * GET|POST /api/resume101/import
@@ -88,17 +88,16 @@ async function handleImport(request: Request) {
     }>;
   };
 
-  const directCredits = data.records
-    .filter((record) => record.fields.Project)
-    .map((record) => ({
-      project: record.fields.Project ?? "",
-      role: record.fields.Role ?? "",
-      company: record.fields.Company ?? ""
-    }));
+  const directImport = extractDirectCredits(data.records);
+  const imported = directImport.credits.length > 0 ? directImport : extractResumeImportFromJson(data.records);
 
-  const credits = directCredits.length > 0 ? directCredits : extractCreditsFromResumeJson(data.records);
-
-  return NextResponse.json({ credits, updatedAt: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }) });
+  return NextResponse.json({
+    credits: imported.credits,
+    groups: imported.groups,
+    training: imported.training,
+    skills: imported.skills,
+    updatedAt: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  });
 }
 
 type ResumeJsonSectionItem = {
@@ -114,9 +113,57 @@ type ResumeJsonPayload = {
   commercial?: ResumeJsonSectionItem[];
   newMedia?: ResumeJsonSectionItem[];
   voiceover?: ResumeJsonSectionItem[];
+  training?: Array<{
+    class?: string;
+    instructor?: string;
+    location?: string;
+  }>;
+  skills?: string | string[];
 };
 
-function extractCreditsFromResumeJson(
+type ResumeImportPayload = {
+  credits: ResumeCredit[];
+  groups: ResumeCreditGroup[];
+  training: ResumeTraining[];
+  skills: string;
+};
+
+function extractDirectCredits(
+  records: Array<{
+    fields: {
+      Project?: string;
+      Role?: string;
+      Company?: string;
+      Category?: string;
+    };
+  }>
+): ResumeImportPayload {
+  const categoryMap = new Map<string, ResumeCredit[]>();
+
+  for (const record of records) {
+    const project = record.fields.Project?.trim();
+    if (!project) continue;
+
+    const credit = {
+      project,
+      role: record.fields.Role?.trim() ?? "",
+      company: record.fields.Company?.trim() ?? ""
+    };
+    const category = record.fields.Category?.trim() || "Credits";
+    categoryMap.set(category, [...(categoryMap.get(category) ?? []), credit]);
+  }
+
+  const groups = [...categoryMap.entries()].map(([title, credits]) => ({ title, credits }));
+
+  return {
+    credits: groups.flatMap((group) => group.credits),
+    groups,
+    training: [],
+    skills: ""
+  };
+}
+
+function extractResumeImportFromJson(
   records: Array<{
     createdTime?: string;
     fields: {
@@ -124,7 +171,7 @@ function extractCreditsFromResumeJson(
       "Submitted at"?: string;
     };
   }>
-): ResumeCredit[] {
+): ResumeImportPayload {
   const latestRecord = [...records]
     .filter((record) => record.fields["RESUME JSON"])
     .sort((a, b) => {
@@ -135,32 +182,54 @@ function extractCreditsFromResumeJson(
 
   const raw = latestRecord?.fields["RESUME JSON"];
   if (!raw) {
-    return [];
+    return { credits: [], groups: [], training: [], skills: "" };
   }
 
   try {
     const resume = JSON.parse(raw) as ResumeJsonPayload;
-    const sections = [
-      resume.television,
-      resume.film,
-      resume.theatre,
-      resume.commercial,
-      resume.newMedia,
-      resume.voiceover
-    ];
+    const groups = [
+      buildGroup("Television", resume.television),
+      buildGroup("Film", resume.film),
+      buildGroup("Theatre", resume.theatre),
+      buildGroup("Commercial", resume.commercial),
+      buildGroup("New Media", resume.newMedia),
+      buildGroup("Voiceover", resume.voiceover)
+    ].filter((group): group is ResumeCreditGroup => Boolean(group));
 
-    return sections
-      .flatMap((section) => section ?? [])
-      .filter((item) => item.project)
-      .map((item) => ({
-        project: item.project ?? "",
-        role: item.role ?? "",
-        company: item.studio ?? ""
-      }));
+    const training = (resume.training ?? [])
+      .map((entry) => ({
+        class: entry.class?.trim() ?? "",
+        instructor: entry.instructor?.trim() ?? "",
+        location: entry.location?.trim() ?? ""
+      }))
+      .filter((entry) => entry.class || entry.instructor || entry.location);
+
+    const skills = Array.isArray(resume.skills)
+      ? resume.skills.filter(Boolean).join(", ")
+      : resume.skills?.trim() ?? "";
+
+    return {
+      credits: groups.flatMap((group) => group.credits),
+      groups,
+      training,
+      skills
+    };
   } catch (error) {
     console.error("Resume101 JSON parse failed:", error);
-    return [];
+    return { credits: [], groups: [], training: [], skills: "" };
   }
+}
+
+function buildGroup(title: string, items?: ResumeJsonSectionItem[]): ResumeCreditGroup | null {
+  const credits = (items ?? [])
+    .map((item) => ({
+      project: item.project?.trim() ?? "",
+      role: item.role?.trim() ?? "",
+      company: item.studio?.trim() ?? ""
+    }))
+    .filter((credit) => credit.project);
+
+  return credits.length > 0 ? { title, credits } : null;
 }
 
 export async function GET(request: Request) {

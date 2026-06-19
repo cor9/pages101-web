@@ -89,6 +89,9 @@ function mapSection(section: PageSectionRow): ActorPageSection[] {
           syncedWithResume101: Boolean(content.syncedWithResume101),
           updatedAt: getString(content.updatedAt),
           credits: getArray(content.credits),
+          groups: getArray(content.groups),
+          training: getArray(content.training),
+          skills: getOptionalString(content.skills),
           fileUrl: getOptionalString(content.fileUrl),
           fileName: getOptionalString(content.fileName)
         }
