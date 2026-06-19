@@ -814,7 +814,7 @@ export function CareerTrackerDashboard() {
               <article className="career-stat-card">
                 <span>Callbacks</span>
                 <strong>{stats.callbacks}</strong>
-                <small>Current year</small>
+                <small>Callback stage or later</small>
               </article>
               <article className="career-stat-card">
                 <span>Avail Checks</span>
@@ -829,7 +829,7 @@ export function CareerTrackerDashboard() {
               <article className="career-stat-card">
                 <span>Callback Rate</span>
                 <strong>{formatPercent(stats.callbackRate)}</strong>
-                <small>Callbacks ÷ auditions</small>
+                <small>Callback stage or later ÷ auditions</small>
               </article>
               <article className="career-stat-card">
                 <span>Booking Rate</span>

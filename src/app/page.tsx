@@ -15,8 +15,6 @@ import {
   setMagicLinkCooldown
 } from "@/lib/auth/magic-link";
 
-type TemplateType = "classic" | "splash" | "prestige";
-
 export default function HomePage() {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
@@ -27,9 +25,6 @@ export default function HomePage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [cooldownMs, setCooldownMs] = useState(0);
-
-  // Template previewer state
-  const [activeTemplate, setActiveTemplate] = useState<TemplateType>("classic");
 
   useEffect(() => {
     if (!supabase) return;
@@ -218,9 +213,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section className="landing-social" aria-label="Social Proof">
-        <p>Built by Corey Ralston, youth talent manager and founder of Child Actor 101.</p>
+      {/* Safety Proof */}
+      <section className="landing-social" aria-label="Safety">
+        <p>Child-safe by default. Parent contact stays protected, and Actor Pages stay hidden from Google unless you choose otherwise.</p>
       </section>
 
       <section id="how-it-works" className="landing-problem" aria-label="Problem">
@@ -271,73 +266,58 @@ export default function HomePage() {
 
       <section className="landing-career-tracker" aria-label="Career Tracker">
         <div className="landing-section-header">
+          <p className="landing-section-eyebrow">Private Career Tracker</p>
           <h2>Finally Know What&apos;s Actually Happening In Your Actor&apos;s Career</h2>
           <p>Most families guess. Pages101 keeps a complete history of auditions, outcomes, callbacks, avail checks, and bookings so you can identify patterns and measure growth over time.</p>
         </div>
 
-        <div className="landing-career-grid">
-          <div className="career-stats-panel">
-            <div className="career-stats-grid landing-career-stats-grid">
-              <div className="career-stat-card">
-                <span>37</span>
-                <small>Auditions</small>
+        <div className="landing-career-dashboard-shell">
+          <div className="landing-career-shot-grid">
+            <article className="landing-career-shot-card">
+              <div className="browser-mockup landing-career-browser">
+                <div className="browser-mockup-header">
+                  <span className="browser-mockup-dot red"></span>
+                  <span className="browser-mockup-dot yellow"></span>
+                  <span className="browser-mockup-dot green"></span>
+                  <span className="browser-mockup-address">Pages101 Career Tracker · Stats</span>
+                </div>
+                <div className="landing-career-shot-frame">
+                  <Image
+                    src="/landing/career-tracker-stats.jpg"
+                    alt="Pages101 Career Tracker stats view showing yearly audition totals and callback rate"
+                    width={1558}
+                    height={566}
+                    style={{ width: "100%", height: "auto", display: "block" }}
+                  />
+                </div>
               </div>
-              <div className="career-stat-card">
-                <span>11</span>
-                <small>Callbacks</small>
-              </div>
-              <div className="career-stat-card">
-                <span>4</span>
-                <small>Avail Checks</small>
-              </div>
-              <div className="career-stat-card">
-                <span>2</span>
-                <small>Bookings</small>
-              </div>
-              <div className="career-stat-card career-stat-card--wide">
-                <span>29.7%</span>
-                <small>Callback Rate</small>
-              </div>
-            </div>
-          </div>
+            </article>
 
-          <div className="career-table-card landing-career-table-card">
-            <div className="career-filters-header">
-              <h3>Career Tracker Snapshot</h3>
-            </div>
-            <div className="career-table-wrap">
-              <table className="career-table">
-                <thead>
-                  <tr>
-                    <th>Project</th>
-                    <th>Role</th>
-                    <th>Outcome</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Summer of Wren</td>
-                    <td>Guest Star</td>
-                    <td><span className="career-outcome-badge career-outcome-badge--callback">Callback</span></td>
-                  </tr>
-                  <tr>
-                    <td>BrightMart</td>
-                    <td>Principal</td>
-                    <td><span className="career-outcome-badge career-outcome-badge--avail_check">Avail Check</span></td>
-                  </tr>
-                  <tr>
-                    <td>Maple Street</td>
-                    <td>Supporting</td>
-                    <td><span className="career-outcome-badge career-outcome-badge--booked">Booked</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <article className="landing-career-shot-card">
+              <div className="browser-mockup landing-career-browser">
+                <div className="browser-mockup-header">
+                  <span className="browser-mockup-dot red"></span>
+                  <span className="browser-mockup-dot yellow"></span>
+                  <span className="browser-mockup-dot green"></span>
+                  <span className="browser-mockup-address">Pages101 Career Tracker · Auditions</span>
+                </div>
+                <div className="landing-career-shot-frame">
+                  <Image
+                    src="/landing/career-tracker-table.jpg"
+                    alt="Pages101 Career Tracker table showing audition entries with stage and outcome"
+                    width={1558}
+                    height={1307}
+                    style={{ width: "100%", height: "auto", display: "block" }}
+                  />
+                </div>
+              </div>
+            </article>
           </div>
+          <p className="landing-career-caption">Real Pages101 tracker screens showing yearly stats and detailed audition history.</p>
         </div>
       </section>
 
-      {/* Interactive Templates Preview */}
+      {/* Template Gallery */}
       <section className="landing-templates" aria-label="Templates Showcase">
         <div className="landing-section-header">
           <h2>Choose The Look That Fits Your Actor</h2>
@@ -345,29 +325,12 @@ export default function HomePage() {
         </div>
 
         <div className="template-previewer">
-          <div className="template-tabs">
-            <button 
-              className={`template-tab ${activeTemplate === "classic" ? "active" : ""}`}
-              onClick={() => setActiveTemplate("classic")}
-            >
-              Classic <span className="badge-free">Free</span>
-            </button>
-            <button 
-              className={`template-tab ${activeTemplate === "splash" ? "active" : ""}`}
-              onClick={() => setActiveTemplate("splash")}
-            >
-              Splash <span className="badge-plus">Plus</span>
-            </button>
-            <button 
-              className={`template-tab ${activeTemplate === "prestige" ? "active" : ""}`}
-              onClick={() => setActiveTemplate("prestige")}
-            >
-              Prestige <span className="badge-plus">Plus</span>
-            </button>
-          </div>
-
-          <div className="template-mock-display">
-            {activeTemplate === "classic" && (
+          <div className="landing-template-grid">
+            <div className="landing-template-card">
+              <div className="landing-template-card-head">
+                <h3>Classic</h3>
+                <span className="badge-free">Free</span>
+              </div>
               <div className="browser-mockup">
                 <div className="browser-mockup-header">
                   <span className="browser-mockup-dot red"></span>
@@ -379,9 +342,13 @@ export default function HomePage() {
                   <Image src="/classicexample.jpg" alt="Classic actor page preview" width={500} height={833} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
-            )}
-            
-            {activeTemplate === "splash" && (
+            </div>
+
+            <div className="landing-template-card">
+              <div className="landing-template-card-head">
+                <h3>Splash</h3>
+                <span className="badge-plus">Plus</span>
+              </div>
               <div className="browser-mockup">
                 <div className="browser-mockup-header">
                   <span className="browser-mockup-dot red"></span>
@@ -393,9 +360,13 @@ export default function HomePage() {
                   <Image src="/splashexample.jpg" alt="Splash actor page preview" width={500} height={633} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
-            )}
+            </div>
 
-            {activeTemplate === "prestige" && (
+            <div className="landing-template-card">
+              <div className="landing-template-card-head">
+                <h3>Prestige</h3>
+                <span className="badge-plus">Plus</span>
+              </div>
               <div className="browser-mockup">
                 <div className="browser-mockup-header">
                   <span className="browser-mockup-dot red"></span>
@@ -407,7 +378,7 @@ export default function HomePage() {
                   <Image src="/prestigeexample.jpg" alt="Prestige actor page preview" width={500} height={806} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
         <p className="landing-template-note">
@@ -422,10 +393,21 @@ export default function HomePage() {
         </div>
         <div className="landing-domain-grid">
           <div className="feature-card landing-domain-card">
+            <div className="landing-domain-flow" aria-hidden="true">
+              <span className="landing-domain-badge landing-domain-badge--platform">
+                <span className="landing-domain-badge-icon">◫</span>
+                <span>mia.pages101.me</span>
+              </span>
+              <span className="landing-domain-arrow">→</span>
+              <span className="landing-domain-badge landing-domain-badge--example">
+                <span className="landing-domain-badge-icon">◫</span>
+                <span>MiaRoseActor.com</span>
+              </span>
+            </div>
             <div className="landing-domain-examples">
-              <span>MiaRoseActor.com</span>
-              <span>BillyThompsonActor.com</span>
-              <span>JordanLeePerformer.com</span>
+              <span className="landing-domain-badge landing-domain-badge--example"><span className="landing-domain-badge-icon">◫</span><span>MiaRoseActor.com</span></span>
+              <span className="landing-domain-badge landing-domain-badge--example"><span className="landing-domain-badge-icon">◫</span><span>BillyThompsonActor.com</span></span>
+              <span className="landing-domain-badge landing-domain-badge--example"><span className="landing-domain-badge-icon">◫</span><span>JordanLeePerformer.com</span></span>
             </div>
             <p className="landing-domain-words">Professional. Memorable. Easy to share.</p>
           </div>
@@ -442,7 +424,7 @@ export default function HomePage() {
               <tr>
                 <th>Feature</th>
                 <th>Pages101</th>
-                <th>Generic Website Builder</th>
+                <th>Generic Builder</th>
                 <th>Linktree</th>
               </tr>
             </thead>
@@ -479,7 +461,7 @@ export default function HomePage() {
           </div>
           <div className="feature-card">
             <h3>Sibling Support</h3>
-            <p>Create up to four performer pages for one family account.</p>
+            <p>Create up to four Actor Pages for one family account.</p>
           </div>
           <div className="feature-card">
             <h3>Updates Feed</h3>
@@ -549,10 +531,10 @@ export default function HomePage() {
         <div className="landing-pricing-summary">
           <p className="landing-pricing-summary-title">Every account includes:</p>
           <div className="landing-pricing-summary-list" aria-label="Included in every account">
-            <span>✓ Professional actor page</span>
-            <span>✓ One-click Resume101 import and re-import</span>
-            <span>✓ Child-safe contact relay</span>
-            <span>✓ Career Tracker</span>
+            <span>✓ Professional Actor Page</span>
+            <span>✓ Resume101 Import</span>
+            <span>✓ Child-Safe Contact Relay</span>
+            <span>✓ Career Tracker (5 entries free, unlimited on Plus)</span>
           </div>
         </div>
 
@@ -568,7 +550,7 @@ export default function HomePage() {
               <li>✓ Included safety controls</li>
               <li>✓ One-click Resume101 import and re-import</li>
               <li>✓ Safety relays & default noindex</li>
-              <li>✓ 1 performer page</li>
+              <li>✓ 1 Actor Page</li>
               <li>✓ 5 audition tracker entries</li>
             </ul>
           </div>
@@ -583,7 +565,7 @@ export default function HomePage() {
               <li>✓ Connect your own custom domain</li>
               <li>✓ Unlimited headshots & clips</li>
               <li>✓ Curated updates feed</li>
-              <li>✓ Sibling support — up to 4 performer pages</li>
+              <li>✓ Sibling support — up to 4 Actor Pages</li>
               <li>✓ Unlimited audition tracking</li>
               <li>✓ Minimal Pages101 credit (no ads)</li>
               <li>✓ One-click Resume101 import and re-import</li>
@@ -594,16 +576,16 @@ export default function HomePage() {
 
       <section className="landing-bottom-cta" aria-label="Bottom Call To Action">
         <div className="landing-bottom-cta-card">
-          <h2>One Link For The Industry. One Dashboard For The Family.</h2>
-          <p>Create a professional actor page, organize auditions and callbacks, track career progress, and upgrade anytime for custom domains and premium designs.</p>
+          <h2>One Actor Page For The Industry. One Career Tracker For The Family.</h2>
+          <p>Showcase your actor professionally, organize auditions privately, and upgrade anytime for premium templates, custom domains, sibling support, and unlimited tracking.</p>
           <div className="landing-bottom-cta-actions">
             {user ? (
               <button onClick={() => router.push("/dashboard")} className="btn-hero-primary">
-                Create Free Account
+                Create Free Actor Page
               </button>
             ) : (
               <button onClick={handleScrollToLogin} className="btn-hero-primary">
-                Create Free Account
+                Create Free Actor Page
               </button>
             )}
             <a

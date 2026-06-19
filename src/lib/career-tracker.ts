@@ -177,6 +177,9 @@ export const AUDITION_RECEIVED_FROM_LABELS: Record<AuditionReceivedFrom, string>
   other: "Other"
 };
 
+const CALLBACK_STAGE_INDEX = AUDITION_STAGES.indexOf("callback");
+const CALLBACK_LIKE_OUTCOMES: AuditionOutcome[] = ["callback", "avail_check", "booked"];
+
 function optionalTrimmedString(maxLength: number) {
   return z
     .string()
@@ -241,7 +244,13 @@ export function sortAuditionsNewestFirst(auditions: AuditionRecord[]) {
 export function calculateCurrentYearStats(auditions: AuditionRecord[], year = new Date().getFullYear()): AuditionStats {
   const currentYearAuditions = auditions.filter((audition) => audition.audition_date?.startsWith(`${year}-`));
   const auditionsCount = currentYearAuditions.length;
-  const callbacks = currentYearAuditions.filter((audition) => audition.outcome === "callback").length;
+  const callbacks = currentYearAuditions.filter((audition) => {
+    const stageIndex = audition.audition_stage ? AUDITION_STAGES.indexOf(audition.audition_stage) : -1;
+    const reachedCallbackStage = stageIndex >= CALLBACK_STAGE_INDEX;
+    const hasCallbackLikeOutcome = audition.outcome ? CALLBACK_LIKE_OUTCOMES.includes(audition.outcome) : false;
+
+    return reachedCallbackStage || hasCallbackLikeOutcome;
+  }).length;
   const availChecks = currentYearAuditions.filter((audition) => audition.outcome === "avail_check").length;
   const bookings = currentYearAuditions.filter((audition) => audition.outcome === "booked").length;
 

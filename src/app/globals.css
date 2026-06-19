@@ -4016,6 +4016,15 @@ img {
   color: var(--ink);
 }
 
+.landing-section-eyebrow {
+  margin: 0 0 12px 0 !important;
+  color: var(--marquee);
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .landing-section-header p {
   font-size: 16px;
   color: var(--ink-soft);
@@ -4116,31 +4125,50 @@ img {
   padding: 80px 24px;
 }
 
-.landing-career-grid {
+.landing-career-tracker {
+  background: linear-gradient(180deg, rgba(243, 236, 225, 0.95) 0%, rgba(255, 252, 248, 0.92) 100%);
+  border-radius: 28px;
+}
+
+.landing-career-dashboard-shell {
+  background: rgba(255, 252, 248, 0.72);
+  border: 1px solid rgba(43, 35, 32, 0.08);
+  border-radius: 24px;
+  padding: 28px;
+}
+
+.landing-career-shot-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: 28px;
-  align-items: stretch;
+  grid-template-columns: 1fr;
+  gap: 20px;
 }
 
-.career-stats-panel {
-  background: var(--paper);
-  border: 1px solid var(--hairline);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--shadow-card);
+.landing-career-shot-card {
+  min-width: 0;
 }
 
-.landing-career-stats-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.landing-career-browser {
+  max-width: none;
+  border-radius: 18px;
 }
 
-.career-stat-card--wide {
-  grid-column: span 2;
+.landing-career-shot-frame {
+  background: linear-gradient(180deg, #fcfaf7 0%, #ffffff 100%);
+  padding: 0;
 }
 
-.landing-career-table-card {
-  margin: 0;
+.landing-career-shot-frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.landing-career-caption {
+  margin: 16px 0 0;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: italic;
 }
 
 .landing-template-note {
@@ -4163,25 +4191,59 @@ img {
   text-align: center;
 }
 
+.landing-domain-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.landing-domain-arrow {
+  color: var(--ink-soft);
+  font-size: 22px;
+  font-weight: 700;
+}
+
 .landing-domain-examples {
-  display: grid;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 18px;
 }
 
-.landing-domain-examples span {
+.landing-domain-badge {
   display: inline-flex;
-  justify-content: center;
   align-items: center;
+  gap: 10px;
   min-height: 52px;
-  padding: 0 16px;
+  padding: 0 18px;
   border-radius: 999px;
-  background: var(--cream);
-  border: 1px solid rgba(43, 35, 32, 0.1);
+  border: 1px solid rgba(43, 35, 32, 0.08);
+  background: #fff;
   color: var(--ink);
-  font-size: clamp(18px, 2vw, 24px);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 600;
+  box-shadow: 0 10px 22px rgba(43, 35, 32, 0.06);
+}
+
+.landing-domain-badge--platform {
+  background: #f6f3ed;
+  color: var(--ink-soft);
+}
+
+.landing-domain-badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(43, 35, 32, 0.06);
+  font-size: 10px;
 }
 
 .landing-domain-words {
@@ -4241,45 +4303,8 @@ img {
 }
 
 .template-previewer {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
-}
-
-.template-tabs {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 32px;
-  border-bottom: 1px solid var(--hairline);
-  padding-bottom: 12px;
-}
-
-.template-tab {
-  background: transparent;
-  border: none;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 12px 24px;
-  cursor: pointer;
-  color: var(--ink-soft);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-}
-
-.template-tab.active {
-  color: var(--marquee);
-}
-
-.template-tab.active::after {
-  content: "";
-  position: absolute;
-  bottom: -13px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--marquee);
 }
 
 .badge-free {
@@ -4298,25 +4323,39 @@ img {
   border-radius: 100px;
 }
 
-.template-mock-display {
-  background: var(--cream);
-  border: 1px solid var(--hairline);
-  border-radius: 12px;
-  padding: 40px;
-  min-height: 280px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.landing-template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  align-items: start;
 }
 
-.mock-display-canvas {
-  width: 100%;
-  max-width: 500px;
-  background: var(--paper);
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: var(--shadow-card);
-  animation: fadeIn 0.3s ease;
+.landing-template-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.landing-template-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.landing-template-card-head h3 {
+  margin: 0;
+  font-family: var(--font-fraunces), Fraunces, Georgia, serif;
+  font-size: 24px;
+}
+
+.landing-template-card .browser-mockup {
+  max-width: none;
+}
+
+.landing-template-card .browser-mockup-body {
+  height: auto;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -6034,7 +6073,7 @@ img {
   }
 
   .landing-pillars-grid,
-  .landing-career-grid {
+  .landing-template-grid {
     grid-template-columns: 1fr;
   }
 
@@ -6065,15 +6104,6 @@ img {
     font-size: 32px;
   }
 
-  .template-tab {
-    padding: 8px 12px;
-    font-size: 14px;
-  }
-
-  .template-mock-display {
-    padding: 20px;
-  }
-
   .landing-problem,
   .landing-pillars,
   .landing-career-tracker,
@@ -6093,7 +6123,15 @@ img {
     padding: 24px;
   }
 
-  .landing-domain-examples span {
+  .landing-domain-flow {
+    flex-direction: column;
+  }
+
+  .landing-domain-arrow {
+    transform: rotate(90deg);
+  }
+
+  .landing-domain-badge {
     font-size: 16px;
   }
 
@@ -6107,6 +6145,10 @@ img {
 
   .landing-bottom-cta-card {
     padding: 32px 22px;
+  }
+
+  .landing-career-dashboard-shell {
+    padding: 18px;
   }
 
   .oauth-buttons {
