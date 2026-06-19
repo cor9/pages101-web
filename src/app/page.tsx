@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -124,7 +125,7 @@ export default function HomePage() {
         fontWeight: "500",
         borderBottom: "1px solid var(--hairline)"
       }}>
-        Part of the <a href="https://childactor101.com" target="_blank" rel="noreferrer" style={{ color: "var(--marquee)", textDecoration: "underline", fontWeight: "600" }}>Child Actor 101</a> family &bull; Build your resume at <a href="https://resumes.childactor101.com" target="_blank" rel="noreferrer" style={{ color: "var(--marquee)", textDecoration: "underline", fontWeight: "600" }}>resumes.childactor101.com</a>
+        Part of the <a href="https://childactor101.com" target="_blank" rel="noreferrer" style={{ color: "var(--marquee)", textDecoration: "underline", fontWeight: "600" }}>Child Actor 101</a> family &bull; Build your resume at <a href="https://resumes.childactor101.com" target="_blank" rel="noreferrer" style={{ color: "var(--marquee)", textDecoration: "underline", fontWeight: "600" }}>Resume101</a>
       </div>
 
       {/* Navigation */}
@@ -139,7 +140,7 @@ export default function HomePage() {
                 onClick={() => router.push("/dashboard")} 
                 className="btn-nav-primary"
               >
-                Go to Dashboard
+                Manage Your Press Kits
               </button>
             ) : (
               <button 
@@ -158,10 +159,10 @@ export default function HomePage() {
         <div className="landing-hero-container">
           <div className="landing-hero-content">
             <h1 className="landing-hero-title">
-              The Free 10-Minute Marketing Page for Young Actors
+              The Free 10-Minute Digital Press Kit for Young Actors
             </h1>
             <p className="landing-hero-subtitle">
-              Built with Industry Experience. Safe-by-default. Showcase headshots, reels, clips, resume, important links, Contact info and a curated newsfeed in a stunning casting-ready web page.
+              Built by a talent manager. Safe by default. One polished link for headshots, reels, resume, and reps — plus a private tracker for every audition.
             </p>
             <div className="landing-hero-ctas">
               {user ? (
@@ -169,14 +170,14 @@ export default function HomePage() {
                   onClick={() => router.push("/dashboard")} 
                   className="btn-hero-primary"
                 >
-                  Manage Your Pages
+                  Manage Your Press Kits
                 </button>
               ) : (
                 <button 
                   onClick={handleScrollToLogin} 
                   className="btn-hero-primary"
                 >
-                  Create Your Actor Page Free
+                  Create Your Free Press Kit
                 </button>
               )}
               <a href="#features" className="btn-hero-secondary">
@@ -222,33 +223,58 @@ export default function HomePage() {
       {/* Features Section */}
       <section id="features" className="landing-features" aria-label="Features">
         <div className="landing-section-header">
-          <h2>The promotional page your child&apos;s team actually wants to use.</h2>
-          <p>Everything you need to showcase your child&apos;s talent professionally, safely, and quickly.</p>
+          <h2>The press kit your child&apos;s team actually wants to use.</h2>
+          <p>One professional link for headshots, resume credits, reels, clips, representation, casting profiles, and safe contact — plus a private career tracker for auditions, callbacks, avail checks, and bookings.</p>
+          <p className="landing-support-line">Stop sending casting five different links. Pages101 gives your actor one clean, professional place for everything their team needs.</p>
         </div>
         
         <div className="landing-features-grid">
           <div className="feature-card">
             <div className="feature-icon font-tip-icon">💡</div>
             <h3>101 Manager Tips</h3>
-            <p>Get professional coaching guidance beside every builder field. Know exactly how to slate, which headshots to lead with, and what clips casting directors want to see.</p>
+            <p>Get professional guidance beside every field. Know what to include, what to leave out, which headshots to lead with, and how to present your actor&apos;s materials clearly.</p>
           </div>
           
           <div className="feature-card">
             <div className="feature-icon resume-icon">🔄</div>
             <h3>Resume101 Integration</h3>
-            <p>Import all credits from Resume101 with a single click. Keep your page in sync instantly without re-typing. Download formatted PDF resumes directly from the page.</p>
+            <p>Import credits from Resume101 with a single click. Keep your press kit and actor resume consistent without re-typing the same credits over and over.</p>
           </div>
 
           <div className="feature-card">
             <div className="feature-icon safety-icon">🛡️</div>
             <h3>Safety-First by Default</h3>
-            <p>We hide personal contact info and exact birthdates. parent messages are relayed securely via an email form. Pages are unlisted from Google search unless you choose to opt in.</p>
+            <p>We hide personal contact info and exact birthdates. Parent messages are relayed securely through a contact form. Press kits are unlisted from Google search unless you choose to opt in.</p>
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon multi-icon">👥</div>
-            <h3>Manage Sibling Pages</h3>
-            <p>Have multiple talented performers in the family? Manage up to 4 child actor pages under a single account, switching between templates instantly (Plus Tier).</p>
+            <div className="feature-icon multi-icon">📋</div>
+            <h3>Career Tracker</h3>
+            <p>Track auditions, callbacks, avail checks, and bookings in one private dashboard. See your actor&apos;s progress over time and keep important casting notes organized.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-more-than" aria-label="More Than a Press Kit">
+        <div className="landing-section-header">
+          <h2>More Than a Digital Press Kit</h2>
+          <p>Pages101 helps families showcase the actor publicly while staying organized privately.</p>
+        </div>
+
+        <div className="landing-mini-grid">
+          <div className="feature-card landing-mini-card">
+            <h3>Public Press Kit</h3>
+            <p>Share headshots, clips, reels, resume credits, representation, casting links, and safe contact in one clean professional link.</p>
+          </div>
+
+          <div className="feature-card landing-mini-card">
+            <h3>Private Career Tracker</h3>
+            <p>Log auditions, callbacks, producer sessions, avail checks, bookings, outcomes, casting contacts, and notes.</p>
+          </div>
+
+          <div className="feature-card landing-mini-card">
+            <h3>Connected 101 Tools</h3>
+            <p>Use Resume101 to keep credits consistent, Prep101 to prepare stronger auditions, and Reader101 to support better self-tapes.</p>
           </div>
         </div>
       </section>
@@ -256,8 +282,8 @@ export default function HomePage() {
       {/* Interactive Templates Preview */}
       <section className="landing-templates" aria-label="Templates Showcase">
         <div className="landing-section-header">
-          <h2>Choose a Stunning Template</h2>
-          <p>Switch templates in one click without losing any resume details, clips, or headshots.</p>
+          <h2>Choose a Press Kit Style</h2>
+          <p>Switch styles in one click without losing resume credits, clips, links, or headshots.</p>
         </div>
 
         <div className="template-previewer">
@@ -292,7 +318,7 @@ export default function HomePage() {
                   <span className="browser-mockup-address">billy.childactor101.com</span>
                 </div>
                 <div className="browser-mockup-body" style={{ position: "relative" }}>
-                  <Image src="/classicexample.jpg" alt="Classic Template Preview" width={500} height={833} style={{ width: "100%", height: "auto" }} />
+                  <Image src="/classicexample.jpg" alt="Classic Press Kit Preview" width={500} height={833} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
             )}
@@ -306,7 +332,7 @@ export default function HomePage() {
                   <span className="browser-mockup-address">mia.childactor101.com</span>
                 </div>
                 <div className="browser-mockup-body" style={{ position: "relative" }}>
-                  <Image src="/splashexample.jpg" alt="Splash Template Preview" width={500} height={633} style={{ width: "100%", height: "auto" }} />
+                  <Image src="/splashexample.jpg" alt="Splash Press Kit Preview" width={500} height={633} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
             )}
@@ -320,7 +346,7 @@ export default function HomePage() {
                   <span className="browser-mockup-address">corey.childactor101.com</span>
                 </div>
                 <div className="browser-mockup-body" style={{ position: "relative" }}>
-                  <Image src="/prestigeexample.jpg" alt="Prestige Template Preview" width={500} height={806} style={{ width: "100%", height: "auto" }} />
+                  <Image src="/prestigeexample.jpg" alt="Prestige Press Kit Preview" width={500} height={806} style={{ width: "100%", height: "auto" }} />
                 </div>
               </div>
             )}
@@ -332,7 +358,7 @@ export default function HomePage() {
       <section id="login-section" className="landing-login">
         <div className="landing-login-container">
           <div className="login-card">
-            <h2>Start Building Your Page</h2>
+            <h2>Start Building Your Press Kit</h2>
             <p className="login-card-subtitle">No password needed. We&apos;ll email you a secure link to sign in or register.</p>
             
             {status === "success" ? (
@@ -380,22 +406,23 @@ export default function HomePage() {
       <section className="landing-pricing" aria-label="Pricing">
         <div className="landing-section-header">
           <h2>Simple, Honest Pricing</h2>
-          <p>Safety is always free. Plus unlocks custom domains, sibling pages, and design templates.</p>
+          <p>Safety is always free. Plus unlocks custom domains, sibling press kits, unlimited media, premium styles, live Resume101 sync, and unlimited audition tracking.</p>
         </div>
 
         <div className="pricing-grid">
           <div className="pricing-tier free-tier">
             <h3>Classic Free</h3>
             <div className="tier-price">$0 <span>/ forever</span></div>
-            <p className="tier-desc">Great for getting started and setting up a basic profile.</p>
+            <p className="tier-desc">Great for creating a safe, simple digital press kit.</p>
             <ul className="tier-features">
-              <li>✓ Classic Template</li>
+              <li>✓ Classic Press Kit Style</li>
               <li>✓ Custom Accent Colors & Fonts</li>
-              <li>✓ 3 free images & 2 video link uploads</li>
+              <li>✓ 3 headshots & 2 video links</li>
               <li>✓ Included safety controls</li>
-              <li>✓ Resume101 copy import</li>
+              <li>✓ Resume101 credit import</li>
               <li>✓ Safety relays & default noindex</li>
-              <li>✓ 1 performer page</li>
+              <li>✓ 1 performer press kit</li>
+              <li>✓ 5 audition tracker entries</li>
             </ul>
           </div>
 
@@ -403,13 +430,14 @@ export default function HomePage() {
             <div className="tier-badge">Recommended</div>
             <h3>Plus</h3>
             <div className="tier-price">$49 <span>/ year</span></div>
-            <p className="tier-desc">Perfect for active performers and multi-sibling families.</p>
+            <p className="tier-desc">Perfect for active performers, siblings, and families who want a polished professional link plus private career tracking.</p>
             <ul className="tier-features">
-              <li>✓ Classic + Splash + Prestige templates</li>
+              <li>✓ Classic + Splash + Prestige press kit styles</li>
               <li>✓ Connect your own custom domain</li>
               <li>✓ Unlimited headshots & clips</li>
-              <li>✓ Behind-the-Scenes updates feed</li>
-              <li>✓ Sibling support (up to 4 performer pages)</li>
+              <li>✓ Curated updates feed</li>
+              <li>✓ Sibling support — up to 4 performer press kits</li>
+              <li>✓ Unlimited audition tracking</li>
               <li>✓ Minimal Pages101 credit (no ads)</li>
               <li>✓ Syncs live with Resume101</li>
             </ul>
@@ -424,6 +452,7 @@ export default function HomePage() {
             Pages<span>101</span>
           </div>
           <div className="footer-links">
+            <Link href="/">Pages101</Link>
             <a href="https://childactor101.com" target="_blank" rel="noreferrer">Child Actor 101</a>
             <a href="https://resumes.childactor101.com" target="_blank" rel="noreferrer">Resume101</a>
             <a href="#features">Features</a>
