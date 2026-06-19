@@ -1505,32 +1505,43 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
               <span>{(resumeContent?.credits ?? []).length} credit{(resumeContent?.credits ?? []).length === 1 ? "" : "s"}</span>
             </div>
             <TipDisclosure tipKey="resume" />
-            {resumeHasPdf ? (
+            <>
               <div className="resume-import-bar">
                 <p>
-                  <b>Resume Document</b> — {resumeContent?.fileName ? `Current: ${resumeContent.fileName}` : "Uploaded PDF attached."}
+                  <b>Resume101 Import</b> — pull your credits directly from Resume101.
                 </p>
-                <button className="btn-import" type="button" onClick={handleRemoveResumeDocument}>
-                  Remove
+                <button
+                  className="btn-import"
+                  type="button"
+                  disabled={importing || !authUser}
+                  onClick={handleResume101Import}
+                >
+                  {importing ? "Importing…" : "Import →"}
                 </button>
               </div>
-            ) : resumeHasStructured ? (
-              <>
-                <div className="resume-import-bar">
-                  <p>
-                    <b>Resume101 Import</b> — pull your credits directly from Resume101.
-                  </p>
-                  <button
-                    className="btn-import"
-                    type="button"
-                    disabled={importing || !authUser}
-                    onClick={handleResume101Import}
-                  >
-                    {importing ? "Importing…" : "Import →"}
+              {importStatus ? <p className="panel-note">{importStatus}</p> : null}
+              {!authUser ? <p className="panel-note">Sign in to import from Resume101.</p> : null}
+
+              <div className="resume-import-bar" style={{ marginTop: 16 }}>
+                <p>
+                  <b>Resume Document</b> — {resumeHasPdf
+                    ? (resumeContent?.fileName ? `Current: ${resumeContent.fileName}` : "Uploaded PDF attached.")
+                    : "Upload a PDF or DOC for download."}
+                </p>
+                {resumeHasPdf ? (
+                  <button className="btn-import" type="button" onClick={handleRemoveResumeDocument}>
+                    Remove
                   </button>
-                </div>
-                {importStatus ? <p className="panel-note">{importStatus}</p> : null}
-                {!authUser ? <p className="panel-note">Sign in to import from Resume101.</p> : null}
+                ) : (
+                  <label className="btn-import" style={{ cursor: "pointer", textAlign: "center" }}>
+                    {resumeUploading ? "Uploading…" : "Upload →"}
+                    <input type="file" accept=".pdf,.doc,.docx" disabled={resumeUploading} onChange={handleResumeUpload} style={{ display: "none" }} />
+                  </label>
+                )}
+              </div>
+              {resumeUploadStatus ? <p className="panel-note">{resumeUploadStatus}</p> : null}
+
+              {resumeHasStructured ? (
                 <div className="editor-rows" aria-label="Resume credits" style={{ marginTop: 16 }}>
                   {(resumeContent?.credits ?? []).map((credit, index) => (
                     <div className="editor-row" key={`credit-${index}`}>
@@ -1553,36 +1564,8 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                   ))}
                   <button className="button-secondary panel-action" type="button" onClick={addCredit}>Add credit</button>
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="resume-import-bar">
-                  <p>
-                    <b>Import from Resume101</b> — pull your credits directly from Resume101.
-                  </p>
-                  <button
-                    className="btn-import"
-                    type="button"
-                    disabled={importing || !authUser}
-                    onClick={handleResume101Import}
-                  >
-                    {importing ? "Importing…" : "Import →"}
-                  </button>
-                </div>
-                {importStatus ? <p className="panel-note">{importStatus}</p> : null}
-                {!authUser ? <p className="panel-note">Sign in to import from Resume101.</p> : null}
-                <div className="resume-import-bar" style={{ marginTop: 16 }}>
-                  <p>
-                    <b>Resume Document</b> — Upload a PDF or DOC for download.
-                  </p>
-                  <label className="btn-import" style={{ cursor: "pointer", textAlign: "center" }}>
-                    {resumeUploading ? "Uploading…" : "Upload →"}
-                    <input type="file" accept=".pdf,.doc,.docx" disabled={resumeUploading} onChange={handleResumeUpload} style={{ display: "none" }} />
-                  </label>
-                </div>
-                {resumeUploadStatus ? <p className="panel-note">{resumeUploadStatus}</p> : null}
-              </>
-            )}
+              ) : null}
+            </>
           </article>
 
           {/* BTS Feed (Plus only) */}

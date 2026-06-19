@@ -54,7 +54,10 @@ async function handleImport(request: Request) {
   // 1. individual credit rows with Project/Role/Company fields, or
   // 2. a single lead row containing a serialized RESUME JSON blob.
   const filterFormula = encodeURIComponent(`{Email} = "${user.email}"`);
-  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_CREDITS_TABLE)}?filterByFormula=${filterFormula}&fields[]=Project&fields[]=Role&fields[]=Company&fields[]=Category&fields[]=RESUME%20JSON&fields[]=Submitted%20at&pageSize=25`;
+  // Do not request explicit field subsets here. Resume101 may point at a leads
+  // table that stores credits inside a RESUME JSON blob rather than direct
+  // Project/Role/Company columns, and Airtable rejects unknown field filters.
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_CREDITS_TABLE)}?filterByFormula=${filterFormula}&pageSize=25`;
 
   const response = await fetch(url, {
     headers: {
