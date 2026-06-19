@@ -157,7 +157,7 @@ export default function HomePage() {
               The Free Home Base for Your Young Actor&apos;s Career
             </h1>
             <p className="landing-hero-subtitle">
-              Create one professional link for headshots, clips, resume credits, representation, and casting profiles — while privately tracking auditions, callbacks, avail checks, and bookings in one dashboard.
+              One professional link for the public. One private dashboard for the family.
             </p>
             <p className="landing-hero-authority">
               Created by Corey Ralston, youth talent manager and founder of Child Actor 101.
@@ -396,7 +396,7 @@ export default function HomePage() {
             <div className="landing-domain-flow" aria-hidden="true">
               <span className="landing-domain-badge landing-domain-badge--platform">
                 <span className="landing-domain-badge-icon">◫</span>
-                <span>mia.pages101.me</span>
+                <span>pages.childactor101.com/p/mia</span>
               </span>
               <span className="landing-domain-arrow">→</span>
               <span className="landing-domain-badge landing-domain-badge--example">
@@ -429,14 +429,14 @@ export default function HomePage() {
               </tr>
             </thead>
             <tbody>
-              <tr><td>Built for child actors</td><td>✓</td><td>—</td><td>—</td></tr>
-              <tr><td>Resume integration</td><td>✓</td><td>—</td><td>—</td></tr>
-              <tr><td>Career tracking</td><td>✓</td><td>—</td><td>—</td></tr>
-              <tr><td>Representation section</td><td>✓</td><td>—</td><td>—</td></tr>
-              <tr><td>Casting links</td><td>✓</td><td>—</td><td>—</td></tr>
-              <tr><td>Safe contact relay</td><td>✓</td><td>—</td><td>—</td></tr>
-              <tr><td>Google-hidden by default</td><td>✓</td><td>—</td><td>—</td></tr>
-              <tr><td>Child safety controls</td><td>✓</td><td>—</td><td>—</td></tr>
+              <tr><td>Built for child actors</td><td>✓</td><td><span className="landing-comparison-off">✗</span></td><td><span className="landing-comparison-off">✗</span></td></tr>
+              <tr><td>Resume integration</td><td>✓</td><td><span className="landing-comparison-off">✗</span></td><td><span className="landing-comparison-off">✗</span></td></tr>
+              <tr><td>Career tracking</td><td>✓</td><td><span className="landing-comparison-off">✗</span></td><td><span className="landing-comparison-off">✗</span></td></tr>
+              <tr><td>Representation section</td><td>✓</td><td><span className="landing-comparison-off">✗</span></td><td><span className="landing-comparison-off">✗</span></td></tr>
+              <tr><td>Casting links</td><td>✓</td><td><span className="landing-comparison-off">✗</span></td><td><span className="landing-comparison-off">✗</span></td></tr>
+              <tr><td>Safe contact relay</td><td>✓</td><td><span className="landing-comparison-off">✗</span></td><td><span className="landing-comparison-off">✗</span></td></tr>
+              <tr><td>Google-hidden by default</td><td>✓</td><td><span className="landing-comparison-off">✗</span></td><td><span className="landing-comparison-off">✗</span></td></tr>
+              <tr><td>Child safety controls</td><td>✓</td><td><span className="landing-comparison-off">✗</span></td><td><span className="landing-comparison-off">✗</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -465,7 +465,7 @@ export default function HomePage() {
           </div>
           <div className="feature-card">
             <h3>Updates Feed</h3>
-            <p>Share curated wins and momentum on the public page without exposing private details.</p>
+            <p>Share casting wins, premieres, and milestones with the public side of the page.</p>
           </div>
           <div className="feature-card">
             <h3>Unlimited Career Tracking</h3>
@@ -568,7 +568,6 @@ export default function HomePage() {
               <li>✓ Sibling support — up to 4 Actor Pages</li>
               <li>✓ Unlimited audition tracking</li>
               <li>✓ Minimal Pages101 credit (no ads)</li>
-              <li>✓ One-click Resume101 import and re-import</li>
             </ul>
           </div>
         </div>
@@ -610,7 +609,6 @@ export default function HomePage() {
             <Link href="/">Pages101</Link>
             <a href="https://childactor101.com" target="_blank" rel="noreferrer">Child Actor 101</a>
             <a href="https://resumes.childactor101.com" target="_blank" rel="noreferrer">Resume101</a>
-            <a href="#how-it-works">How It Works</a>
             <a href="#login-section">Login</a>
           </div>
           <p className="footer-credit">&copy; {new Date().getFullYear()} Child Actor 101. All safety controls are active by default.</p>

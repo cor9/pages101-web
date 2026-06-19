@@ -4286,6 +4286,11 @@ img {
   font-weight: 800;
 }
 
+.landing-comparison-off {
+  color: rgba(43, 35, 32, 0.38);
+  font-weight: 700;
+}
+
 .landing-more-than {
   padding: 0 24px 80px;
   max-width: 1200px;
