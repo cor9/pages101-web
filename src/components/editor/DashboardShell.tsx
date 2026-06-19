@@ -1547,6 +1547,17 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
               </div>
               {resumeUploadStatus ? <p className="panel-note">{resumeUploadStatus}</p> : null}
 
+              {!resumeHasPdf && !resumeHasStructured ? (
+                <div className="resume-import-bar" style={{ marginTop: 16 }}>
+                  <p>
+                    <b>Need a resume first?</b> Build it on Resume101, then come back here and import your credits.
+                  </p>
+                  <a className="btn-import" href="https://resumes.childactor101.com" target="_blank" rel="noreferrer">
+                    Open Resume101 ↗
+                  </a>
+                </div>
+              ) : null}
+
               {resumeHasStructured ? (
                 <div className="editor-rows" aria-label="Resume credits" style={{ marginTop: 16 }}>
                   {(resumeContent?.credits ?? []).map((credit, index) => (
