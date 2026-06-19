@@ -1108,7 +1108,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
       }
       setMagicLinkCooldown(authEmail, MAGIC_LINK_SUCCESS_COOLDOWN_MS);
       setAuthCooldownMs(MAGIC_LINK_SUCCESS_COOLDOWN_MS);
-      setAuthStatus("Check your email for the sign-in link.");
+      setAuthStatus("Check your email for the sign-in link. If you do not see it, check your spam folder.");
     } finally {
       setAuthSubmitting(false);
     }
