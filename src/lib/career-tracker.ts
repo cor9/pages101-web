@@ -99,6 +99,7 @@ export type CareerTrackerSubscription = {
   plan: Plan;
   status: string | null;
   current_period_end: string | null;
+  stripe_customer_id: string | null;
 } | null;
 
 export type CareerTrackerResponse = {

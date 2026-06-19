@@ -5159,6 +5159,89 @@ img {
   margin-bottom: 0;
 }
 
+.promo-code-card {
+  margin-top: 0;
+}
+
+.promo-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.promo-code-header h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.promo-code-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(40, 167, 69, 0.1);
+  color: #2B6F3E;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.promo-code-copy {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.promo-code-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.promo-code-form input {
+  width: 100%;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--cream);
+  padding: 11px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.promo-code-form input:focus {
+  outline: none;
+  border-color: var(--marquee);
+  background: var(--paper);
+}
+
+.promo-code-form .btn-upgrade-now {
+  width: 100%;
+}
+
+.promo-code-success,
+.promo-code-error {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.promo-code-success {
+  color: #2B6F3E;
+  font-weight: 600;
+}
+
+.promo-code-error {
+  color: var(--marquee-deep);
+  font-weight: 600;
+}
+
 .career-subtitle {
   margin: 6px 0 0;
   font-size: 13px;

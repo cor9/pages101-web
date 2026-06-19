@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false }),
     serviceClient
       .from("p101_subscriptions")
-      .select("plan, status, current_period_end")
+      .select("plan, status, current_period_end, stripe_customer_id")
       .eq("user_id", user.id)
       .maybeSingle()
   ]);

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { PromoCodeCard } from "@/components/dashboard/PromoCodeCard";
 import {
   AUDITION_FORMATS,
   AUDITION_FORMAT_LABELS,
@@ -693,6 +694,7 @@ export function CareerTrackerDashboard() {
   };
 
   const isPlusActive = isActivePlusSubscription(subscription);
+  const hasStripeBilling = Boolean(subscription?.stripe_customer_id);
   const auditionLimit = isPlusActive ? null : 5;
   const isLimitReached = !isPlusActive && auditions.length >= 5;
   const stats = useMemo(() => calculateCurrentYearStats(auditions), [auditions]);
@@ -1020,9 +1022,13 @@ export function CareerTrackerDashboard() {
               {isPlusActive ? (
                 <div className="plus-active-box">
                   <p className="plus-features-note">✓ Unlimited audition tracking &bull; ✓ Custom Domains &bull; ✓ Prestige/Splash templates</p>
-                  <button onClick={handleManageBilling} disabled={billingLoading} className="btn-manage-billing">
-                    {billingLoading ? "Loading..." : "Manage Subscription"}
-                  </button>
+                  {hasStripeBilling ? (
+                    <button onClick={handleManageBilling} disabled={billingLoading} className="btn-manage-billing">
+                      {billingLoading ? "Loading..." : "Manage Subscription"}
+                    </button>
+                  ) : (
+                    <p className="promo-code-success">Plus is active on this account via access code.</p>
+                  )}
                 </div>
               ) : (
                 <div className="upgrade-upsell-box">
@@ -1046,6 +1052,12 @@ export function CareerTrackerDashboard() {
               <p>Consistent outcome updates make callback and booking rates meaningful, especially when your performer is juggling multiple submissions at once.</p>
               <p>Use notes to capture redirects, what worked in the room, and which casting offices keep bringing your performer back.</p>
             </div>
+
+            <PromoCodeCard
+              subscription={subscription}
+              onSubscriptionUpdate={(nextSubscription) => setSubscription(nextSubscription)}
+              body="Have a beta tester or incentive code? Redeem it here to unlock or extend Plus access without going through checkout."
+            />
           </aside>
         </div>
       </main>

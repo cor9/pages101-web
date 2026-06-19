@@ -6,6 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { DashboardShell } from "@/components/editor/DashboardShell";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { PromoCodeCard } from "@/components/dashboard/PromoCodeCard";
 import { normalizeSlug, validateSlug } from "@/lib/slug";
 
 type ActorPageListItem = {
@@ -20,8 +21,9 @@ type ActorPageListItem = {
 
 type SubscriptionState = {
   plan: "free" | "plus";
-  status: string;
+  status: string | null;
   current_period_end: string | null;
+  stripe_customer_id: string | null;
 } | null;
 
 function DashboardLoading() {
@@ -98,7 +100,7 @@ function DashboardPageClient() {
       // 2. Get subscription
       const { data: subData, error: subErr } = await supabase
         .from("p101_subscriptions")
-        .select("plan, status, current_period_end")
+        .select("plan, status, current_period_end, stripe_customer_id")
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -336,6 +338,7 @@ function DashboardPageClient() {
 
   // Standard Dashboard View
   const isPlusActive = subscription?.plan === "plus" && (subscription?.status === "active" || subscription?.status === "trialing");
+  const hasStripeBilling = Boolean(subscription?.stripe_customer_id);
   const siblingLimit = isPlusActive ? 4 : 1;
   const isLimitReached = pages.length >= siblingLimit;
 
@@ -529,13 +532,17 @@ function DashboardPageClient() {
               {isPlusActive ? (
                 <div className="plus-active-box">
                   <p className="plus-features-note">✓ Custom Domains &bull; ✓ Prestige/Splash templates &bull; ✓ Unlimited headshots & clips</p>
-                  <button 
-                    onClick={handleManageBilling} 
-                    disabled={billingLoading}
-                    className="btn-manage-billing"
-                  >
-                    {billingLoading ? "Loading..." : "Manage Subscription"}
-                  </button>
+                  {hasStripeBilling ? (
+                    <button 
+                      onClick={handleManageBilling} 
+                      disabled={billingLoading}
+                      className="btn-manage-billing"
+                    >
+                      {billingLoading ? "Loading..." : "Manage Subscription"}
+                    </button>
+                  ) : (
+                    <p className="promo-code-success">Plus is active on this account via access code.</p>
+                  )}
                 </div>
               ) : (
                 <div className="upgrade-upsell-box">
@@ -563,6 +570,11 @@ function DashboardPageClient() {
               <p>Safety is built into Pages101 at every layer. We never expose your child&apos;s phone number or personal email address, and exact dates of birth are never stored.</p>
               <p>For more details or help connecting your custom domains, read the talent manager advice in the editor toolbar tips.</p>
             </div>
+
+            <PromoCodeCard
+              subscription={subscription}
+              onSubscriptionUpdate={(nextSubscription) => setSubscription(nextSubscription)}
+            />
           </aside>
         </div>
       </main>

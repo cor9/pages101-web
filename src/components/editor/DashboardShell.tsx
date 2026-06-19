@@ -18,6 +18,7 @@ import {
   setMagicLinkCooldown
 } from "@/lib/auth/magic-link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { PromoCodeCard } from "@/components/dashboard/PromoCodeCard";
 import type {
   ActorPage,
   ActorPageSection,
@@ -60,8 +61,9 @@ type DomainApiResponse = {
 
 type SubscriptionRow = {
   plan: Plan;
-  status: string;
+  status: string | null;
   current_period_end: string | null;
+  stripe_customer_id: string | null;
 };
 
 function isActivePlus(sub: SubscriptionRow | null): boolean {
@@ -257,7 +259,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
       // Load subscription plan
       const { data: subRow } = await supabase
         .from("p101_subscriptions")
-        .select("plan, status, current_period_end")
+        .select("plan, status, current_period_end, stripe_customer_id")
         .eq("user_id", authUser.id)
         .maybeSingle<SubscriptionRow>();
 
@@ -1672,6 +1674,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
               onSignOut={handleSignOut}
               onUpgrade={handleUpgrade}
               onManageSubscription={handleManageSubscription}
+              onPromoRedeemed={setSubscription}
             />
           </article>
 
@@ -1787,7 +1790,7 @@ function StatusPill({ ok, label }: { ok: boolean; label: string }) {
 function AuthControls({
   email, user, status, plan, subscription, upgrading,
   submitDisabled, submitLabel,
-  onEmailChange, onSubmit, onSignOut, onUpgrade, onManageSubscription
+  onEmailChange, onSubmit, onSignOut, onUpgrade, onManageSubscription, onPromoRedeemed
 }: {
   email: string;
   user: User | null;
@@ -1802,6 +1805,7 @@ function AuthControls({
   onSignOut: () => void;
   onUpgrade: () => void;
   onManageSubscription: () => void;
+  onPromoRedeemed: (subscription: SubscriptionRow) => void;
 }) {
   if (user) {
     return (
@@ -1818,9 +1822,13 @@ function AuthControls({
               <strong>✦ Pages101 Plus</strong> — Premium templates, unlimited headshots &amp; clips, BTS feed.
               {subscription?.current_period_end ? ` Renews ${new Date(subscription.current_period_end).toLocaleDateString()}.` : ""}
             </p>
-            <button className="btn-import" type="button" disabled={upgrading} onClick={onManageSubscription}>
-              {upgrading ? "Loading…" : "Manage subscription"}
-            </button>
+            {subscription?.stripe_customer_id ? (
+              <button className="btn-import" type="button" disabled={upgrading} onClick={onManageSubscription}>
+                {upgrading ? "Loading…" : "Manage subscription"}
+              </button>
+            ) : (
+              <span className="status-pill status-pill--ok">Activated by code</span>
+            )}
           </div>
         ) : (
           <div className="upgrade-bar" id="upgrade-bar">
@@ -1834,6 +1842,13 @@ function AuthControls({
         )}
 
         {status ? <p className="panel-note">{status}</p> : null}
+
+        <PromoCodeCard
+          subscription={subscription}
+          onSubscriptionUpdate={onPromoRedeemed}
+          title="Promo or Beta Code"
+          body="Have a beta tester or special incentive code? Redeem it here to unlock Plus access without using Stripe."
+        />
       </div>
     );
   }
