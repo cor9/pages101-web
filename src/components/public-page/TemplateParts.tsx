@@ -82,13 +82,6 @@ export function TemplateResume({ page, resume }: { page: ActorPage; resume: Resu
         <h3>{page.displayName}</h3>
         <p>{[page.unionStatus, page.ageRange, page.market].filter(Boolean).join(" · ")}</p>
       </div>
-      {resume.syncedWithResume101 ? (
-        <div className="sheet-sync">
-          <p>
-            <b>Synced with Resume101</b> · Last updated {resume.updatedAt}. Edit once, update everywhere.
-          </p>
-        </div>
-      ) : null}
       {groups.map((group) => (
         <div key={group.title}>
           <h4>{group.title}</h4>
