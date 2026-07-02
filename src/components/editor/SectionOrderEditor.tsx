@@ -4,7 +4,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent
@@ -39,6 +40,7 @@ function SortableItem({ id, section }: { id: string; section: ActorPageSection }
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    touchAction: "none",
     padding: "12px 16px",
     margin: "6px 0",
     backgroundColor: "var(--app-surface)",
@@ -57,7 +59,7 @@ function SortableItem({ id, section }: { id: string; section: ActorPageSection }
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <span>{SECTION_LABELS[section.type]}</span>
-      <span aria-hidden="true" style={{ color: "var(--app-muted)", fontSize: "16px" }}>☰</span>
+      <span aria-hidden="true" style={{ color: "var(--app-muted)", fontSize: "16px", cursor: "grab" }}>☰</span>
     </div>
   );
 }
@@ -70,10 +72,16 @@ export function SectionOrderEditor({
   onChange: (sections: ActorPageSection[]) => void;
 }) {
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 5,
       },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      }
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates
@@ -88,7 +96,9 @@ export function SectionOrderEditor({
     const newIndex = sections.findIndex((s) => s.id === over.id);
 
     if (oldIndex !== -1 && newIndex !== -1) {
-      onChange(arrayMove(sections, oldIndex, newIndex));
+      const newOrder = arrayMove(sections, oldIndex, newIndex);
+      // Ensure the sortOrder property matches the new array index so it saves to the DB correctly!
+      onChange(newOrder.map((s, index) => ({ ...s, sortOrder: index })));
     }
   }
 
