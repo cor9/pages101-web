@@ -19,6 +19,7 @@ import {
 } from "@/lib/auth/magic-link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { PromoCodeCard } from "@/components/dashboard/PromoCodeCard";
+import { SectionOrderEditor } from "@/components/editor/SectionOrderEditor";
 import type {
   ActorPage,
   ActorPageSection,
@@ -1340,6 +1341,15 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                 ))}
               </select>
             </label>
+          </article>
+
+          {/* Section Order */}
+          <article className="editor-panel" data-testid="section-order-panel">
+            <div className="panel-heading">
+              <p>Section Order</p>
+              <span>Drag to reorder</span>
+            </div>
+            <SectionOrderEditor sections={sections} onChange={setSections} />
           </article>
 
           {/* Custom Domain */}

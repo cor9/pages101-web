@@ -120,6 +120,7 @@ export async function POST(request: Request) {
   return NextResponse.json({ received: true });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getUserIdForCustomer(supabase: any, customerId: string): Promise<string | undefined> {
   const { data } = await supabase
     .from("p101_subscriptions")
