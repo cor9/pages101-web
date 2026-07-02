@@ -39,12 +39,19 @@ export async function POST(request: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode !== "subscription") break;
 
-        const userId = session.metadata?.user_id;
+        const userId = session.client_reference_id || session.metadata?.user_id;
         if (!userId) break;
 
         const subscriptionId = session.subscription as string;
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const customerId = session.customer as string;
+
+        // Optionally update the subscription metadata in Stripe so future events have the user_id
+        if (!subscription.metadata?.user_id) {
+          await stripe.subscriptions.update(subscriptionId, {
+            metadata: { user_id: userId },
+          });
+        }
 
         await upsertSubscription(supabase, {
           userId,
@@ -59,13 +66,19 @@ export async function POST(request: Request) {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.user_id;
+        let userId: string | undefined = subscription.metadata?.user_id;
+        const customerId = subscription.customer as string;
+
+        if (!userId) {
+          // Fallback: lookup user by customer ID
+          userId = await getUserIdForCustomer(supabase, customerId);
+        }
         if (!userId) break;
 
         const isActive = subscription.status === "active" || subscription.status === "trialing";
         await upsertSubscription(supabase, {
           userId,
-          customerId: subscription.customer as string,
+          customerId,
           subscriptionId: subscription.id,
           plan: isActive ? "plus" : "free",
           status: subscription.status,
@@ -76,12 +89,17 @@ export async function POST(request: Request) {
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.user_id;
+        let userId: string | undefined = subscription.metadata?.user_id;
+        const customerId = subscription.customer as string;
+
+        if (!userId) {
+          userId = await getUserIdForCustomer(supabase, customerId);
+        }
         if (!userId) break;
 
         await upsertSubscription(supabase, {
           userId,
-          customerId: subscription.customer as string,
+          customerId,
           subscriptionId: subscription.id,
           plan: "free",
           status: "canceled",
@@ -100,6 +118,15 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+async function getUserIdForCustomer(supabase: any, customerId: string): Promise<string | undefined> {
+  const { data } = await supabase
+    .from("p101_subscriptions")
+    .select("user_id")
+    .eq("stripe_customer_id", customerId)
+    .single();
+  return data?.user_id;
 }
 
 async function upsertSubscription(

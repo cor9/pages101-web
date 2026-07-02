@@ -549,8 +549,14 @@ export function CareerTrackerDashboard() {
   };
 
   const handleUpgrade = () => {
+    if (!user) return;
     const paymentLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || "https://buy.stripe.com/3cI7sL4lVaPR9QFccy2wV0m";
-    window.location.href = paymentLink;
+    const url = new URL(paymentLink);
+    url.searchParams.set("client_reference_id", user.id);
+    if (user.email) {
+      url.searchParams.set("prefilled_email", user.email);
+    }
+    window.location.href = url.toString();
   };
 
   const handleManageBilling = async () => {
