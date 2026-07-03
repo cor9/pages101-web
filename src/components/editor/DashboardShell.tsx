@@ -56,6 +56,15 @@ type DomainApiResponse = {
   domain?: string | null;
   verified?: boolean;
   verification?: Array<{ type: string; domain: string; value: string; reason?: string }>;
+  dns?: {
+    configured: boolean;
+    requiredType: "A" | "CNAME";
+    requiredName: string;
+    requiredValue: string;
+    foundValues: string[];
+  };
+  apexName?: string | null;
+  projectId?: string | null;
 };
 
 // ─── Plan subscription state ──────────────────────────────────────────────────
@@ -151,6 +160,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
   const [customDomain, setCustomDomain] = useState("");
   const [connectedDomain, setConnectedDomain] = useState("");
   const [customDomainVerified, setCustomDomainVerified] = useState(false);
+  const [customDomainDetails, setCustomDomainDetails] = useState<DomainApiResponse | null>(null);
   const [customDomainSaving, setCustomDomainSaving] = useState(false);
   const [customDomainStatus, setCustomDomainStatus] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(false);
@@ -317,6 +327,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
       setCustomDomain(domainRow?.domain ?? "");
       setConnectedDomain(domainRow?.domain ?? "");
       setCustomDomainVerified(false);
+      setCustomDomainDetails(null);
       setCustomDomainStatus(domainRow?.domain ? "Checking domain status..." : null);
       setSaveStatus(pageRow.published ? `Published at https://pages.childactor101.com/p/${pageRow.slug}` : "Saved draft loaded");
 
@@ -346,6 +357,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
 
         if (!statusResponse.ok) {
           setCustomDomainVerified(false);
+          setCustomDomainDetails(null);
           setCustomDomainStatus(statusBody.error ?? statusBody.message ?? "Could not check domain status. Click Verify to try again.");
           return;
         }
@@ -355,6 +367,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
         setCustomDomain(checkedDomain);
         setConnectedDomain(checkedDomain);
         setCustomDomainVerified(verified);
+        setCustomDomainDetails(statusBody);
         setCustomDomainStatus(statusBody.message ?? (verified ? "Connected and active." : `Check the DNS settings where ${checkedDomain} is managed, then click Verify again.`));
         setSaveStatus(pageRow.published && verified ? `Published at https://${checkedDomain}` : pageRow.published ? `Published at https://pages.childactor101.com/p/${pageRow.slug}` : "Saved draft loaded");
       }
@@ -1063,6 +1076,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
       if (action === "attach") {
         const connectedDomainName = body.domain ?? domain;
         const verified = Boolean(body.verified);
+        setCustomDomainDetails(body);
         setCustomDomain(connectedDomainName);
         setConnectedDomain(connectedDomainName);
         setCustomDomainVerified(verified);
@@ -1070,6 +1084,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
         setSaveStatus(verified ? `Published at https://${connectedDomainName}` : `Saved domain ${connectedDomainName}.`);
       } else if (action === "verify") {
         const verified = Boolean(body.verified);
+        setCustomDomainDetails(body);
         setConnectedDomain(body.domain ?? domain);
         setCustomDomainVerified(verified);
         setCustomDomainStatus(body.message ?? (verified ? "Connected and active." : `Check the DNS settings where ${body.domain ?? domain} is managed, then click Verify again.`));
@@ -1078,6 +1093,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
         setCustomDomain("");
         setConnectedDomain("");
         setCustomDomainVerified(false);
+        setCustomDomainDetails(null);
         setCustomDomainStatus(null);
         setSaveStatus(`Custom domain removed. Published at ${publicPageUrl}`);
       }
@@ -1144,9 +1160,13 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
   const resumeHasPdf = Boolean(resumeContent?.fileUrl);
   const resumeHasStructured = (resumeContent?.credits ?? []).length > 0;
   const domainHelpDomain = connectedDomain || customDomain.trim().toLowerCase();
+  const domainInstructions = getDomainInstructions(domainHelpDomain, customDomainDetails);
   const domainHelpMessage = domainHelpDomain
-    ? `Open the DNS settings where ${domainHelpDomain} is managed - Squarespace, GoDaddy, Cloudflare, Namecheap, or whoever hosts the DNS. Add the exact record Vercel shows, then click Verify.`
-    : "Type your domain and click Connect domain. We’ll show the exact DNS record after you save it.";
+    ? `Open the DNS settings where ${domainHelpDomain} is managed - Squarespace, GoDaddy, Cloudflare, Namecheap, or whoever hosts the DNS. Add the record shown below, save it there, then come back here and click Verify.`
+    : "Type your domain and click Connect domain. We’ll show the exact DNS record here.";
+  const domainDnsMismatchNote = !customDomainVerified && customDomainDetails?.dns?.foundValues?.length
+    ? `Right now DNS is returning ${customDomainDetails.dns.foundValues.join(", ")}. Replace that with the record shown below, wait a few minutes, then click Verify.`
+    : null;
 
   const pressSection = sections.find((s) => s.type === "press");
   const pressContent = pressSection?.type === "press" ? pressSection.content : null;
@@ -1399,10 +1419,26 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                   <ol>
                     <li>Type the domain and click <b>Connect domain</b>.</li>
                     <li>Open the DNS settings at your domain provider.</li>
-                    <li>Add the record Vercel gives you.</li>
-                    <li>Come back here and click <b>Verify</b>.</li>
+                    <li>Add the exact record shown below.</li>
+                    <li>Save the DNS change there, wait a few minutes, then come back here and click <b>Verify</b>.</li>
                   </ol>
-                  <p className="panel-note">{domainHelpMessage}</p>
+                  {domainInstructions.length > 0 ? (
+                    <div className="domain-records">
+                      <p><b>{customDomainVerified ? "Current DNS setup" : "DNS record to add"}</b></p>
+                      {domainInstructions.map((instruction) => (
+                        <div className="domain-record" key={`${instruction.type}-${instruction.fullHost}-${instruction.value}`}>
+                          <span>{instruction.type} record</span>
+                          <code>Name / Host: {instruction.host}</code>
+                          <code>Value / Target: {instruction.value}</code>
+                          {instruction.host !== instruction.fullHost ? <p className="panel-note">Full host: {instruction.fullHost}</p> : null}
+                          {instruction.note ? <p className="panel-note">{instruction.note}</p> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="panel-note">{domainHelpMessage}</p>
+                  )}
+                  {domainDnsMismatchNote ? <p className="panel-note">{domainDnsMismatchNote}</p> : null}
                 </div>
                 <label>
                   Domain
@@ -1972,6 +2008,62 @@ function sanitizeFileName(fileName: string) {
     .replace(/[^a-z0-9.]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return sanitized || "headshot.jpg";
+}
+
+type DomainInstruction = {
+  type: string;
+  host: string;
+  fullHost: string;
+  value: string;
+  note?: string;
+};
+
+function getDomainInstructions(domain: string, details: DomainApiResponse | null): DomainInstruction[] {
+  if (!domain) {
+    return [];
+  }
+
+  if (details?.verification?.length) {
+    return details.verification.map((challenge) => {
+      const fullHost = normalizeDomainRecordHost(challenge.domain || domain);
+      return {
+        type: challenge.type.toUpperCase(),
+        host: formatDomainHostForProvider(fullHost, domain),
+        fullHost,
+        value: challenge.value,
+        note: challenge.reason
+      };
+    });
+  }
+
+  if (details?.dns) {
+    const fullHost = normalizeDomainRecordHost(details.dns.requiredName);
+    return [{
+      type: details.dns.requiredType,
+      host: formatDomainHostForProvider(fullHost, domain),
+      fullHost,
+      value: details.dns.requiredValue
+    }];
+  }
+
+  return [];
+}
+
+function normalizeDomainRecordHost(host: string) {
+  return host.trim().replace(/\.$/, "").toLowerCase();
+}
+
+function formatDomainHostForProvider(fullHost: string, domain: string) {
+  const normalizedDomain = normalizeDomainRecordHost(domain);
+  if (fullHost === normalizedDomain) {
+    return "@";
+  }
+
+  if (fullHost.endsWith(`.${normalizedDomain}`)) {
+    return fullHost.slice(0, -(normalizedDomain.length + 1));
+  }
+
+  return fullHost;
 }
 
 function normalizeOptionalEmail(value: string | null | undefined) {

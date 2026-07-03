@@ -2838,6 +2838,36 @@ img {
   font-weight: 800;
 }
 
+.domain-records {
+  display: grid;
+  gap: 10px;
+}
+
+.domain-record {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(43, 35, 32, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.domain-record span {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.domain-record code {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.domain-record .panel-note {
+  margin-top: 0;
+}
+
 .checkbox-line {
   display: flex !important;
   grid-template-columns: none !important;
