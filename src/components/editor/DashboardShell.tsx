@@ -1163,8 +1163,8 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
   const domainHelpDomain = connectedDomain || customDomain.trim().toLowerCase();
   const domainInstructions = getDomainInstructions(domainHelpDomain, customDomainDetails);
   const domainHelpMessage = domainHelpDomain
-    ? `Open the DNS settings where ${domainHelpDomain} is managed - Squarespace, GoDaddy, Cloudflare, Namecheap, or whoever hosts the DNS. Add the record shown below, save it there, then come back here and click Verify.`
-    : "Type your domain and click Connect domain. We’ll show the exact DNS record here.";
+    ? `Open the DNS settings where ${domainHelpDomain} is managed - Squarespace, GoDaddy, Cloudflare, Namecheap, or wherever that domain's DNS lives. Add the record shown below, save it there, then come back here and click Verify.`
+    : "Type the domain you own and click Connect domain. We'll show the exact DNS record here.";
   const domainDnsMismatchNote = !customDomainVerified && customDomainDetails?.dns?.foundValues?.length
     ? `Right now DNS is returning ${customDomainDetails.dns.foundValues.join(", ")}. Replace that with the record shown below, wait a few minutes, then click Verify.`
     : null;
@@ -1411,15 +1411,18 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
             {editorPlan === "plus" ? (
               <>
                 <p className="panel-note">
-                  Connect a domain like <b>yourname.com</b>. We’ll tell you exactly what DNS record to add and where to add it, then you can verify from here.
+                  Connect a domain like <b>yourname.com</b> so it opens this exact Pages101 page instead of the default share link.
                 </p>
                 <div className="domain-help">
                   <p>
-                    <b>Where do I add it?</b> In the DNS settings for the company that manages the domain, such as Squarespace, GoDaddy, Cloudflare, Namecheap, or the person who sold you the domain.
+                    <b>This domain will point to:</b> <code>{publicPageUrl}</code>
+                  </p>
+                  <p>
+                    <b>Where do I add it?</b> In the DNS settings for the company that manages the domain, such as Squarespace, GoDaddy, Cloudflare, Namecheap, or the registrar or host where the DNS is managed.
                   </p>
                   <ol>
-                    <li>Type the domain and click <b>Connect domain</b>.</li>
-                    <li>Open the DNS settings at your domain provider.</li>
+                    <li>Type the domain you own and click <b>Connect domain</b>.</li>
+                    <li>Open the DNS settings wherever that domain is managed.</li>
                     <li>Add the exact record shown below.</li>
                     <li>Save the DNS change there, wait a few minutes, then come back here and click <b>Verify</b>.</li>
                   </ol>
@@ -1428,7 +1431,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                       <p><b>{customDomainVerified ? "Current DNS setup" : "DNS record to add"}</b></p>
                       {domainInstructions.map((instruction) => (
                         <div className="domain-record" key={`${instruction.type}-${instruction.fullHost}-${instruction.value}`}>
-                          <span>{instruction.type} record</span>
+                          <span>{instruction.type} record to add</span>
                           <code>Name / Host: {instruction.host}</code>
                           <code>Value / Target: {instruction.value}</code>
                           {instruction.host !== instruction.fullHost ? <p className="panel-note">Full host: {instruction.fullHost}</p> : null}
@@ -1453,7 +1456,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                       height={250}
                       unoptimized
                     />
-                    <span>Need a domain first? Search and buy one on Namecheap.</span>
+                    <span>Need to buy a domain first? Search and buy one on Namecheap.</span>
                   </a>
                 </div>
                 <label>
@@ -1481,7 +1484,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                 <div className="page-location">
                   <span>Domain status</span>
                   <code>{connectedDomain ? `https://${connectedDomain}` : "No custom domain connected"}</code>
-                  <p>{customDomainVerified ? "Your domain is live." : connectedDomain ? `Waiting for the DNS record. ${domainHelpDomain ? `The record must be added where ${domainHelpDomain} is managed.` : ""}` : "Save a domain to see the DNS instructions."}</p>
+                  <p>{customDomainVerified ? `Your domain is live and now opens this page.` : connectedDomain ? `Waiting for the DNS record. ${domainHelpDomain ? `The record must be added where ${domainHelpDomain} is managed.` : ""}` : "Save a domain to see the DNS instructions for this page."}</p>
                 </div>
               </>
             ) : (
