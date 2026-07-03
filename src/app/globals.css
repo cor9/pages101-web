@@ -2868,6 +2868,38 @@ img {
   margin-top: 0;
 }
 
+.domain-affiliate-card {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid rgba(43, 35, 32, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.domain-affiliate-card img {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(30, 34, 90, 0.14);
+}
+
+.domain-affiliate-card span {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.domain-affiliate-card:hover span {
+  text-decoration: underline;
+}
+
 .checkbox-line {
   display: flex !important;
   grid-template-columns: none !important;

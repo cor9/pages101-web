@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import type { User } from "@supabase/supabase-js";
 import { ActorPageRenderer } from "@/components/public-page/ActorPageRenderer";
 import { accentSwatches, backgroundSwatches, fontPairOptions, templateTokens } from "@/lib/templates";
@@ -1439,6 +1440,21 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                     <p className="panel-note">{domainHelpMessage}</p>
                   )}
                   {domainDnsMismatchNote ? <p className="panel-note">{domainDnsMismatchNote}</p> : null}
+                  <a
+                    className="domain-affiliate-card"
+                    href="https://namecheap.pxf.io/c/4798761/1183670/5618"
+                    target="_blank"
+                    rel="noreferrer sponsored"
+                  >
+                    <Image
+                      src="/affiliate/namecheap-banner-300x250.png"
+                      alt="Search and buy domains from Namecheap"
+                      width={300}
+                      height={250}
+                      unoptimized
+                    />
+                    <span>Need a domain first? Search and buy one on Namecheap.</span>
+                  </a>
                 </div>
                 <label>
                   Domain
