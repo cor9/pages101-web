@@ -335,7 +335,8 @@ export function formatDnsNotReadyMessage(domain: string, routingStatus: DomainRo
 
 export async function getActiveDomainStatus(vercelDomain: VercelProjectDomain, domain: string) {
   const routingStatus = await getDomainRoutingStatus(domain);
-  const active = Boolean(vercelDomain.verified);
+  const hasVerificationChallenges = (vercelDomain.verification?.length ?? 0) > 0;
+  const active = Boolean(vercelDomain.verified) && routingStatus.configured && !hasVerificationChallenges;
 
   if (active) {
     return {
@@ -348,10 +349,10 @@ export async function getActiveDomainStatus(vercelDomain: VercelProjectDomain, d
   return {
     active,
     routingStatus,
-    message: vercelDomain.verification?.length
+    message: hasVerificationChallenges
       ? formatVerificationMessage(domain, vercelDomain.verification)
       : routingStatus.configured
-        ? "DNS looks ready, but Vercel has not verified the domain yet. Click Verify again in a minute."
+        ? "DNS looks ready, but the domain is not active on Vercel yet. Click Verify again in a minute."
         : formatDnsNotReadyMessage(domain, routingStatus)
   };
 }
