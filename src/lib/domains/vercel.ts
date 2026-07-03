@@ -6,7 +6,10 @@ const domainPattern = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0
 
 export const customDomainRequestSchema = z.object({
   pageSlug: z.string().trim().min(3).max(40),
-  domain: z.string().trim().toLowerCase().regex(domainPattern, "Enter a valid domain")
+  domain: z.preprocess(
+    normalizeDomainLikeValue,
+    z.string().trim().toLowerCase().regex(domainPattern, "Enter a valid domain")
+  )
 });
 
 export type VercelProjectDomainChallenge = {
@@ -332,12 +335,24 @@ export function formatDnsNotReadyMessage(domain: string, routingStatus: DomainRo
 
 export async function getActiveDomainStatus(vercelDomain: VercelProjectDomain, domain: string) {
   const routingStatus = await getDomainRoutingStatus(domain);
-  const active = Boolean(vercelDomain.verified) && routingStatus.configured;
+  const active = Boolean(vercelDomain.verified);
+
+  if (active) {
+    return {
+      active,
+      routingStatus,
+      message: "Connected and active."
+    };
+  }
 
   return {
     active,
     routingStatus,
-    message: active ? "Connected and active." : formatDnsNotReadyMessage(domain, routingStatus)
+    message: vercelDomain.verification?.length
+      ? formatVerificationMessage(domain, vercelDomain.verification)
+      : routingStatus.configured
+        ? "DNS looks ready, but Vercel has not verified the domain yet. Click Verify again in a minute."
+        : formatDnsNotReadyMessage(domain, routingStatus)
   };
 }
 
@@ -389,4 +404,20 @@ function safeJsonParse<T>(value: string): T | null {
   } catch {
     return null;
   }
+}
+
+function normalizeDomainLikeValue(value: unknown) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  const withoutProtocol = trimmed.replace(/^https?:\/\//, "");
+  const withoutPath = withoutProtocol.replace(/[/?#].*$/, "");
+  const withoutPort = withoutPath.replace(/:\d+$/, "");
+  return withoutPort.replace(/\.$/, "");
 }

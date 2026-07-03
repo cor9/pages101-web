@@ -23,6 +23,7 @@ export type ActorPageRow = {
   market: string | null;
   has_rep: boolean;
   reps: unknown;
+  relay_recipient_email?: string | null;
   links: unknown;
   slate_url: string | null;
   published: boolean;
@@ -54,6 +55,7 @@ export function mapActorPageRows(page: ActorPageRow, sections: PageSectionRow[],
     market: page.market ?? "",
     hasRep: page.has_rep,
     reps: getArray<Rep>(page.reps),
+    relayRecipientEmail: getOptionalString(page.relay_recipient_email) ?? null,
     links: getArray<PageLink>(page.links),
     slateUrl: page.slate_url,
     published: page.published,

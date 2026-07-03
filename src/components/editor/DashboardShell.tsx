@@ -39,6 +39,7 @@ import type {
 
 const page = samplePages[0];
 const initialHeadshots = getPageHeadshots(page);
+const DEFAULT_RELAY_RECIPIENT_EMAIL = "johnhaganactor@gmail.com";
 
 const sectionTipMap: Partial<Record<SectionType, TipKey>> = {
   headshots: "headshots",
@@ -72,9 +73,10 @@ function isActivePlus(sub: SubscriptionRow | null): boolean {
   return sub.plan === "plus" && (sub.status === "active" || sub.status === "trialing");
 }
 
-function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBackground: boolean) {
+function buildActorPagePayload(actorPage: ActorPage, userId: string, options: { includeBackground: boolean; includeRelayRecipientEmail: boolean }) {
   const normalizedFontPair = actorPage.fontPair === "template" ? null : actorPage.fontPair;
   const normalizedAccent = actorPage.accent ?? null;
+  const normalizedRelayRecipientEmail = normalizeOptionalEmail(actorPage.relayRecipientEmail);
 
   return {
     id: actorPage.id,
@@ -82,7 +84,7 @@ function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBack
     slug: actorPage.slug,
     template: actorPage.template,
     accent: normalizedAccent,
-    ...(includeBackground ? { background: actorPage.background ?? null } : {}),
+    ...(options.includeBackground ? { background: actorPage.background ?? null } : {}),
     font_pair: normalizedFontPair,
     display_name: actorPage.displayName,
     status_line: actorPage.statusLine ?? null,
@@ -91,6 +93,7 @@ function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBack
     market: actorPage.market ?? null,
     has_rep: actorPage.hasRep ?? true,
     reps: actorPage.reps ?? [],
+    ...(options.includeRelayRecipientEmail ? { relay_recipient_email: normalizedRelayRecipientEmail } : {}),
     links: actorPage.links ?? [],
     slate_url: actorPage.slateUrl ?? null,
     published: actorPage.published,
@@ -99,8 +102,12 @@ function buildActorPagePayload(actorPage: ActorPage, userId: string, includeBack
   } as Record<string, unknown> & { id: string; user_id: string; slug: string };
 }
 
+function isMissingColumnError(error: { code?: string; message?: string } | null | undefined, columnName: string) {
+  return error?.code === "PGRST204" && Boolean(error.message?.includes(columnName));
+}
+
 function isMissingBackgroundColumnError(error: { code?: string; message?: string } | null | undefined) {
-  return error?.code === "PGRST204" && Boolean(error.message?.includes("background"));
+  return isMissingColumnError(error, "background");
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -120,6 +127,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
   const [noindex, setNoindex] = useState(page.noindex);
   const [hasRep, setHasRep] = useState(page.hasRep);
   const [reps, setReps] = useState<Rep[]>(page.reps);
+  const [relayRecipientEmail, setRelayRecipientEmail] = useState(page.relayRecipientEmail ?? DEFAULT_RELAY_RECIPIENT_EMAIL);
   const [links, setLinks] = useState<PageLink[]>(page.links);
   const [slateUrl, setSlateUrl] = useState(page.slateUrl ?? "");
   const [headshots, setHeadshots] = useState<Headshot[]>(initialHeadshots);
@@ -390,6 +398,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
       market,
       hasRep,
       reps: normalizeReps(reps),
+      relayRecipientEmail: normalizeOptionalEmail(relayRecipientEmail),
       links: normalizeLinks(links),
       slateUrl: slateUrl.trim() ? normalizeEmbedUrl(slateUrl.trim()) : null,
       template: templateId,
@@ -410,7 +419,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
     }),
     [
       currentPageId, accent, ageRange, displayName, editorPlan, fontPair, hasRep, isPublished, noindex,
-      background, links, market, publicSlug, renderedHeadshots, reps, sections,
+      background, links, market, publicSlug, relayRecipientEmail, renderedHeadshots, reps, sections,
       slateUrl, statusLine, templateId, unionStatus
     ]
   );
@@ -430,7 +439,11 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
   // ─── Apply loaded page ─────────────────────────────────────────────────────
 
   function applyActorPage(actorPage: ActorPage) {
-    const loadedSections = actorPage.sections.length > 0 ? actorPage.sections : page.sections;
+    const loadedSections = normalizeSectionSortOrder(
+      actorPage.sections.length > 0
+        ? actorPage.sections.slice().sort((a, b) => a.sortOrder - b.sortOrder)
+        : page.sections
+    );
     const loadedHeadshots = getPageHeadshots({ ...actorPage, sections: loadedSections });
 
     setCurrentPageId(actorPage.id);
@@ -442,6 +455,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
     setMarket(actorPage.market);
     setHasRep(actorPage.hasRep);
     setReps(actorPage.reps);
+    setRelayRecipientEmail(actorPage.relayRecipientEmail ?? DEFAULT_RELAY_RECIPIENT_EMAIL);
     setLinks(actorPage.links);
     setSlateUrl(actorPage.slateUrl ?? "");
     setTemplateId(actorPage.template);
@@ -876,48 +890,50 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
   const saveActorPage = useCallback(async (actorPage: ActorPage) => {
     if (!supabase || !authUser) throw new Error("Sign in to publish.");
     const userId = authUser.id;
+    let includeBackground = true;
+    let includeRelayRecipientEmail = true;
+    let savedWithoutBackground = false;
 
-    const payload = buildActorPagePayload(actorPage, userId, true);
+    while (true) {
+      const payload = buildActorPagePayload(actorPage, userId, { includeBackground, includeRelayRecipientEmail });
 
-    console.log("SAVE ATTEMPT - user:", authUser.id);
-    console.log("SAVE ATTEMPT - payload:", payload);
+      console.log("SAVE ATTEMPT - user:", authUser.id);
+      console.log("SAVE ATTEMPT - payload:", payload);
 
-    const initialSave = await supabase
-      .from("p101_actor_pages")
-      .upsert(payload, { onConflict: "id" })
-      .select("id")
-      .single<{ id: string }>();
-
-    console.log("SAVE RESULT - data:", initialSave.data);
-    console.log("SAVE RESULT - error:", JSON.stringify(initialSave.error));
-
-    if (!initialSave.error) {
-      return { id: initialSave.data.id, savedWithoutBackground: false };
-    }
-
-    if (isMissingBackgroundColumnError(initialSave.error)) {
-      const fallbackPayload = buildActorPagePayload(actorPage, userId, false);
-      console.warn("Background column is unavailable; retrying save without background.");
-      const fallbackSave = await supabase
+      const saveResult = await supabase
         .from("p101_actor_pages")
-        .upsert(fallbackPayload, { onConflict: "id" })
+        .upsert(payload, { onConflict: "id" })
         .select("id")
         .single<{ id: string }>();
 
-      console.log("SAVE RESULT (fallback) - data:", fallbackSave.data);
-      console.log("SAVE RESULT (fallback) - error:", JSON.stringify(fallbackSave.error));
+      console.log("SAVE RESULT - data:", saveResult.data);
+      console.log("SAVE RESULT - error:", JSON.stringify(saveResult.error));
 
-      if (fallbackSave.error) throw fallbackSave.error;
-      return { id: fallbackSave.data.id, savedWithoutBackground: true };
+      if (!saveResult.error) {
+        return { id: saveResult.data.id, savedWithoutBackground };
+      }
+
+      if (includeBackground && isMissingBackgroundColumnError(saveResult.error)) {
+        includeBackground = false;
+        savedWithoutBackground = true;
+        console.warn("Background column is unavailable; retrying save without background.");
+        continue;
+      }
+
+      if (includeRelayRecipientEmail && isMissingColumnError(saveResult.error, "relay_recipient_email")) {
+        includeRelayRecipientEmail = false;
+        console.warn("Relay recipient column is unavailable; retrying save without relay recipient email.");
+        continue;
+      }
+
+      throw saveResult.error;
     }
-
-    throw initialSave.error;
   }, [authUser, supabase]);
 
   const saveSections = useCallback(async (pageId: string, pageSections: ActorPage["sections"]) => {
     if (!supabase) throw new Error("Supabase env vars are missing.");
 
-    const rows = pageSections.map((section) => ({
+    const rows = normalizeSectionSortOrder(pageSections.slice().sort((a, b) => a.sortOrder - b.sortOrder)).map((section) => ({
       page_id: pageId,
       type: section.type,
       enabled: section.enabled,
@@ -1232,9 +1248,21 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                 <button className="button-secondary panel-action" type="button" onClick={addRep}>Add rep</button>
               </div>
             ) : (
-              <p className="panel-note">
-                The live page shows a parent contact button that routes through the private relay. Parent email and phone stay off the page.
-              </p>
+              <>
+                <p className="panel-note">
+                  The live page shows a parent contact button that routes through the private relay. Parent email and phone stay off the page.
+                </p>
+                <label>
+                  Relay inbox email
+                  <input
+                    type="email"
+                    value={relayRecipientEmail}
+                    placeholder={DEFAULT_RELAY_RECIPIENT_EMAIL}
+                    onChange={(e) => setRelayRecipientEmail(e.target.value)}
+                  />
+                </label>
+                <p className="panel-note">Messages from the public contact form will go to this inbox.</p>
+              </>
             )}
           </article>
 
@@ -1907,6 +1935,10 @@ function buildPageFingerprint(actorPage: ActorPage) {
 
 // ─── Utility helpers ───────────────────────────────────────────────────────────
 
+function normalizeSectionSortOrder(sectionList: ActorPageSection[]) {
+  return sectionList.map((section, index) => ({ ...section, sortOrder: (index + 1) * 10 }));
+}
+
 function getPageHeadshots(actorPage: ActorPage) {
   const section = actorPage.sections.find((s) => s.type === "headshots");
   return section?.type === "headshots" ? section.content.headshots : [];
@@ -1941,6 +1973,11 @@ function sanitizeFileName(fileName: string) {
     .replace(/[^a-z0-9.]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return sanitized || "headshot.jpg";
+}
+
+function normalizeOptionalEmail(value: string | null | undefined) {
+  const normalized = value?.trim().toLowerCase() ?? "";
+  return normalized || null;
 }
 
 function normalizeReps(repsToNormalize: Rep[]) {

@@ -110,6 +110,7 @@ export type ActorPage = {
   market: string;
   hasRep: boolean;
   reps: Rep[];
+  relayRecipientEmail: string | null;
   links: PageLink[];
   slateUrl: string | null;
   published: boolean;

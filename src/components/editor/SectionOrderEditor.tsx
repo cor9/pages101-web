@@ -97,8 +97,7 @@ export function SectionOrderEditor({
 
     if (oldIndex !== -1 && newIndex !== -1) {
       const newOrder = arrayMove(sections, oldIndex, newIndex);
-      // Ensure the sortOrder property matches the new array index so it saves to the DB correctly!
-      onChange(newOrder.map((s, index) => ({ ...s, sortOrder: index })));
+      onChange(newOrder.map((section, index) => ({ ...section, sortOrder: (index + 1) * 10 })));
     }
   }
 
