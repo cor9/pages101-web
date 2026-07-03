@@ -19,7 +19,7 @@ export const samplePages: ActorPage[] = [
     market: "Los Angeles / Southeast",
     hasRep: false,
     reps: [],
-    relayRecipientEmail: "johnhaganactor@gmail.com",
+    relayRecipientEmail: null,
     links: [
       { label: "Actors Access", url: "https://actorsaccess.com" },
       { label: "IMDb", url: "https://imdb.com" }

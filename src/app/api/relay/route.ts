@@ -3,8 +3,6 @@ import { z } from "zod";
 import { sendPages101Email } from "@/lib/email";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
-const DEFAULT_RELAY_RECIPIENT_EMAIL = process.env.PAGES101_DEFAULT_RELAY_EMAIL?.trim() || "johnhaganactor@gmail.com";
-
 const relaySchema = z.object({
   slug: z.string().trim().min(3).max(40),
   senderName: z.string().trim().min(1).max(120),
@@ -64,7 +62,7 @@ export async function POST(request: Request) {
     console.error("Relay owner lookup failed:", ownerError);
   }
 
-  const relayRecipient = pageRow.relay_recipient_email?.trim() || ownerData.user?.email?.trim() || DEFAULT_RELAY_RECIPIENT_EMAIL;
+  const relayRecipient = pageRow.relay_recipient_email?.trim() || ownerData.user?.email?.trim();
   if (!relayRecipient) {
     return NextResponse.json({ error: "We saved the message, but could not deliver it." }, { status: 500 });
   }

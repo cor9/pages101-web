@@ -39,7 +39,6 @@ import type {
 
 const page = samplePages[0];
 const initialHeadshots = getPageHeadshots(page);
-const DEFAULT_RELAY_RECIPIENT_EMAIL = "johnhaganactor@gmail.com";
 
 const sectionTipMap: Partial<Record<SectionType, TipKey>> = {
   headshots: "headshots",
@@ -127,7 +126,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
   const [noindex, setNoindex] = useState(page.noindex);
   const [hasRep, setHasRep] = useState(page.hasRep);
   const [reps, setReps] = useState<Rep[]>(page.reps);
-  const [relayRecipientEmail, setRelayRecipientEmail] = useState(page.relayRecipientEmail ?? DEFAULT_RELAY_RECIPIENT_EMAIL);
+  const [relayRecipientEmail, setRelayRecipientEmail] = useState(page.relayRecipientEmail ?? "");
   const [links, setLinks] = useState<PageLink[]>(page.links);
   const [slateUrl, setSlateUrl] = useState(page.slateUrl ?? "");
   const [headshots, setHeadshots] = useState<Headshot[]>(initialHeadshots);
@@ -455,7 +454,7 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
     setMarket(actorPage.market);
     setHasRep(actorPage.hasRep);
     setReps(actorPage.reps);
-    setRelayRecipientEmail(actorPage.relayRecipientEmail ?? DEFAULT_RELAY_RECIPIENT_EMAIL);
+    setRelayRecipientEmail(actorPage.relayRecipientEmail ?? "");
     setLinks(actorPage.links);
     setSlateUrl(actorPage.slateUrl ?? "");
     setTemplateId(actorPage.template);
@@ -1257,11 +1256,11 @@ export function DashboardShell({ pageId, onBack }: { pageId?: string; onBack?: (
                   <input
                     type="email"
                     value={relayRecipientEmail}
-                    placeholder={DEFAULT_RELAY_RECIPIENT_EMAIL}
+                    placeholder={authUser?.email ?? "parent@example.com"}
                     onChange={(e) => setRelayRecipientEmail(e.target.value)}
                   />
                 </label>
-                <p className="panel-note">Messages from the public contact form will go to this inbox.</p>
+                <p className="panel-note">Messages from the public contact form will go to this inbox. Leave it blank to use the Pages101 account email.</p>
               </>
             )}
           </article>
