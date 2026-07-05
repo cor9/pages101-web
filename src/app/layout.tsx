@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Cormorant_Garamond, Fraunces, Inter, Outfit } from "next/font/google";
+import { Bricolage_Grotesque, Cormorant_Garamond, Fraunces, Inter, JetBrains_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,6 +31,12 @@ const bricolage = Bricolage_Grotesque({
   display: "swap"
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap"
+});
+
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   variable: "--font-cormorant",
@@ -40,7 +46,10 @@ const cormorant = Cormorant_Garamond({
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable} ${outfit.variable} ${bricolage.variable} ${cormorant.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${fraunces.variable} ${outfit.variable} ${bricolage.variable} ${cormorant.variable} ${jetbrainsMono.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
