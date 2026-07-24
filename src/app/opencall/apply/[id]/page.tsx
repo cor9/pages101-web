@@ -653,6 +653,7 @@ export default function OpenCallApplyPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
                   {form.headshots.map((h, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "var(--paper)", border: "1px solid var(--hairline)", borderRadius: 6 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded URL from Supabase storage; domain not statically known */}
                       <img src={h.url} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4, flexShrink: 0 }} />
                       <select
                         value={h.type}
