@@ -8,6 +8,8 @@ import { DashboardShell } from "@/components/editor/DashboardShell";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { PromoCodeCard } from "@/components/dashboard/PromoCodeCard";
 import { normalizeSlug, validateSlug } from "@/lib/slug";
+import { formatDeadline, isWindowOpen } from "@/lib/opencall";
+import type { OpenCallEvent } from "@/lib/opencall";
 
 type ActorPageListItem = {
   id: string;
@@ -79,6 +81,11 @@ function DashboardPageClient() {
   // Stripe Loading
   const [billingLoading, setBillingLoading] = useState(false);
 
+  // Open Call
+  const [ocEvent, setOcEvent] = useState<OpenCallEvent | null>(null);
+  const [ocApplications, setOcApplications] = useState<Array<{ id: string; status: string; actor_name: string | null; updated_at: string; submitted_at: string | null }>>([]);
+  const [ocLoading, setOcLoading] = useState(false);
+
   // Fetch all pages and subscription for current user
   const fetchPagesAndSub = useCallback(async (userId: string) => {
     if (!supabase) return;
@@ -114,6 +121,27 @@ function DashboardPageClient() {
     }
   }, [supabase]);
 
+  const fetchOpenCallData = useCallback(async () => {
+    if (!supabase) return;
+    setOcLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? "";
+      const [evtBody, appsBody] = await Promise.all([
+        fetch("/api/opencall/event").then((r) => r.ok ? r.json() as Promise<{ event?: OpenCallEvent }> : Promise.resolve({})),
+        token
+          ? fetch("/api/opencall/applications", { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.ok ? r.json() as Promise<{ applications?: Array<{ id: string; status: string; actor_name: string | null; updated_at: string; submitted_at: string | null }> }> : Promise.resolve({}))
+          : Promise.resolve({}),
+      ]);
+      setOcEvent((evtBody as { event?: OpenCallEvent }).event ?? null);
+      setOcApplications((appsBody as { applications?: Array<{ id: string; status: string; actor_name: string | null; updated_at: string; submitted_at: string | null }> }).applications ?? []);
+    } catch {
+      // ignore — OC data is non-critical
+    } finally {
+      setOcLoading(false);
+    }
+  }, [supabase]);
+
   // Auth listener
   useEffect(() => {
     if (!supabase) {
@@ -125,6 +153,7 @@ function DashboardPageClient() {
       if (data.user) {
         setUser(data.user);
         fetchPagesAndSub(data.user.id);
+        fetchOpenCallData();
       } else {
         // Redirect if not logged in
         router.push("/");
@@ -136,6 +165,7 @@ function DashboardPageClient() {
       if (session?.user) {
         setUser(session.user);
         fetchPagesAndSub(session.user.id);
+        fetchOpenCallData();
       } else {
         setUser(null);
         router.push("/");
@@ -143,7 +173,7 @@ function DashboardPageClient() {
     });
 
     return () => authSub.unsubscribe();
-  }, [supabase, fetchPagesAndSub, router]);
+  }, [supabase, fetchPagesAndSub, fetchOpenCallData, router]);
 
   // Sign out
   const handleSignOut = async () => {
@@ -497,6 +527,28 @@ function DashboardPageClient() {
                     </article>
                   );
                 })}
+              </div>
+            )}
+            {/* Open Call card */}
+            {!ocLoading && ocEvent && isWindowOpen(ocEvent) && (
+              <div style={{ marginTop: 32, padding: "20px 24px", background: "var(--paper)", border: "2px solid var(--marquee)", borderRadius: "var(--radius)" }}>
+                <p style={{ fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--marquee)", margin: "0 0 5px" }}>Open Call</p>
+                <h3 style={{ fontWeight: 800, color: "var(--ink)", margin: "0 0 3px", fontSize: "1rem" }}>{ocEvent.name}</h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--ink-soft)", margin: "0 0 14px" }}>Deadline: <strong>{formatDeadline(ocEvent.submits_close)}</strong></p>
+                {ocApplications.filter((a) => a.status !== "withdrawn").map((a) => (
+                  <div key={a.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", border: "1px solid var(--hairline)", borderRadius: 6, marginBottom: 6, background: "var(--cream)" }}>
+                    <div>
+                      <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--ink)" }}>{a.actor_name ?? "Unnamed"}</span>
+                      <span style={{ fontSize: "0.75rem", color: "var(--ink-soft)", marginLeft: 8 }}>{a.status === "submitted" ? "Submitted" : "Draft"}</span>
+                    </div>
+                    <a href={`/opencall/apply/${a.id}`} style={{ fontSize: "0.8rem", color: "var(--marquee)", textDecoration: "none", fontWeight: 700 }}>
+                      {a.status === "submitted" ? "View" : "Continue →"}
+                    </a>
+                  </div>
+                ))}
+                <a href="/opencall" style={{ display: "inline-block", marginTop: 8, padding: "8px 16px", background: "var(--marquee)", color: "#fff", borderRadius: 6, textDecoration: "none", fontWeight: 700, fontSize: "0.875rem" }}>
+                  {ocApplications.filter((a) => a.status !== "withdrawn").length === 0 ? "Apply Now" : "New Application"}
+                </a>
               </div>
             )}
           </section>
