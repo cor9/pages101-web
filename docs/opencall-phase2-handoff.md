@@ -83,17 +83,20 @@ Only `open / reviewing / closed` events are returned by the public event API. `d
 
 ### `p101_opencall_rep_invites`
 
+> **Note:** Earlier session reports conflicted on this table's columns (`email` vs `rep_email`, presence of `invited_by`). The table below reflects the verified live schema as of Phase 2 completion.
+
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid PK | |
-| `event_id` | uuid FK → events | |
-| `invited_by` | uuid FK → auth.users | |
-| `token_hash` | text UNIQUE | sha256 of the raw token; raw token is emailed once, never stored |
-| `email` | text | rep's email |
-| `expires_at` | timestamptz | |
+| `event_id` | uuid FK → events NOT NULL | |
+| `rep_name` | text NOT NULL | |
+| `rep_email` | text NOT NULL | rep's email |
+| `rep_agency` | text | nullable |
+| `token_hash` | text UNIQUE NOT NULL | sha256 of the raw token; raw token is emailed once, never stored |
+| `expires_at` | timestamptz NOT NULL | |
 | `revoked_at` | timestamptz | nullable |
 | `redeemed_at` | timestamptz | nullable; set on first valid redemption |
-| `created_at` | timestamptz | |
+| `created_at` | timestamptz NOT NULL | |
 
 Token flow: server generates raw token → emails it → stores only `sha256(raw_token)`. Redemption checks hash match + not expired + not revoked. Single-use via `redeemed_at`.
 
@@ -102,12 +105,11 @@ Token flow: server generates raw token → emails it → stores only `sha256(raw
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid PK | |
-| `event_id` | uuid FK → events | nullable |
-| `invite_id` | uuid FK → rep_invites | nullable |
+| `event_id` | uuid FK → events NOT NULL | verified NOT NULL in live schema |
+| `invite_id` | uuid FK → rep_invites NOT NULL | verified NOT NULL in live schema |
 | `application_id` | uuid FK → applications | nullable; required for application-scoped actions |
-| `action` | text | `session_start / invite_redeemed / access_denied / view_application / reveal_guardian_contact` |
-| `metadata` | jsonb | |
-| `created_at` | timestamptz | |
+| `action` | text NOT NULL | `session_start / invite_redeemed / access_denied / view_application / reveal_guardian_contact` |
+| `created_at` | timestamptz NOT NULL | |
 
 No INSERT policy for `authenticated` or `anon` — service role only.
 
