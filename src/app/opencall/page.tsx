@@ -161,18 +161,27 @@ const COPY = {
 //    not-yet-added file never flashes a broken-image icon. Drop the logo at
 //    public/opencall/child-actor-101-logo.png and it appears beside the wordmark.
 function LogoMark() {
-  const [loaded, setLoaded] = useState(false);
+  const [status, setStatus] = useState<"loading" | "ok" | "fail">("loading");
+  const imgRef = useRef<HTMLImageElement>(null);
+  // Cached images can finish loading before hydration attaches onLoad, so also
+  // check `complete` on mount — otherwise a present logo can stay hidden.
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img && img.complete) setStatus(img.naturalWidth > 0 ? "ok" : "fail");
+  }, []);
   return (
     <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: C.ink }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={imgRef}
         src="/opencall/child-actor-101-logo.png"
         alt=""
         aria-hidden="true"
         width={36}
         height={36}
-        onLoad={() => setLoaded(true)}
-        style={{ height: 36, width: 36, objectFit: "contain", borderRadius: 8, display: loaded ? "block" : "none" }}
+        onLoad={() => setStatus("ok")}
+        onError={() => setStatus("fail")}
+        style={{ height: 36, width: 36, objectFit: "contain", borderRadius: 8, display: status === "ok" ? "block" : "none" }}
       />
       <span style={{ fontFamily: display, fontWeight: 800, fontSize: 20, letterSpacing: "-0.02em" }}>{COPY.org}</span>
     </Link>
