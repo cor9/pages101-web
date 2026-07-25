@@ -170,20 +170,21 @@ function LogoMark() {
     if (img && img.complete) setStatus(img.naturalWidth > 0 ? "ok" : "fail");
   }, []);
   return (
-    <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: C.ink }}>
+    <Link href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: C.ink }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
+        className="oc-logo"
         src="/opencall/child-actor-101-logo.png"
         alt=""
         aria-hidden="true"
-        width={36}
-        height={36}
+        width={52}
+        height={52}
         onLoad={() => setStatus("ok")}
         onError={() => setStatus("fail")}
-        style={{ height: 36, width: 36, objectFit: "contain", borderRadius: 8, display: status === "ok" ? "block" : "none" }}
+        style={{ objectFit: "contain", display: status === "ok" ? "block" : "none" }}
       />
-      <span style={{ fontFamily: display, fontWeight: 800, fontSize: 20, letterSpacing: "-0.02em" }}>{COPY.org}</span>
+      <span style={{ fontFamily: display, fontWeight: 800, fontSize: 21, letterSpacing: "-0.02em" }}>{COPY.org}</span>
     </Link>
   );
 }
@@ -205,6 +206,8 @@ function Collage({ src, alt, ratio, bg }: { src: string; alt: string; ratio: str
 // Responsive helpers: hero (text | image) and section splits (text | image),
 // each collapsing to a single stacked column on mobile.
 const HERO_CSS = `
+.oc-logo{ height:48px; width:48px; border-radius:11px; flex:none; }
+@media (max-width: 900px){ .oc-logo{ height:40px; width:40px; border-radius:9px; } }
 .oc-hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:48px; align-items:center; }
 .oc-split{ display:grid; grid-template-columns:1fr 1fr; gap:44px; align-items:center; }
 .oc-frame{ position:relative; margin:0; border-radius:22px; overflow:hidden; border:1px solid rgba(246,241,233,0.14); background-clip:padding-box; }
@@ -442,7 +445,7 @@ export default function OpenCallLanding() {
       <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
       {/* Nav */}
       <header style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(20,18,16,0.85)", backdropFilter: "saturate(140%) blur(8px)", borderBottom: `1px solid ${C.line}` }}>
-        <div style={{ maxWidth: 1160, margin: "0 auto", padding: "14px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ maxWidth: 1160, margin: "0 auto", padding: "12px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <LogoMark />
           <nav style={{ display: "flex", gap: 26, fontSize: 14, color: C.soft, fontWeight: 500 }}>
             <a href="#what" style={{ color: "inherit", textDecoration: "none" }}>Open Call</a>
@@ -464,7 +467,7 @@ export default function OpenCallLanding() {
             </div>
             <h1 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2.8rem, 6.4vw, 5.4rem)", lineHeight: 0.95, letterSpacing: "-0.03em", margin: "0 0 24px" }}>
               One profile.<br />
-              <span style={{ color: C.lime }}>Real industry eyes.</span>
+              <span style={{ color: C.blue }}>Real industry eyes.</span>
             </h1>
             <p style={{ fontSize: 19, lineHeight: 1.55, color: C.soft, maxWidth: 540, margin: "0 0 16px" }}>
               Young performers from across the country submit one casting-ready profile. Verified youth talent agents and managers review every eligible submission, looking for performers who fit the needs of their roster.
@@ -488,8 +491,8 @@ export default function OpenCallLanding() {
       <section style={{ maxWidth: 1160, margin: "0 auto", padding: "24px 32px 72px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {COPY.stats.map((s, i) => {
-            const bgs = [C.lime, C.bg2, C.bg2, C.bg2];
-            const fgs = [C.bg, C.ink, C.ink, C.ink];
+            const bgs = [C.blue, C.bg2, C.bg2, C.bg2];
+            const fgs = ["#10233F", C.ink, C.ink, C.ink];
             return (
               <div key={s.label} style={{ background: bgs[i], color: fgs[i], borderRadius: 20, padding: "26px 24px", border: i === 0 ? "none" : `1px solid ${C.line}` }}>
                 <div style={{ fontFamily: display, fontWeight: 800, fontSize: s.value.length > 6 ? 30 : 44, lineHeight: 1, letterSpacing: "-0.03em" }}>{s.value}</div>
@@ -541,7 +544,7 @@ export default function OpenCallLanding() {
           <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3rem)", letterSpacing: "-0.02em", margin: "0 0 40px" }}>{COPY.trust.heading}</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
             {COPY.trust.points.map((p, i) => {
-              const accents = [C.lime, C.coral, C.blue, C.lime];
+              const accents = [C.blue, C.coral, C.blue, C.lime];
               return (
                 <div key={p.title} style={{ background: C.bg, borderRadius: 20, padding: 30, border: `1px solid ${C.line}` }}>
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: accents[i], color: C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: display, fontWeight: 800, marginBottom: 18 }}>{i + 1}</div>
@@ -567,7 +570,7 @@ export default function OpenCallLanding() {
           <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3rem)", letterSpacing: "-0.02em", margin: "0 0 40px" }}>{COPY.how.heading}</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
             {COPY.how.steps.map((s, i) => {
-              const accents = [C.lime, C.blue, C.coral, C.lime];
+              const accents = [C.blue, C.coral, C.lime, C.blue];
               return (
                 <div key={s.n} style={{ background: C.bg2, borderRadius: 20, padding: 26, border: `1px solid ${C.line}` }}>
                   <div style={{ fontFamily: display, fontWeight: 800, fontSize: 15, color: accents[i], letterSpacing: "0.1em", marginBottom: 44 }}>STEP {s.n}</div>
@@ -690,7 +693,7 @@ export default function OpenCallLanding() {
       </section>
 
       {/* Final CTA — state-driven */}
-      <section id="apply" style={{ background: C.lime, color: C.bg }}>
+      <section id="apply" style={{ background: C.blue, color: "#10233F" }}>
         <div style={{ maxWidth: 1160, margin: "0 auto", padding: "100px 32px" }}>
           {phase === "open" ? (
             <>
