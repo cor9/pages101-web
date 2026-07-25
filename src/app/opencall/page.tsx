@@ -188,55 +188,30 @@ function LogoMark() {
   );
 }
 
-// ── Hero collage bento — the four supplied original mixed-media images, used
-//    as provided. object-fit: cover + per-image object-position so the strongest
-//    subject stays visible. No enhancement, recolor, smoothing, or overlaid text;
-//    the handmade collage artifacts are intentional campaign identity. ──
-function HeroCollage() {
+// ── Collage frame — shows a supplied original mixed-media image in FULL, at its
+//    native aspect ratio, so nothing is cropped, stretched, recolored, or
+//    smoothed. Rounded corners + a consistent hairline border, no text overlay.
+//    The four images are spread across the page rather than crammed into one
+//    mosaic; their handmade quality is intentional campaign identity. ──
+function Collage({ src, alt, ratio, bg }: { src: string; alt: string; ratio: string; bg: string }) {
   return (
-    <div className="oc-bento">
-      {/* 1 · Primary large — child holding the oversized clapperboard */}
-      <figure className="oc-card oc-primary" style={{ background: C.coral }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/opencall/hero/clapperboard.webp" alt="Young performer with an oversized clapperboard" style={{ objectPosition: "center 30%" }} />
-      </figure>
-      {/* 2 · Upper small — child in sunglasses pointing at the oversized document */}
-      <figure className="oc-card oc-upper" style={{ background: C.blue }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/opencall/hero/sunglasses-document.webp" alt="Young performer in sunglasses reviewing a document" style={{ objectPosition: "80% 42%" }} />
-      </figure>
-      {/* 3 & 4 · Lower pair — retro TV with youth portraits, and audition/callback crop */}
-      <div className="oc-lower">
-        <figure className="oc-card" style={{ background: C.lime }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/opencall/hero/tv-portraits.webp" alt="Retro television surrounded by young performers" style={{ objectPosition: "center center" }} />
-        </figure>
-        <figure className="oc-card" style={{ background: C.coral }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/opencall/hero/audition-callback.jpg" alt="Audition and callback collage" style={{ objectPosition: "60% 40%" }} />
-        </figure>
-      </div>
-    </div>
+    <figure className="oc-frame" style={{ background: bg, aspectRatio: ratio }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} />
+    </figure>
   );
 }
 
-// Hero-only responsive CSS (keeps the approved desktop composition; adds mobile
-// stacking so no face is cut awkwardly). Scoped by the oc- classes above.
+// Responsive helpers: hero (text | image) and section splits (text | image),
+// each collapsing to a single stacked column on mobile.
 const HERO_CSS = `
 .oc-hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:48px; align-items:center; }
-.oc-bento{ display:grid; grid-template-columns:1.25fr 1fr; grid-template-rows:1fr 1fr; gap:14px; aspect-ratio:1 / 1; }
-.oc-primary{ grid-row:1 / 3; }
-.oc-upper{ grid-column:2; grid-row:1; }
-.oc-lower{ grid-column:2; grid-row:2; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.oc-card{ position:relative; margin:0; border-radius:22px; overflow:hidden; border:1px solid rgba(246,241,233,0.14); background-clip:padding-box; }
-.oc-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.oc-split{ display:grid; grid-template-columns:1fr 1fr; gap:44px; align-items:center; }
+.oc-frame{ position:relative; margin:0; border-radius:22px; overflow:hidden; border:1px solid rgba(246,241,233,0.14); background-clip:padding-box; }
+.oc-frame img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
 @media (max-width: 900px){
   .oc-hero-grid{ grid-template-columns:1fr; gap:32px; }
-  .oc-bento{ grid-template-columns:1fr 1fr; grid-template-rows:auto; aspect-ratio:auto; }
-  .oc-primary{ grid-column:1 / 3; grid-row:auto; aspect-ratio:16 / 10; }
-  .oc-upper{ grid-column:1 / 3; grid-row:auto; aspect-ratio:16 / 10; }
-  .oc-lower{ grid-column:1 / 3; grid-row:auto; }
-  .oc-lower .oc-card{ aspect-ratio:4 / 5; }
+  .oc-split{ grid-template-columns:1fr; gap:28px; }
 }
 `;
 
@@ -505,7 +480,7 @@ export default function OpenCallLanding() {
             </div>
             <p style={{ fontSize: 14, color: C.soft, marginTop: 20 }}>{COPY.heroSub}</p>
           </div>
-          <HeroCollage />
+          <Collage src="/opencall/hero/clapperboard.webp" alt="Young performer with an oversized clapperboard" ratio="1 / 1" bg={C.coral} />
         </div>
       </section>
 
@@ -543,15 +518,20 @@ export default function OpenCallLanding() {
       {/* Why this Open Call is different */}
       <section style={{ background: C.bg }}>
         <div style={{ maxWidth: 1160, margin: "0 auto", padding: "88px 32px" }}>
-          <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3rem)", letterSpacing: "-0.02em", margin: "0 0 28px" }}>{COPY.different.heading}</h2>
-          <div style={{ display: "grid", gap: 18, maxWidth: 820, marginBottom: 40 }}>
-            {COPY.different.body.map((p) => (
-              <p key={p.slice(0, 24)} style={{ fontSize: 18, lineHeight: 1.65, color: C.soft, margin: 0 }}>{p}</p>
-            ))}
+          <div className="oc-split">
+            <div>
+              <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3rem)", letterSpacing: "-0.02em", margin: "0 0 28px" }}>{COPY.different.heading}</h2>
+              <div style={{ display: "grid", gap: 18, marginBottom: 36 }}>
+                {COPY.different.body.map((p) => (
+                  <p key={p.slice(0, 24)} style={{ fontSize: 18, lineHeight: 1.65, color: C.soft, margin: 0 }}>{p}</p>
+                ))}
+              </div>
+              <p style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(1.6rem, 3vw, 2.4rem)", lineHeight: 1.15, letterSpacing: "-0.02em", color: C.lime, margin: 0 }}>
+                {COPY.different.highlight}
+              </p>
+            </div>
+            <Collage src="/opencall/hero/audition-callback.jpg" alt="Audition and callback collage of young performers" ratio="1508 / 1370" bg={C.coral} />
           </div>
-          <p style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(1.7rem, 3.6vw, 2.8rem)", lineHeight: 1.15, letterSpacing: "-0.02em", color: C.lime, margin: 0, maxWidth: 900 }}>
-            {COPY.different.highlight}
-          </p>
         </div>
       </section>
 
@@ -653,38 +633,46 @@ export default function OpenCallLanding() {
       <section style={{ maxWidth: 1160, margin: "0 auto", padding: "0 32px 88px" }}>
         <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3rem)", letterSpacing: "-0.02em", margin: "0 0 12px" }}>{COPY.reps.heading}</h2>
         <p style={{ fontSize: 18, color: C.soft, maxWidth: 660, margin: "0 0 32px" }}>{COPY.reps.intro}</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }}>
-          <div style={{ background: C.bg2, borderRadius: 20, padding: 32, border: `1px solid ${C.line}` }}>
-            <h3 style={{ fontFamily: display, fontWeight: 700, fontSize: 15, letterSpacing: "0.1em", textTransform: "uppercase", color: C.lime, margin: "0 0 18px" }}>Visible to reviewers</h3>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-              {COPY.reps.see.map((s) => (
-                <span key={s} style={{ background: C.bg, border: `1px solid ${C.line}`, borderRadius: 999, padding: "9px 16px", fontSize: 14.5 }}>{s}</span>
-              ))}
+        <div className="oc-split" style={{ alignItems: "start" }}>
+          <Collage src="/opencall/hero/tv-portraits.webp" alt="Young performers of many backgrounds around a retro television" ratio="1 / 1" bg={C.blue} />
+          <div style={{ display: "grid", gap: 16 }}>
+            <div style={{ background: C.bg2, borderRadius: 20, padding: 32, border: `1px solid ${C.line}` }}>
+              <h3 style={{ fontFamily: display, fontWeight: 700, fontSize: 15, letterSpacing: "0.1em", textTransform: "uppercase", color: C.lime, margin: "0 0 18px" }}>Visible to reviewers</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {COPY.reps.see.map((s) => (
+                  <span key={s} style={{ background: C.bg, border: `1px solid ${C.line}`, borderRadius: 999, padding: "9px 16px", fontSize: 14.5 }}>{s}</span>
+                ))}
+              </div>
             </div>
-          </div>
-          <div style={{ background: "#241512", borderRadius: 20, padding: 32, border: `1px solid ${C.coral}` }}>
-            <h3 style={{ fontFamily: display, fontWeight: 700, fontSize: 15, letterSpacing: "0.1em", textTransform: "uppercase", color: C.coral, margin: "0 0 18px" }}>{COPY.reps.neverHeading}</h3>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 12 }}>
-              {COPY.reps.never.map((s) => (
-                <li key={s} style={{ display: "flex", gap: 10, fontSize: 15, lineHeight: 1.45 }}>
-                  <span style={{ color: C.coral, fontWeight: 800 }}>✕</span><span>{s}</span>
-                </li>
-              ))}
-            </ul>
+            <div style={{ background: "#241512", borderRadius: 20, padding: 32, border: `1px solid ${C.coral}` }}>
+              <h3 style={{ fontFamily: display, fontWeight: 700, fontSize: 15, letterSpacing: "0.1em", textTransform: "uppercase", color: C.coral, margin: "0 0 18px" }}>{COPY.reps.neverHeading}</h3>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 12 }}>
+                {COPY.reps.never.map((s) => (
+                  <li key={s} style={{ display: "flex", gap: 10, fontSize: 15, lineHeight: 1.45 }}>
+                    <span style={{ color: C.coral, fontWeight: 800 }}>✕</span><span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Privacy */}
       <section id="privacy" style={{ background: C.blue, color: "#10233F" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px" }}>
-          <p style={{ fontFamily: display, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 20px", opacity: 0.7 }}>{COPY.privacy.heading}</p>
-          <div style={{ display: "grid", gap: 16 }}>
-            {COPY.privacy.body.map((p) => (
-              <p key={p.slice(0, 24)} style={{ fontFamily: display, fontWeight: 700, fontSize: "clamp(1.3rem, 2.6vw, 1.9rem)", lineHeight: 1.34, letterSpacing: "-0.01em", margin: 0 }}>{p}</p>
-            ))}
+        <div style={{ maxWidth: 1160, margin: "0 auto", padding: "80px 32px" }}>
+          <div className="oc-split">
+            <Collage src="/opencall/hero/sunglasses-document.webp" alt="Young performer in sunglasses reviewing a document" ratio="1 / 1" bg={C.coral} />
+            <div>
+              <p style={{ fontFamily: display, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 20px", opacity: 0.7 }}>{COPY.privacy.heading}</p>
+              <div style={{ display: "grid", gap: 16 }}>
+                {COPY.privacy.body.map((p) => (
+                  <p key={p.slice(0, 24)} style={{ fontFamily: display, fontWeight: 700, fontSize: "clamp(1.2rem, 2.2vw, 1.7rem)", lineHeight: 1.34, letterSpacing: "-0.01em", margin: 0 }}>{p}</p>
+                ))}
+              </div>
+              <p style={{ fontSize: 17, fontWeight: 600, margin: "20px 0 0" }}>{COPY.privacy.tail}</p>
+            </div>
           </div>
-          <p style={{ fontSize: 17, fontWeight: 600, margin: "20px 0 0" }}>{COPY.privacy.tail}</p>
         </div>
       </section>
 
