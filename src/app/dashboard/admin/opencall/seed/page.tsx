@@ -12,7 +12,7 @@ type SeedApp = {
   state: string | null;
   birth_year: number | null;
   union_status: string | null;
-  has_current_rep: boolean;
+  has_current_rep: boolean | null;
   status: string;
   submitted_at: string | null;
 };
@@ -272,14 +272,14 @@ export default function AdminSeedPage() {
           <div style={{ display: "flex", gap: 12, marginBottom: 32, flexWrap: "wrap" }}>
             <button
               onClick={handleSeed}
-              disabled={seeding || apps.length >= 24}
+              disabled={seeding || apps.length > 0}
               style={{
-                padding: "10px 20px", background: apps.length >= 24 ? "#94a3b8" : "#1a1a2e", color: "#fff",
+                padding: "10px 20px", background: apps.length > 0 ? "#94a3b8" : "#1a1a2e", color: "#fff",
                 border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14,
-                cursor: (seeding || apps.length >= 24) ? "not-allowed" : "pointer", opacity: seeding ? 0.7 : 1,
+                cursor: (seeding || apps.length > 0) ? "not-allowed" : "pointer", opacity: seeding ? 0.7 : 1,
               }}
             >
-              {seeding ? "Generating…" : apps.length >= 24 ? "24 Profiles Already Seeded" : `Generate All 24 Seed Profiles`}
+              {seeding ? "Generating…" : apps.length > 0 ? `${apps.length} Profiles Seeded (delete to regenerate)` : "Generate All 30 Seed Profiles"}
             </button>
 
             <button
@@ -337,7 +337,7 @@ export default function AdminSeedPage() {
             <p style={{ color: "#94a3b8", fontSize: 14 }}>Loading…</p>
           ) : apps.length === 0 ? (
             <div style={{ padding: "24px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-              No seed profiles yet. Click <strong>Generate All 24 Seed Profiles</strong> to create them.
+              No seed profiles yet. Click <strong>Generate All 30 Seed Profiles</strong> to create them.
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
@@ -376,33 +376,34 @@ export default function AdminSeedPage() {
             <h2 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700 }}>Edge-Case Coverage</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8, fontSize: 12 }}>
               {[
-                ["Two headshots (commercial + theatrical)", "Zoe Park, Ethan Jackson-Brown, + more"],
-                ["One headshot only", "Liam Torres"],
-                ["Three headshots", "Sofia Chen-Williams"],
-                ["Landscape image (900×600)", "Avery Santos"],
-                ["Unusually tall image (300×800)", "Destiny Williams"],
-                ["Low-resolution image (120×150)", "Priya Mehta"],
-                ["Broken image URL", "Noah Kim"],
-                ["Missing optional reel", "Liam Torres, Isabella Moreno, + more"],
-                ["Broken résumé URL", "Alyssa Nguyen"],
-                ["Multiple video clips (reel + other)", "Caleb Fitzgerald, Lucas Park Fernandez Romano, Jordan Williams-Scott"],
-                ["Two casting profile URLs", "Avery Santos, Isabella Moreno, + more"],
-                ["No supplemental note", "Sofia Chen-Williams, Maya Okonkwo"],
-                ["Long supplemental note (~4000 chars)", "Marcus Reed, Jordan Williams-Scott"],
-                ["Short name", "Jake Ma, Alex Reyes, Zoe Park"],
-                ["Hyphenated surname", "Sofia Chen-Williams, Ethan Jackson-Brown, Valentina Cruz-García, Bianca Osei-Mensah, Jordan Williams-Scott"],
-                ["Long multi-part name (4 parts)", "Lucas Park Fernandez Romano"],
-                ["Many local-hire markets (5 cities)", "Ryan Walsh"],
-                ["All seeking categories", "Lucas Park Fernandez Romano, Jordan Williams-Scott"],
-                ["SAG-AFTRA", "Zoe Park, Avery Santos, Noah Kim, + more"],
-                ["SAG-Eligible", "Sofia Chen-Williams, Priya Mehta, + more"],
-                ["Non-Union", "Liam Torres, Marcus Reed, + more"],
-                ["Represented", "Zoe Park, Sofia Chen-Williams, + more"],
-                ["Unrepresented", "Liam Torres, Marcus Reed, + more"],
-                ["Ages 6–9", "6 profiles (Zoe, Liam, Sofia, Marcus, Avery, Priya)"],
-                ["Ages 10–13", "6 profiles (Noah, Isabella, Ethan, Alyssa, Caleb, Maya)"],
-                ["Ages 14–17", "6 profiles (Ryan, Valentina, Jake, Destiny, Nadia, Lucas)"],
-                ["Ages 18–21", "6 profiles (Emma, Dylan, Bianca, Alex, Megan, Jordan)"],
+                ["Headshot count", "8 profiles ×1, 16 ×2, 6 ×3"],
+                ["Landscape / lifestyle image", "Adaeze N'Diaye (900×600)"],
+                ["Unusually tall image", "Zora Abernathy-Chen (300×800)"],
+                ["Square image", "Ruby Tran (700×700)"],
+                ["Low-resolution image", "Bodhi Kessler (120×150)"],
+                ["Broken image URL", "Rosalind Whitmore Ashby Callahan"],
+                ["No optional reel", "5 profiles"],
+                ["Multiple video clips (reel + other)", "5 profiles"],
+                ["Broken résumé URL", "Kai Nakamura, Sawyer Lindqvist"],
+                ["Placeholder résumé (schema requires one)", "Selah Marchetti"],
+                ["Broken slate URL", "Theo Park"],
+                ["Broken casting-profile URL", "Wren Baptiste"],
+                ["Alternate ('other') casting platform", "Kai Nakamura, Adaeze N'Diaye, Bodhi Kessler"],
+                ["No supplemental note", "8 profiles"],
+                ["Long note (multi-sentence + newline + skill list)", "Ava Whitfield-Ross"],
+                ["Short name", "Milo Chen, Ruby Tran, Theo Park, Bodhi Kessler, Harlow Ng"],
+                ["Apostrophe in name", "Beckett O'Malley, Adaeze N'Diaye, Finn O'Sullivan, Cormac D'Ambrosio"],
+                ["Hyphenated surname", "11 profiles"],
+                ["Long multi-part name", "Rosalind Whitmore Ashby Callahan, Maximilian Beauregard Thibodeaux III, + 2 more"],
+                ["3+ local-hire markets", "Anaya Fitzroy-Okwuosa, Zora Abernathy-Chen, Harlow Ng, Cormac D'Ambrosio"],
+                ["SAG-AFTRA (10) / SAG-Eligible (6) / Non-Union (14)", "spread across all age groups"],
+                ["Unrepresented (12) / Agency (8) / Manager (5) / Both (5)", "spread across all age groups"],
+                ["Representation-sought coverage", "theatrical_agent 16, commercial_agent 21, voiceover_agent 6, print_agent 7, theatre_agent 7, hosting_agent 4 (manager/regional_agent/across_the_board have no source signal in this fixture set)"],
+                ["Ages 6–8", "5 profiles"],
+                ["Ages 9–11", "5 profiles"],
+                ["Ages 12–14", "6 profiles"],
+                ["Ages 15–17", "7 profiles"],
+                ["Ages 18–21", "7 profiles"],
               ].map(([label, example]) => (
                 <div key={label} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 6, padding: "8px 10px" }}>
                   <div style={{ fontWeight: 600, color: "#374151", marginBottom: 2 }}>{label}</div>

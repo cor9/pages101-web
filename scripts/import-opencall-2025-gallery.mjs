@@ -246,56 +246,91 @@ function mapWorkPermit(raw, unmapped) {
 }
 
 const NONE_LIKE_REP = /^(none|no|n\/a|unrepresented|not represented)\.?$/i;
-function mapRepresentation(raw) {
+
+// Approved representation-type vocabulary — must match REPRESENTATION_TYPE_OPTIONS
+// in src/lib/opencall.ts. across_the_board is checked first and requires an
+// explicit full-service/multi-department signal; it is never used as a
+// generic "couldn't tell" fallback. theatre_agent (stage) is checked before
+// theatrical_agent (TV & Film) so "theatre"/"stage"/"Broadway" mentions don't
+// fall through to the wrong bucket.
+const REP_TYPE_KEYWORDS = [
+  { type: "across_the_board", pattern: /\bacross[- ]the[- ]board|full[- ]service|multiple\s+departments|all\s+departments\b/i },
+  { type: "theatre_agent", pattern: /\btheatre\b|\bstage\b|broadway/i },
+  { type: "theatrical_agent", pattern: /\btheatrical\b|\bfilm\b|\btv\b|\btelevision\b/i },
+  { type: "commercial_agent", pattern: /\bcommercial\b/i },
+  { type: "voiceover_agent", pattern: /\bvoice[\s-]?over\b|\bvoiceover\b/i },
+  { type: "print_agent", pattern: /\bprint\b/i },
+  { type: "manager", pattern: /\bmanager\b|\bmanagement\b/i },
+  { type: "regional_agent", pattern: /\bregional\b/i },
+  { type: "hosting_agent", pattern: /\bhosting\b|\bhost\b/i },
+];
+
+function inferRepresentationType(text) {
+  for (const { type, pattern } of REP_TYPE_KEYWORDS) {
+    if (pattern.test(text)) return type;
+  }
+  return null;
+}
+
+// Historical-import-only carve-out: when the free text clearly indicates
+// representation but no keyword confidently identifies a type, this leaves
+// representatives empty rather than inventing a category (per explicit
+// direction — do not force an inaccurate type onto real historical
+// applicants). The original text is always preserved in representation_notes
+// regardless. This does NOT relax draftSaveSchema or the live submit route's
+// completeness check for real family submissions — both still require a
+// valid type on every representative entry; this bypass only applies to rows
+// this script writes directly with status='submitted'.
+function mapCurrentRepresentation(raw, unmapped) {
   const v = (raw || "").trim();
   if (!v || NONE_LIKE_REP.test(v)) {
-    return { has_current_rep: false, current_rep_name: null, rep_context: null };
+    return { has_current_rep: false, representatives: [], representation_notes: null };
   }
   const firstLine = v.split("\n")[0].trim();
+  const type = inferRepresentationType(v);
+  if (!type) {
+    unmapped.push(`REPRESENTATION UNCATEGORIZED: no representation-type keyword matched (original text preserved in representation_notes): ${redactPII(v.slice(0, 80))}`);
+    return { has_current_rep: true, representatives: [], representation_notes: v.slice(0, 2000) };
+  }
   return {
     has_current_rep: true,
-    current_rep_name: firstLine.slice(0, 160),
-    rep_context: v.slice(0, 2000),
+    representatives: [{ name: firstLine.slice(0, 160), type, market: null }],
+    representation_notes: v.slice(0, 2000),
   };
 }
 
-// NOTE: the live TalentSearch gallery's "Seeking rep" filter (components/
-// TalentGallery.jsx in the talentsearch repo) does a raw substring match
-// against arrayToString(app.seeking) using its OWN fixed vocabulary —
-// theatrical / manager / commercial / voice / regional — inherited from the
-// original Airtable Open Call form (the same vocabulary this CSV uses). That
-// is a different set from this app's own submission-form SEEKING_OPTIONS
-// (src/lib/opencall.ts: theatrical/commercial/voiceover/print/musical_theater/
-// hosting). We map to the GALLERY's vocabulary here so "Seeking Manager" and
-// "Seeking Regional Agent" are actually filterable in the real gallery,
-// rather than silently dropped. ('voiceover' also still works for the
-// gallery's "voice" filter since 'voiceover'.includes('voice') is true.)
-const SEEKING_MAP = {
-  "seeking theatrical agent": "theatrical",
-  "seeking commercial agent": "commercial",
-  "seeking voice over agent": "voiceover",
-  "seeking print agent": "print",
+// The real 2025 Airtable form's own "Seeking What Talent Representation?"
+// column already used a representation-type vocabulary — this is the field
+// this app's rebuild should have carried forward as its own concept instead
+// of conflating it with work-category "seeking" (see PR notes). Only 6 of
+// the 9 currently-approved types were ever offered on the original form;
+// theatre_agent/hosting_agent/across_the_board correctly never appear from
+// this import.
+const SEEKING_REPRESENTATION_MAP = {
+  "seeking theatrical agent": "theatrical_agent",
+  "seeking commercial agent": "commercial_agent",
+  "seeking voice over agent": "voiceover_agent",
+  "seeking print agent": "print_agent",
   "seeking manager": "manager",
-  "seeking regional agent": "regional",
+  "seeking regional agent": "regional_agent",
 };
-function mapSeeking(raw, unmapped) {
+function mapSeekingRepresentation(raw, unmapped) {
   const options = splitList(raw);
   const seeking = [];
   for (const o of options) {
-    const mapped = SEEKING_MAP[o.trim().toLowerCase()];
+    const mapped = SEEKING_REPRESENTATION_MAP[o.trim().toLowerCase()];
     if (mapped) {
       if (!seeking.includes(mapped)) seeking.push(mapped);
     } else if (o.trim()) {
-      unmapped.push(`seeking: ${redactPII(o.trim())}`);
+      unmapped.push(`seeking representation (unmapped, dropped): ${redactPII(o.trim())}`);
     }
   }
   if (seeking.length === 0) {
-    // Required: cardinality(seeking) >= 1 for status='submitted'. These rows
-    // either left the field blank or selected only a category with no
-    // equivalent in the fixed gallery filter vocabulary (e.g. "Seeking
-    // Manager", "Seeking Regional Agent" — see notes above).
-    unmapped.push("FALLBACK: seeking -> [theatrical] (no mappable category selected)");
-    seeking.push("theatrical");
+    // No DB constraint requires cardinality >= 1 (that requirement lives only
+    // in the live submit route's business logic, which this importer
+    // bypasses). Left honestly empty rather than forcing a guess — see PR
+    // notes for why this replaces the old forced ["theatrical"] fallback.
+    unmapped.push("SEEKING REPRESENTATION UNCATEGORIZED: no mappable category selected, left empty (no forced default)");
   }
   return seeking;
 }
@@ -326,6 +361,62 @@ function mapCastingPlatforms(raw) {
 // content; always logged so the report shows exactly which rows needed one.
 const PLACEHOLDER_BASE = "https://import-placeholder.example.com";
 
+// ─── Attachment materialization ─────────────────────────────────────────────
+// Airtable's v5.airtableusercontent.com URLs are signed with a short-lived
+// expiry baked into the URL itself; every attachment in a given CSV export
+// shares one expiry timestamp, so once it passes, EVERY image/resume link in
+// that export is dead at once (HTTP 410 Gone). This downloads each such URL
+// and re-uploads it into Supabase Storage (bucket "pages101-media", the same
+// bucket real Open Call submissions use) so future runs don't depend on a
+// CDN link that can expire out from under us. If the source is already gone
+// (as it was for the 2025 export — the original Airtable base itself no
+// longer exists), the row gets an honest, clearly-labeled "unavailable"
+// placeholder instead of a silently-broken link or a generic stock photo.
+
+const MEDIA_BUCKET = "pages101-media";
+const materializeStats = { attempted: 0, recovered: 0, unavailable: 0 };
+
+function extFromContentType(ct) {
+  if (!ct) return "bin";
+  if (ct.includes("jpeg") || ct.includes("jpg")) return "jpg";
+  if (ct.includes("png")) return "png";
+  if (ct.includes("webp")) return "webp";
+  if (ct.includes("pdf")) return "pdf";
+  return "bin";
+}
+
+async function materializeAttachment(rawUrl, storagePath, label, unmapped) {
+  if (!rawUrl || !rawUrl.includes("airtableusercontent.com")) return null; // nothing to do
+  materializeStats.attempted++;
+  try {
+    const res = await fetch(rawUrl);
+    if (!res.ok) {
+      unmapped.push(`MATERIALIZE FAILED: ${label} -> HTTP ${res.status} (Airtable attachment expired/gone)`);
+      materializeStats.unavailable++;
+      return { recovered: false };
+    }
+    const contentType = res.headers.get("content-type") || "application/octet-stream";
+    const buffer = Buffer.from(await res.arrayBuffer());
+    const ext = extFromContentType(contentType);
+    const fullPath = `${storagePath}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .upload(fullPath, buffer, { contentType, upsert: true, cacheControl: "31536000" });
+    if (uploadError) {
+      unmapped.push(`MATERIALIZE FAILED: ${label} -> storage upload error: ${uploadError.message}`);
+      materializeStats.unavailable++;
+      return { recovered: false };
+    }
+    const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(fullPath);
+    materializeStats.recovered++;
+    return { recovered: true, url: data.publicUrl };
+  } catch (err) {
+    unmapped.push(`MATERIALIZE FAILED: ${label} -> ${err.message}`);
+    materializeStats.unavailable++;
+    return { recovered: false };
+  }
+}
+
 function mapCastingUrls(raw, unmapped) {
   const urls = extractUrls(raw);
   if (urls.length === 0 && (raw || "").trim()) {
@@ -339,8 +430,15 @@ function mapCastingUrls(raw, unmapped) {
   return capped;
 }
 
-function mapHeadshots(row, unmapped) {
+// A photo that genuinely can no longer be recovered from its source gets an
+// honest "unavailable" placeholder — visually distinct from the "none was
+// ever provided" placeholder above, and never a generic stock headshot.
+const UNAVAILABLE_HEADSHOT_URL =
+  "https://placehold.co/600x750/3f1d1d/f5d0d0?text=Original+Photo+Unavailable";
+
+async function mapHeadshots(row, index, unmapped) {
   const headshots = [];
+  let slot = 0;
   for (const [col, type] of [
     ["Headshot Commercial", "commercial"],
     ["Headshot Theatrical", "theatrical"],
@@ -350,7 +448,20 @@ function mapHeadshots(row, unmapped) {
     if (urls.length === 0 && (row[col] || "").trim()) {
       unmapped.push(`${col} (non-URL): ${redactPII(row[col].trim().slice(0, 60))}`);
     }
-    for (const url of urls) headshots.push({ type, url });
+    for (const url of urls) {
+      const storagePath = `import-2025/${String(index + 1).padStart(3, "0")}/headshot-${type}-${slot++}`;
+      const result = await materializeAttachment(url, storagePath, `${col}[${slot}]`, unmapped);
+      if (result?.recovered) {
+        headshots.push({ type, url: result.url });
+      } else if (result) {
+        // Attempted and failed (dead Airtable link) — honest placeholder,
+        // original type/order preserved.
+        headshots.push({ type, url: UNAVAILABLE_HEADSHOT_URL });
+      } else {
+        // Not an Airtable URL at all (already a normal external link) — keep as-is.
+        headshots.push({ type, url });
+      }
+    }
   }
   if (headshots.length === 0) {
     unmapped.push("FALLBACK: headshots -> placeholder (source had none)");
@@ -371,12 +482,21 @@ function mapSingleMediaUrl(raw, label, unmapped) {
 
 // resume_url / slate_url are NOT NULL for status='submitted' — unlike reel
 // and other_video (which stay genuinely optional/null), a missing value here
-// gets a placeholder rather than violating the constraint.
-function mapRequiredMediaUrl(raw, label, placeholderSlug, unmapped) {
+// gets a placeholder rather than violating the constraint. If the source URL
+// is an Airtable attachment, it's materialized into Supabase Storage first;
+// if that fails (dead link), an honest "expired" placeholder is used instead
+// of the "none was ever provided" one, so the two failure modes stay
+// distinguishable in the data.
+async function mapRequiredMediaUrl(raw, label, storagePath, placeholderSlug, unmapped) {
   const url = mapSingleMediaUrl(raw, label, unmapped);
-  if (url) return url;
-  unmapped.push(`FALLBACK: ${label} -> placeholder (source had none)`);
-  return `${PLACEHOLDER_BASE}/${placeholderSlug}`;
+  if (!url) {
+    unmapped.push(`FALLBACK: ${label} -> placeholder (source had none)`);
+    return `${PLACEHOLDER_BASE}/${placeholderSlug}`;
+  }
+  const result = await materializeAttachment(url, storagePath, label, unmapped);
+  if (result?.recovered) return result.url;
+  if (result) return `${PLACEHOLDER_BASE}/${label}-original-expired.pdf`; // attempted, dead Airtable link
+  return url; // not an Airtable URL — already a normal external link
 }
 
 function mapEthnicity(raw, unmapped) {
@@ -396,7 +516,17 @@ function mapEthnicity(raw, unmapped) {
 
 // ─── Row -> application-row mapping ─────────────────────────────────────────
 
-function mapRow(row, index) {
+// Cheap, no-I/O identity hash — computed for every CSV row up front so we
+// only run the (network-heavy, materializing) mapRow on rows that actually
+// need importing, instead of re-fetching every attachment URL on every run.
+function computeRowHash(row) {
+  const nameKey = Object.keys(row).find((k) => k.replace(/^﻿/, "") === "Actor’s Name") ?? "Actor’s Name";
+  const actorName = (row[nameKey] || "").trim();
+  const rowIdentity = [actorName, row["Birthday"], row["Time Created"], row["Email"]].join("|");
+  return createHash("sha256").update(rowIdentity, "utf8").digest("hex");
+}
+
+async function mapRow(row, index) {
   const unmapped = [];
   const nameKey = Object.keys(row).find((k) => k.replace(/^﻿/, "") === "Actor’s Name") ?? "Actor’s Name";
   const actorName = (row[nameKey] || "").trim();
@@ -420,13 +550,18 @@ function mapRow(row, index) {
   }
 
   const loc = parseLocation(row["City, State (Province), Country"], unmapped);
-  const rep = mapRepresentation(row["Current Representation"]);
-  const seeking = mapSeeking(row["Seeking What Talent Representation?"], unmapped);
+  const rep = mapCurrentRepresentation(row["Current Representation"], unmapped);
+  const seekingRepresentation = mapSeekingRepresentation(row["Seeking What Talent Representation?"], unmapped);
   const castingPlatforms = mapCastingPlatforms(row["Casting Profiles"]);
   const castingUrls = mapCastingUrls(row["Casting Profile Link (Actors Access or Casting Networks only)"], unmapped);
-  const headshots = mapHeadshots(row, unmapped);
-  const resume_url = mapRequiredMediaUrl(row["Resume"], "resume", "no-resume-provided.pdf", unmapped);
-  const slate_url = mapRequiredMediaUrl(row["Video Link (SLATE)"], "slate", "no-slate-provided.mp4", unmapped);
+  const paddedIdx = String(index + 1).padStart(3, "0");
+  const headshots = await mapHeadshots(row, index, unmapped);
+  const resume_url = await mapRequiredMediaUrl(
+    row["Resume"], "resume", `import-2025/${paddedIdx}/resume`, "no-resume-provided.pdf", unmapped
+  );
+  const slate_url = await mapRequiredMediaUrl(
+    row["Video Link (SLATE)"], "slate", `import-2025/${paddedIdx}/slate`, "no-slate-provided.mp4", unmapped
+  );
   const reel_url = mapSingleMediaUrl(row["Video Link (Reel, Clips, Self Tape)"], "reel", unmapped);
   const other_video_url = mapSingleMediaUrl(row["Other Video Link"], "other video", unmapped);
   const workPermit = mapWorkPermit(row["Current valid Work Permit(s)"], unmapped);
@@ -475,8 +610,7 @@ function mapRow(row, index) {
 
   const submittedAt = parseTimeCreated(row["Time Created"]) ?? new Date(Date.UTC(2025, 0, 1)).toISOString();
 
-  const rowIdentity = [actorName, row["Birthday"], row["Time Created"], row["Email"]].join("|");
-  const row_hash = createHash("sha256").update(rowIdentity, "utf8").digest("hex");
+  const row_hash = computeRowHash(row);
 
   return {
     application: {
@@ -494,9 +628,9 @@ function mapRow(row, index) {
       work_permit: workPermit,
       passport: mapPassport(row["Current Passport"]),
       has_current_rep: rep.has_current_rep,
-      current_rep_name: rep.current_rep_name,
-      rep_context: rep.rep_context,
-      seeking,
+      representatives: rep.representatives,
+      representation_notes: rep.representation_notes,
+      seeking_representation: seekingRepresentation,
       casting_platforms: castingPlatforms,
       casting_profile_urls: castingUrls,
       headshots,
@@ -533,12 +667,12 @@ const MAPPING_TABLE = [
   ["Coogan Account", "coogan_status", "'checked' -> yes; blank -> not_required (required field, logged as fallback)"],
   ["Current valid Work Permit(s)", "work_permit", "blank -> not_required (fallback); n/a-like -> no; any other detail -> yes (raw detail preserved in notes)"],
   ["Current Passport", "passport", "'checked' -> true; blank -> false"],
-  ["Current Representation", "has_current_rep, current_rep_name, rep_context", "blank/none-like -> unrepresented; else full text preserved in rep_context"],
-  ["Seeking What Talent Representation?", "seeking[]", "Maps to the live gallery's own filter vocabulary (theatrical/manager/commercial/voiceover/regional/print), not this app's newer form options; [theatrical] fallback if none map (required field)"],
+  ["Current Representation", "has_current_rep, representatives[], representation_notes", "blank/none-like -> unrepresented; else has_current_rep=true, full text preserved in representation_notes, and a representative entry is added only when a representation-type keyword is confidently identified (across_the_board requires an explicit full-service/multi-department signal, never a generic fallback) — ambiguous rows get has_current_rep=true with representatives=[] rather than an invented type"],
+  ["Seeking What Talent Representation?", "seeking_representation[]", "Maps to the approved representation-type vocabulary (theatrical_agent/commercial_agent/voiceover_agent/print_agent/manager/regional_agent — the 6 the original 2025 form offered); left empty (not force-defaulted) when nothing maps"],
   ["Casting Profiles", "casting_platforms[]", "Actors Access/Casting Networks map directly; Backstage/Casting Frontier/Casting Workbook/Other -> 'other' (DB only allows these 3 values)"],
   ["Casting Profile Link (...)", "casting_profile_urls[]", "URL(s) extracted, capped at 2 (DB constraint); non-URL text logged + dropped; placeholder fallback if none (required field)"],
-  ["Headshot Commercial / Theatrical / Other", "headshots[] (type: commercial/theatrical/other)", "URL(s) extracted per column, multiple per cell supported (required field — none needed a fallback for this export)"],
-  ["Resume", "resume_url", "first URL extracted; placeholder fallback if none (required field)"],
+  ["Headshot Commercial / Theatrical / Other", "headshots[] (type: commercial/theatrical/other)", "URL(s) extracted per column; Airtable-hosted URLs are downloaded and re-uploaded to Supabase Storage (pages101-media), falling back to an honest 'Original Photo Unavailable' placeholder if the source is gone"],
+  ["Resume", "resume_url", "URL extracted; Airtable-hosted URLs materialized into Supabase Storage the same way as headshots, 'expired'-labeled placeholder if unrecoverable"],
   ["Video Link (SLATE)", "slate_url", "URL extracted; placeholder fallback if none (required field)"],
   ["Video Link (Reel, Clips, Self Tape)", "reel_url", "URL extracted; non-URL text dropped to null + logged"],
   ["Other Video Link", "other_video_url", "URL extracted; non-URL text dropped to null + logged"],
@@ -593,9 +727,9 @@ async function main() {
   const csvRows = parseCsv(raw, { columns: true, skip_empty_lines: true, relax_quotes: true, relax_column_count: true });
   console.log(`CSV row count: ${csvRows.length}`);
 
-  const mapped = csvRows.map((row, i) => mapRow(row, i));
-
   // ─── Existing-import lookup (for idempotent skip / --reset) ──────────────
+  // Done with a CHEAP hash (no network I/O) BEFORE the expensive materializing
+  // mapRow, so an already-imported row never re-fetches its attachments.
   const { data: existingRows, error: existingErr } = await supabase
     .from("p101_opencall_applications")
     .select("id, consents")
@@ -615,17 +749,37 @@ async function main() {
     existingHashes.clear();
   }
 
-  const toInsert = RESET ? mapped : mapped.filter((m) => !existingHashes.has(m.row_hash));
-  const skipped = RESET ? [] : mapped.filter((m) => existingHashes.has(m.row_hash));
+  const indexedRows = csvRows.map((row, i) => ({ row, index: i, hash: computeRowHash(row) }));
+  const rowsToProcess = RESET ? indexedRows : indexedRows.filter((r) => !existingHashes.has(r.hash));
+  const skippedCount = indexedRows.length - rowsToProcess.length;
 
-  console.log(`Rows to import: ${toInsert.length}`);
-  console.log(`Rows already imported (skipped): ${skipped.length}\n`);
+  console.log(`Rows to import: ${rowsToProcess.length}`);
+  console.log(`Rows already imported (skipped): ${skippedCount}\n`);
 
-  if (toInsert.length === 0) {
+  if (rowsToProcess.length === 0) {
     console.log("Nothing to do — all rows already imported. Use --reset to reimport.");
-    printFinalReport({ event, csvRowCount: csvRows.length, insertedCount: 0, skippedCount: skipped.length, failedRows: [], insertedIds: [] });
+    printFinalReport({ event, csvRowCount: csvRows.length, insertedCount: 0, skippedCount, failedRows: [], insertedIds: [] });
     return;
   }
+
+  console.log(`Materializing attachments for ${rowsToProcess.length} row(s) — this downloads/re-uploads each headshot and resume, so it can take a while…\n`);
+  const mapped = [];
+  for (const { row, index } of rowsToProcess) {
+    mapped.push(await mapRow(row, index));
+    if (mapped.length % 10 === 0) console.log(`  ...processed ${mapped.length}/${rowsToProcess.length} rows`);
+  }
+  const toInsert = mapped;
+
+  // Report-before-write: how many rows fell into the historical-import-only
+  // "uncategorized" carve-out, before anything is committed to the DB.
+  const repStats = {
+    uncategorizedRepresentation: mapped.filter((m) => m.unmapped.some((u) => u.startsWith("REPRESENTATION UNCATEGORIZED"))).length,
+    uncategorizedSeekingRepresentation: mapped.filter((m) => m.unmapped.some((u) => u.startsWith("SEEKING REPRESENTATION UNCATEGORIZED"))).length,
+  };
+  console.log("\n── Representation mapping ──────────────────────────────────");
+  console.log(`  Rows with has_current_rep=true but no representation-type keyword matched (representatives=[], original text kept in representation_notes): ${repStats.uncategorizedRepresentation} / ${toInsert.length}`);
+  console.log(`  Rows with no mappable "Seeking What Talent Representation?" value (seeking_representation=[]): ${repStats.uncategorizedSeekingRepresentation} / ${toInsert.length}`);
+  console.log("─────────────────────────────────────────────────────────────\n");
 
   const importUserId = await getImportUserId();
 
@@ -667,16 +821,16 @@ async function main() {
     }
     printFinalReport({
       event, csvRowCount: csvRows.length,
-      insertedCount: insertedIndividually.length, skippedCount: skipped.length,
-      failedRows, insertedIds: insertedIndividually,
+      insertedCount: insertedIndividually.length, skippedCount,
+      failedRows, insertedIds: insertedIndividually, repStats,
     });
     process.exit(failedRows.length > 0 ? 1 : 0);
   }
 
   printFinalReport({
     event, csvRowCount: csvRows.length,
-    insertedCount: inserted.length, skippedCount: skipped.length,
-    failedRows: [], insertedIds: inserted,
+    insertedCount: inserted.length, skippedCount,
+    failedRows: [], insertedIds: inserted, repStats,
   });
 }
 
@@ -694,19 +848,29 @@ async function clearImportedRows(eventId, ids) {
   console.log(`  intro_requests deleted: ${introCount ?? 0}, favorites deleted: ${favCount ?? 0}, applications deleted: ${appCount ?? 0}\n`);
 }
 
-function printFinalReport({ event, csvRowCount, insertedCount, skippedCount, failedRows, insertedIds }) {
+function printFinalReport({ event, csvRowCount, insertedCount, skippedCount, failedRows, insertedIds, repStats }) {
   console.log("\n── Import report ──────────────────────────────────────────");
   console.log(`  CSV row count: ${csvRowCount}`);
   console.log(`  Imported: ${insertedCount}`);
   console.log(`  Skipped (already imported): ${skippedCount}`);
   console.log(`  Failed: ${failedRows.length}`);
   console.log(`  Test event ID: ${event.id}`);
+  if (repStats) {
+    console.log(`  Uncategorized current representation (has_current_rep=true, no type identified): ${repStats.uncategorizedRepresentation}`);
+    console.log(`  Uncategorized representation sought (left empty): ${repStats.uncategorizedSeekingRepresentation}`);
+  }
   if (failedRows.length) {
     console.log("  Failed rows:");
     failedRows.forEach((f) => console.log(`    - ${f.actor_name}: ${f.error}`));
   }
   if (insertedIds.length) {
     console.log(`  Inserted application IDs: ${insertedIds.length} (see above for id list)`);
+  }
+  if (materializeStats.attempted > 0) {
+    console.log("  Attachment materialization (Airtable -> Supabase Storage):");
+    console.log(`    Attempted: ${materializeStats.attempted}`);
+    console.log(`    Recovered: ${materializeStats.recovered}`);
+    console.log(`    Unavailable (dead source, honest placeholder used): ${materializeStats.unavailable}`);
   }
   console.log("─────────────────────────────────────────────────────────────\n");
 }
