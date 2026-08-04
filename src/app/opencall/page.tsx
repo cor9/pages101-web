@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatDeadline, isWindowOpen } from "@/lib/opencall";
 import { OPEN_CALL_REVIEW_URL, OPEN_CALL_WORKSHOP_URL } from "@/lib/opencall-purchases";
@@ -239,6 +240,7 @@ function PreparationCard({
   cta,
   href,
   accent,
+  image,
 }: {
   title: string;
   price: React.ReactNode;
@@ -248,6 +250,7 @@ function PreparationCard({
   cta: string;
   href: string;
   accent: string;
+  image: { src: string; alt: string };
 }) {
   const actionStyle = {
     display: "inline-block",
@@ -262,6 +265,9 @@ function PreparationCard({
 
   return (
     <article style={{ background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 24, padding: "clamp(24px, 4vw, 36px)", display: "flex", flexDirection: "column" }}>
+      <div style={{ overflow: "hidden", borderRadius: 16, marginBottom: 22, background: C.bg, border: `1px solid ${C.line}` }}>
+        <Image src={image.src} width={1254} height={1254} alt={image.alt} style={{ display: "block", width: "100%", height: "auto" }} />
+      </div>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, marginBottom: 20 }}>
         <div>
           <p style={{ color: accent, fontSize: 13, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 8px" }}>Optional preparation</p>
@@ -790,8 +796,8 @@ export default function OpenCallLanding() {
             <p style={{ fontSize: 18, lineHeight: 1.6, color: C.soft, margin: 0 }}>Open Call 11 is completely free to enter, and you do not need to purchase anything to submit. If you’d like professional guidance before you send everything in, Child Actor 101 offers two optional ways to help you put together a stronger, clearer, more professional submission.</p>
           </div>
           <div className="oc-prep-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 20 }}>
-            <PreparationCard title="Open Call Prep Workshop" price={<><span style={{ display: "block", fontSize: 14 }}>$49 Early</span><span style={{ display: "block", fontSize: 12, fontFamily: sans, fontWeight: 700, marginTop: 2 }}>$59 Regular</span></>} supportingLine="Live Workshop + Replay" description="A practical live workshop for parents and young actors covering exactly how to put together a strong Open Call submission — from choosing the right photos to creating a personality slate that actually shows personality." bullets={["What representatives actually notice first", "Choosing your strongest headshots and snapshots", "Commercial, theatrical and type photo strategy", "Creating a memorable personality slate", "Showing charisma without looking rehearsed", "Choosing believable character types", "Common submission mistakes", "How to make materials feel polished without overproducing them", "Live Q&A", "Workshop replay included"]} cta="Reserve My Workshop Spot" href={OPEN_CALL_WORKSHOP_URL} accent={C.lime} />
-            <PreparationCard title="Open Call Submission Review" price="$39" supportingLine="Professional review before you hit submit" description="Already putting your submission together? Get a professional second set of eyes on your materials before you send them." bullets={["Review of selected headshots and snapshots", "Review of personality slate", "Feedback on type choices", "Identification of weak or confusing materials", "Clear, concise notes on what should stay, change or improve", "Final ready-to-submit assessment"]} cta="Get My Submission Reviewed" href={OPEN_CALL_REVIEW_URL} accent={C.coral} />
+            <PreparationCard title="Open Call Prep Workshop" price="$49" supportingLine="Live Workshop + Replay" description="A practical live workshop for parents and young actors covering exactly how to put together a strong Open Call submission — from choosing the right photos to creating a personality slate that actually shows personality." bullets={["What representatives actually notice first", "Choosing your strongest headshots and snapshots", "Commercial, theatrical and type photo strategy", "Creating a memorable personality slate", "Showing charisma without looking rehearsed", "Choosing believable character types", "Common submission mistakes", "How to make materials feel polished without overproducing them", "Live Q&A", "Workshop replay included"]} cta="Reserve My Workshop Spot" href={OPEN_CALL_WORKSHOP_URL} accent={C.lime} image={{ src: "/opencall/prepwkshp.png", alt: "Open Call Prep Workshop" }} />
+            <PreparationCard title="Open Call Submission Review" price="$39" supportingLine="Professional review before you hit submit" description="Already putting your submission together? Get a professional second set of eyes on your materials before you send them." bullets={["Review of selected headshots and snapshots", "Review of personality slate", "Feedback on type choices", "Identification of weak or confusing materials", "Clear, concise notes on what should stay, change or improve", "Final ready-to-submit assessment"]} cta="Get My Submission Reviewed" href={OPEN_CALL_REVIEW_URL} accent={C.coral} image={{ src: "/opencall/subreview.png", alt: "Open Call Submission Review" }} />
           </div>
           <aside style={{ marginTop: 24, background: "#172330", border: `1px solid ${C.blue}`, borderRadius: 18, padding: "22px 24px", color: C.ink }}>
             <p style={{ fontFamily: display, fontWeight: 800, fontSize: 16, color: C.blue, margin: "0 0 8px" }}>A clear promise to every family</p>

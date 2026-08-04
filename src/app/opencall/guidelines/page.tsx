@@ -1,4 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Child Actor 101's Free Talent Representation Open Call",
+};
 
 const C = {
   bg: "#141210",
@@ -78,7 +84,7 @@ const sections: GuideSection[] = [
   {
     id: "work", number: "08", title: "Location & work information", required: "Accuracy matters",
     intro: ["The application asks about city, state/province, country, local-hire cities, union status, Coogan account, work permit and passport. Answer accurately."],
-    callout: "Only list a local-hire market when your family can realistically work there as a local hire. It is not a wish list.",
+    callout: "Local Hire means that you are able to travel to the location and secure accommodations on your own dime.",
     bullets: ["If your actor can genuinely work locally in Los Angeles, San Diego, Atlanta, New York or another market, include it.", "Accuracy is considerably more useful than trying to make an actor appear available everywhere."],
   },
   {
@@ -108,8 +114,12 @@ const checklist = [
 const pageCss = `
   .guide-grid { display:grid; grid-template-columns:220px minmax(0, 1fr); gap:48px; align-items:start; }
   .guide-cards { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
+  .guide-example-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
+  .guide-example-grid figure { margin:0; border-radius:18px; overflow:hidden; background:#1D1A16; border:1px solid rgba(246,241,233,.14); }
+  .guide-example-grid img { display:block; width:100%; aspect-ratio:1.25 / 1; object-fit:cover; }
+  .guide-example-grid figcaption { padding:13px 15px 15px; color:#F6F1E9; font-family:var(--font-bricolage), var(--font-outfit), system-ui, sans-serif; font-weight:800; font-size:15px; }
   .guide-nav { position:sticky; top:88px; }
-  @media (max-width:900px) { .guide-grid { grid-template-columns:1fr; gap:28px; } .guide-nav { position:static; display:flex; flex-wrap:wrap; gap:8px; } .guide-nav a { margin:0 !important; } .guide-cards { grid-template-columns:1fr; } }
+  @media (max-width:900px) { .guide-grid { grid-template-columns:1fr; gap:28px; } .guide-nav { position:static; display:flex; flex-wrap:wrap; gap:8px; } .guide-nav a { margin:0 !important; } .guide-cards, .guide-example-grid { grid-template-columns:1fr; } }
 `;
 
 export default function OpenCallGuidelinesPage() {
@@ -118,7 +128,10 @@ export default function OpenCallGuidelinesPage() {
       <style dangerouslySetInnerHTML={{ __html: pageCss }} />
       <header style={{ borderBottom: `1px solid ${C.line}`, background: "rgba(20,18,16,.9)", position: "sticky", top: 0, zIndex: 2, backdropFilter: "blur(10px)" }}>
         <div style={{ maxWidth: 1160, margin: "0 auto", padding: "14px 32px", display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
-          <Link href="/opencall" style={{ color: C.ink, fontFamily: display, fontWeight: 800, fontSize: 18, textDecoration: "none" }}>Child Actor 101 <span style={{ color: C.lime }}>Open Call 11</span></Link>
+          <a href="https://childactor101.com" target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, color: C.ink, fontFamily: display, fontWeight: 800, fontSize: 18, textDecoration: "none" }}>
+            <Image src="/opencall/child-actor-101-logo.png" width={40} height={40} alt="Child Actor 101" style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 9 }} />
+            <span>Child Actor 101 <span style={{ color: C.lime }}>Open Call 11</span></span>
+          </a>
           <Link href="/opencall#apply" style={{ background: C.lime, color: C.bg, borderRadius: 999, padding: "10px 18px", fontWeight: 800, fontSize: 14, textDecoration: "none", whiteSpace: "nowrap" }}>Free to submit</Link>
         </div>
       </header>
@@ -126,7 +139,8 @@ export default function OpenCallGuidelinesPage() {
       <section style={{ background: C.cream, color: "#1B1712" }}>
         <div style={{ maxWidth: 1160, margin: "0 auto", padding: "clamp(56px, 9vw, 108px) 32px" }}>
           <p style={{ color: C.coral, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", fontSize: 13, margin: "0 0 18px" }}>Open Call 11</p>
-          <h1 style={{ fontFamily: display, fontSize: "clamp(3rem, 8vw, 6.5rem)", lineHeight: .9, letterSpacing: "-.055em", maxWidth: 850, margin: "0 0 24px" }}>Free Submission<br /><span style={{ color: "#354E78" }}>Guidelines &amp; Tips</span></h1>
+          <h1 style={{ fontFamily: display, fontSize: "clamp(2.8rem, 7vw, 5.7rem)", lineHeight: .92, letterSpacing: "-.055em", maxWidth: 980, margin: "0 0 18px" }}>Child Actor 101&apos;s Free Talent Representation Open Call</h1>
+          <p style={{ color: "#354E78", fontFamily: display, fontWeight: 800, fontSize: "clamp(1.35rem, 3vw, 2.1rem)", letterSpacing: "-.025em", margin: "0 0 24px" }}>Free Submission Guidelines &amp; Tips</p>
           <p style={{ fontFamily: display, fontWeight: 700, fontSize: "clamp(1.2rem, 2.5vw, 1.65rem)", lineHeight: 1.35, maxWidth: 760, margin: "0 0 30px" }}>Show us who your actor really is, what they realistically play, and what they can do.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {["Submissions: August 4 – September 7, 2026", "Ages 6–21", "Free to submit"].map((item, i) => <span key={item} style={{ borderRadius: 999, padding: "9px 14px", fontWeight: 800, fontSize: 14, background: i === 2 ? C.lime : "#E5DDD1" }}>{item}</span>)}
@@ -155,7 +169,16 @@ export default function OpenCallGuidelinesPage() {
               </div>
               {section.callout && <p style={{ margin: "22px 0 0", background: C.lime, color: C.bg, borderRadius: 14, padding: "16px 18px", fontFamily: display, fontSize: 18, fontWeight: 800, lineHeight: 1.25 }}>{section.callout}</p>}
               {section.cards && <div className="guide-cards" style={{ marginTop: 24 }}>{section.cards.map((card) => <article key={card.title} style={{ background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 18, padding: 22 }}><h3 style={{ color: C.ink, fontFamily: display, fontSize: 19, margin: "0 0 10px" }}>{card.title}</h3><p style={{ color: C.soft, fontSize: 14.5, lineHeight: 1.55, margin: "0 0 14px" }}>{card.text}</p><ul style={{ listStyle: "none", display: "grid", gap: 8, padding: 0, margin: 0 }}>{card.bullets.map((bullet) => <li key={bullet} style={{ display: "flex", gap: 8, color: C.soft, fontSize: 13.5, lineHeight: 1.45 }}><span style={{ color: C.coral, fontWeight: 900 }}>↳</span>{bullet}</li>)}</ul></article>)}</div>}
+              {section.id === "photos" && <div style={{ marginTop: 28 }}>
+                <p style={{ color: C.lime, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", margin: "0 0 12px" }}>Photo examples</p>
+                <div className="guide-example-grid">
+                  <figure><Image src="/opencall/commercialexamples.jpeg" width={1262} height={1003} alt="Examples of commercial headshots for young performers" /><figcaption>Commercial examples</figcaption></figure>
+                  <figure><Image src="/opencall/theatricalexamples.png" width={1024} height={805} alt="Examples of theatrical headshots for young performers" /><figcaption>Theatrical examples</figcaption></figure>
+                  <figure><Image src="/opencall/lighttheatricalexamples.png" width={945} height={756} alt="Examples of light theatrical headshots for young performers" /><figcaption>Light theatrical examples</figcaption></figure>
+                </div>
+              </div>}
               {section.bullets && <ul style={{ listStyle: "none", display: "grid", gap: 10, padding: 0, margin: "22px 0 0", maxWidth: 810 }}>{section.bullets.map((bullet) => <li key={bullet} style={{ display: "flex", gap: 10, color: C.soft, fontSize: 15.5, lineHeight: 1.5 }}><span style={{ color: C.lime, fontWeight: 900 }}>✓</span>{bullet}</li>)}</ul>}
+              {section.id === "resume" && <a href="https://resumes.childactor101.com" target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, marginTop: 24, padding: "18px 20px", background: C.blue, color: "#10233F", borderRadius: 16, textDecoration: "none" }}><span><span style={{ display: "block", fontFamily: display, fontSize: 18, fontWeight: 800 }}>Free Industry Standard Youth Resume Creator</span><span style={{ display: "block", marginTop: 4, fontSize: 14, fontWeight: 600 }}>Build a clean, professional youth acting résumé with Resume101.</span></span><span style={{ flex: "none", fontWeight: 900 }}>Resume101 ↗</span></a>}
             </section>)}
 
             <section id="checklist" style={{ background: C.coral, color: C.bg, borderRadius: 24, padding: "clamp(24px, 5vw, 42px)", scrollMarginTop: 100 }}>
