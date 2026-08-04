@@ -13,6 +13,7 @@ export async function GET() {
   const { data, error } = await serviceClient
     .from("p101_opencall_events")
     .select("id, year, name, submits_open, submits_close, review_close, status, created_at, updated_at")
+    .eq("is_test", false)
     .in("status", ["open", "reviewing", "closed"])
     .order("year", { ascending: false })
     .limit(1)

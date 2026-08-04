@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { formatDeadline, isWindowOpen } from "@/lib/opencall";
+import { OPEN_CALL_REVIEW_URL, OPEN_CALL_WORKSHOP_URL } from "@/lib/opencall-purchases";
 import type { OpenCallEvent, OpenCallApplication } from "@/lib/opencall";
 import type { User } from "@supabase/supabase-js";
 
@@ -31,8 +32,8 @@ const display = "var(--font-bricolage), var(--font-outfit), system-ui, sans-seri
 const sans = "var(--font-inter), system-ui, sans-serif";
 
 // Displayed dates. State (pre-open / open / closed) is driven by event status
-// below; these strings mirror the approved event configuration (Aug 17 – Sep 7).
-const OPEN_LABEL = "August 17";
+// below; these strings mirror the approved event configuration (Aug 4 – Sep 7).
+const OPEN_LABEL = "August 4, 2026";
 const DEADLINE_LABEL = "September 7, 2026";
 const DEADLINE_SUB = "Labor Day · 11:59 PM Pacific";
 
@@ -215,7 +216,10 @@ const HERO_CSS = `
 @media (max-width: 900px){
   .oc-hero-grid{ grid-template-columns:1fr; gap:32px; }
   .oc-split{ grid-template-columns:1fr; gap:28px; }
+  .oc-prep-grid{ grid-template-columns:1fr !important; }
+  .oc-date-grid{ grid-template-columns:1fr !important; }
 }
+@media (max-width: 720px){ .oc-nav{ display:none !important; } }
 `;
 
 function Pill({ children, bg, fg }: { children: React.ReactNode; bg: string; fg: string }) {
@@ -223,6 +227,61 @@ function Pill({ children, bg, fg }: { children: React.ReactNode; bg: string; fg:
     <span style={{ display: "inline-block", background: bg, color: fg, borderRadius: 999, padding: "6px 14px", fontSize: 13, fontWeight: 700 }}>
       {children}
     </span>
+  );
+}
+
+function PreparationCard({
+  title,
+  price,
+  supportingLine,
+  description,
+  bullets,
+  cta,
+  href,
+  accent,
+}: {
+  title: string;
+  price: React.ReactNode;
+  supportingLine: string;
+  description: string;
+  bullets: string[];
+  cta: string;
+  href: string;
+  accent: string;
+}) {
+  const actionStyle = {
+    display: "inline-block",
+    width: "100%",
+    boxSizing: "border-box" as const,
+    textAlign: "center" as const,
+    borderRadius: 999,
+    padding: "14px 20px",
+    fontSize: 15,
+    fontWeight: 800,
+  };
+
+  return (
+    <article style={{ background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 24, padding: "clamp(24px, 4vw, 36px)", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, marginBottom: 20 }}>
+        <div>
+          <p style={{ color: accent, fontSize: 13, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 8px" }}>Optional preparation</p>
+          <h3 style={{ fontFamily: display, fontSize: "clamp(1.5rem, 3vw, 2rem)", lineHeight: 1.05, letterSpacing: "-0.02em", margin: 0 }}>{title}</h3>
+        </div>
+        <div style={{ flex: "none", borderRadius: 14, padding: "10px 12px", background: accent, color: C.bg, fontFamily: display, fontSize: 17, fontWeight: 800, textAlign: "center" }}>{price}</div>
+      </div>
+      <p style={{ color: C.ink, fontWeight: 700, margin: "0 0 16px" }}>{supportingLine}</p>
+      <p style={{ color: C.soft, fontSize: 15.5, lineHeight: 1.6, margin: "0 0 20px" }}>{description}</p>
+      <ul style={{ listStyle: "none", display: "grid", gap: 10, padding: 0, margin: "0 0 28px" }}>
+        {bullets.map((bullet) => <li key={bullet} style={{ display: "flex", gap: 10, color: C.soft, fontSize: 14.5, lineHeight: 1.45 }}><span style={{ color: accent, fontWeight: 900 }}>✓</span><span>{bullet}</span></li>)}
+      </ul>
+      <div style={{ marginTop: "auto" }}>
+        {href ? (
+          <a href={href} target="_blank" rel="noreferrer" style={{ ...actionStyle, background: accent, color: C.bg, textDecoration: "none" }}>{cta}</a>
+        ) : (
+          <div style={{ ...actionStyle, background: "transparent", color: C.soft, border: `1px dashed ${C.line}` }}>Registration link coming shortly</div>
+        )}
+      </div>
+    </article>
   );
 }
 
@@ -355,10 +414,9 @@ export default function OpenCallLanding() {
   const statusPill = phase === "open" ? "Now open" : phase === "closed" ? "Submissions closed" : `Opens ${OPEN_LABEL}`;
 
   const dateItems = [
-    { label: "Submissions open", value: event ? formatDeadline(event.submits_open) : "August 17, 2026", sub: null as string | null },
-    { label: "Submission deadline", value: event ? formatDeadline(event.submits_close) : DEADLINE_LABEL, sub: DEADLINE_SUB },
-    { label: "Representative review", value: event?.review_close ? `Through ${formatDeadline(event.review_close)}` : "Begins after submissions close", sub: null },
-    { label: "Introductions begin", value: "Rolling, during and after review", sub: null },
+    { label: "Submissions open", value: OPEN_LABEL, sub: null as string | null },
+    { label: "Submission deadline", value: DEADLINE_LABEL, sub: DEADLINE_SUB },
+    { label: "Representative review", value: "Begins September 15, 2026", sub: null },
   ];
 
   // ── Functional apply control (open state only): login / start / applications ──
@@ -447,10 +505,11 @@ export default function OpenCallLanding() {
       <header style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(20,18,16,0.85)", backdropFilter: "saturate(140%) blur(8px)", borderBottom: `1px solid ${C.line}` }}>
         <div style={{ maxWidth: 1160, margin: "0 auto", padding: "12px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <LogoMark />
-          <nav style={{ display: "flex", gap: 26, fontSize: 14, color: C.soft, fontWeight: 500 }}>
+          <nav className="oc-nav" style={{ display: "flex", gap: 26, fontSize: 14, color: C.soft, fontWeight: 500 }}>
             <a href="#what" style={{ color: "inherit", textDecoration: "none" }}>Open Call</a>
             <a href="#how" style={{ color: "inherit", textDecoration: "none" }}>How it works</a>
             <a href="#requirements" style={{ color: "inherit", textDecoration: "none" }}>Requirements</a>
+            <Link href="/opencall/guidelines" style={{ color: "inherit", textDecoration: "none" }}>Guidelines &amp; tips</Link>
             <a href="#privacy" style={{ color: "inherit", textDecoration: "none" }}>Privacy</a>
           </nav>
           <a href="#apply" style={{ background: C.lime, color: C.bg, borderRadius: 999, padding: "10px 20px", fontSize: 14, fontWeight: 800, textDecoration: "none" }}>{navCtaLabel}</a>
@@ -480,6 +539,7 @@ export default function OpenCallLanding() {
                 <a href="#apply" style={{ background: C.lime, color: C.bg, borderRadius: 999, padding: "16px 32px", fontSize: 16, fontWeight: 800, textDecoration: "none" }}>{heroPrimaryLabel}</a>
               )}
               <a href="#how" style={{ color: C.ink, border: `1px solid ${C.line}`, borderRadius: 999, padding: "16px 28px", fontSize: 16, fontWeight: 700, textDecoration: "none" }}>See How It Works</a>
+              <Link href="/opencall/guidelines" style={{ color: C.ink, textDecoration: "underline", fontWeight: 700 }}>Free submission guidelines &amp; tips</Link>
             </div>
             <p style={{ fontSize: 14, color: C.soft, marginTop: 20 }}>{COPY.heroSub}</p>
           </div>
@@ -607,7 +667,7 @@ export default function OpenCallLanding() {
       </section>
 
       {/* Who + Dates */}
-      <section style={{ maxWidth: 1160, margin: "0 auto", padding: "0 32px 88px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+      <section className="oc-date-grid" style={{ maxWidth: 1160, margin: "0 auto", padding: "0 32px 88px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
         <div style={{ background: C.coral, color: C.bg, borderRadius: 24, padding: 36 }}>
           <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: 26, margin: "0 0 22px" }}>{COPY.who.heading}</h2>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 16 }}>
@@ -718,6 +778,25 @@ export default function OpenCallLanding() {
               <p style={{ fontSize: 14, marginTop: 18, fontWeight: 600 }}>Submissions close {DEADLINE_LABEL} at 11:59 PM Pacific.</p>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Optional preparation services stay after the free submission CTA and never affect review. */}
+      <section id="preparation" style={{ background: "#201C16", borderTop: `1px solid ${C.line}` }}>
+        <div style={{ maxWidth: 1160, margin: "0 auto", padding: "88px 32px" }}>
+          <div style={{ maxWidth: 780, marginBottom: 40 }}>
+            <p style={{ fontFamily: display, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", color: C.lime, margin: "0 0 18px" }}>Optional support</p>
+            <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3.2rem)", lineHeight: 1.05, letterSpacing: "-0.025em", margin: "0 0 16px" }}>Need Help Getting Open Call Ready?</h2>
+            <p style={{ fontSize: 18, lineHeight: 1.6, color: C.soft, margin: 0 }}>Open Call 11 is completely free to enter, and you do not need to purchase anything to submit. If you’d like professional guidance before you send everything in, Child Actor 101 offers two optional ways to help you put together a stronger, clearer, more professional submission.</p>
+          </div>
+          <div className="oc-prep-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 20 }}>
+            <PreparationCard title="Open Call Prep Workshop" price={<><span style={{ display: "block", fontSize: 14 }}>$49 Early</span><span style={{ display: "block", fontSize: 12, fontFamily: sans, fontWeight: 700, marginTop: 2 }}>$59 Regular</span></>} supportingLine="Live Workshop + Replay" description="A practical live workshop for parents and young actors covering exactly how to put together a strong Open Call submission — from choosing the right photos to creating a personality slate that actually shows personality." bullets={["What representatives actually notice first", "Choosing your strongest headshots and snapshots", "Commercial, theatrical and type photo strategy", "Creating a memorable personality slate", "Showing charisma without looking rehearsed", "Choosing believable character types", "Common submission mistakes", "How to make materials feel polished without overproducing them", "Live Q&A", "Workshop replay included"]} cta="Reserve My Workshop Spot" href={OPEN_CALL_WORKSHOP_URL} accent={C.lime} />
+            <PreparationCard title="Open Call Submission Review" price="$39" supportingLine="Professional review before you hit submit" description="Already putting your submission together? Get a professional second set of eyes on your materials before you send them." bullets={["Review of selected headshots and snapshots", "Review of personality slate", "Feedback on type choices", "Identification of weak or confusing materials", "Clear, concise notes on what should stay, change or improve", "Final ready-to-submit assessment"]} cta="Get My Submission Reviewed" href={OPEN_CALL_REVIEW_URL} accent={C.coral} />
+          </div>
+          <aside style={{ marginTop: 24, background: "#172330", border: `1px solid ${C.blue}`, borderRadius: 18, padding: "22px 24px", color: C.ink }}>
+            <p style={{ fontFamily: display, fontWeight: 800, fontSize: 16, color: C.blue, margin: "0 0 8px" }}>A clear promise to every family</p>
+            <p style={{ fontSize: 15.5, lineHeight: 1.6, color: C.ink, margin: 0 }}>Open Call 11 is completely free to enter. No purchase is required or given preferential consideration. Representatives reviewing Open Call submissions will not know who purchased workshops, submission reviews, coaching, classes or other Child Actor 101 services. Optional services are provided only to help families prepare and present their materials.</p>
+          </aside>
         </div>
       </section>
 
