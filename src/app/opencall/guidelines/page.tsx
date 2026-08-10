@@ -116,10 +116,21 @@ const pageCss = `
   .guide-cards { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
   .guide-example-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
   .guide-example-grid figure { margin:0; border-radius:18px; overflow:hidden; background:#1D1A16; border:1px solid rgba(246,241,233,.14); }
-  .guide-example-grid img { display:block; width:100%; aspect-ratio:1.25 / 1; object-fit:cover; }
+  .guide-example-grid img { display:block; width:100%; height:auto; object-fit:contain; }
   .guide-example-grid figcaption { padding:13px 15px 15px; color:#F6F1E9; font-family:var(--font-bricolage), var(--font-outfit), system-ui, sans-serif; font-weight:800; font-size:15px; }
+  .guide-video { position:relative; width:100%; aspect-ratio:16 / 9; overflow:hidden; border-radius:18px; border:1px solid rgba(246,241,233,.14); background:#000; }
+  .guide-video iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .guide-section-heading { display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:18px; border-bottom:1px solid rgba(246,241,233,.14); padding-bottom:14px; }
+  .guide-section-heading > span { flex:none; }
+  .guide-checklist { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
+  .guide-checklist-card { background:#FAF8F3; border:1px solid rgba(20,20,18,.14); border-radius:20px; box-shadow:0 2px 0 rgba(0,0,0,.04); padding:20px; color:#151513; }
+  .guide-checklist-card::before { content:""; display:block; width:44px; height:5px; margin-bottom:16px; border-radius:999px; background:var(--check-accent); }
+  .guide-checklist-item { display:flex; align-items:flex-start; gap:9px; font-size:14px; line-height:1.52; margin:0 0 10px; }
+  .guide-checklist-item::before { content:""; flex:none; width:10px; height:10px; margin-top:.42em; border:2px solid var(--check-accent); border-radius:2px; }
+  .guide-checklist-card:focus-within { outline:3px solid #8FB8FF; outline-offset:3px; }
   .guide-nav { position:sticky; top:88px; }
-  @media (max-width:900px) { .guide-grid { grid-template-columns:1fr; gap:28px; } .guide-nav { position:static; display:flex; flex-wrap:wrap; gap:8px; } .guide-nav a { margin:0 !important; } .guide-cards, .guide-example-grid { grid-template-columns:1fr; } }
+  @media (max-width:900px) { .guide-grid { grid-template-columns:1fr; gap:28px; } .guide-nav { position:static; display:flex; flex-wrap:wrap; gap:8px; } .guide-nav a { margin:0 !important; } .guide-cards, .guide-example-grid, .guide-checklist { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+  @media (max-width:620px) { .guide-cards, .guide-example-grid, .guide-checklist { grid-template-columns:1fr; } .guide-section-heading { align-items:flex-start; flex-direction:column; gap:8px; } .guide-section-heading > span { text-align:left !important; } }
 `;
 
 export default function OpenCallGuidelinesPage() {
@@ -160,7 +171,7 @@ export default function OpenCallGuidelinesPage() {
           </nav>
           <div style={{ display: "grid", gap: 64 }}>
             {sections.map((section) => <section key={section.id} id={section.id} style={{ scrollMarginTop: 100 }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 18, borderBottom: `1px solid ${C.line}`, paddingBottom: 14 }}>
+              <div className="guide-section-heading">
                 <h2 style={{ fontFamily: display, fontSize: "clamp(1.8rem, 4vw, 2.8rem)", letterSpacing: "-.03em", margin: 0 }}><span style={{ color: C.coral, fontSize: 14, verticalAlign: "middle", letterSpacing: ".08em" }}>{section.number}</span> {section.title}</h2>
                 <span style={{ flex: "none", color: C.lime, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em", textAlign: "right" }}>{section.required}</span>
               </div>
@@ -172,20 +183,26 @@ export default function OpenCallGuidelinesPage() {
               {section.id === "photos" && <div style={{ marginTop: 28 }}>
                 <p style={{ color: C.lime, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", margin: "0 0 12px" }}>Photo examples</p>
                 <div className="guide-example-grid">
-                  <figure><Image src="/opencall/commercialexamples.jpeg" width={1262} height={1003} alt="Examples of commercial headshots for young performers" /><figcaption>Commercial examples</figcaption></figure>
-                  <figure><Image src="/opencall/theatricalexamples.png" width={1024} height={805} alt="Examples of theatrical headshots for young performers" /><figcaption>Theatrical examples</figcaption></figure>
-                  <figure><Image src="/opencall/lighttheatricalexamples.png" width={945} height={756} alt="Examples of light theatrical headshots for young performers" /><figcaption>Light theatrical examples</figcaption></figure>
+                  <figure><img src="https://gallery.eomail1.com/8b0da600-4dda-11f1-83fe-6f044faf36e1%2F019fea73-f6d7-7727-8824-2adf03881b01.jpeg" alt="Commercial headshot examples for young performers" loading="lazy" /><figcaption>Commercial examples</figcaption></figure>
+                  <figure><img src="https://gallery.eomail1.com/8b0da600-4dda-11f1-83fe-6f044faf36e1%2F019fea74-028a-7811-a34e-be1907f64654.png" alt="Theatrical headshot examples for young performers" loading="lazy" /><figcaption>Theatrical examples</figcaption></figure>
+                  <figure><img src="https://gallery.eomail1.com/8b0da600-4dda-11f1-83fe-6f044faf36e1%2F019fea74-04ee-74b9-8ea1-f396d0841773.png" alt="Light theatrical headshot examples for young performers" loading="lazy" /><figcaption>Light theatrical examples</figcaption></figure>
                 </div>
               </div>}
               {section.bullets && <ul style={{ listStyle: "none", display: "grid", gap: 10, padding: 0, margin: "22px 0 0", maxWidth: 810 }}>{section.bullets.map((bullet) => <li key={bullet} style={{ display: "flex", gap: 10, color: C.soft, fontSize: 15.5, lineHeight: 1.5 }}><span style={{ color: C.lime, fontWeight: 900 }}>✓</span>{bullet}</li>)}</ul>}
+              {section.id === "slate" && <div style={{ marginTop: 28 }}><p style={{ color: C.lime, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", margin: "0 0 12px" }}>Personality slate example</p><div className="guide-video"><iframe src="https://www.youtube-nocookie.com/embed/Wba8E_m2kaI" title="Personality slate example" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /></div></div>}
+              {section.id === "acting" && <div style={{ display: "grid", gap: 20, marginTop: 28 }}><div><p style={{ color: C.lime, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", margin: "0 0 12px" }}>Comedy reel example</p><div className="guide-video"><iframe src="https://player.mediadelivery.net/embed/712901/eb836586-b316-407b-a35d-c17b9905c5fe?autoplay=true&loop=false&muted=true&preload=true&responsive=true" title="Comedy reel example" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /></div></div><div><p style={{ color: C.lime, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", margin: "0 0 12px" }}>Self-tape scene example</p><div className="guide-video"><iframe src="https://player.mediadelivery.net/embed/712901/4038ce83-10f2-4cbd-9307-e4f798214abf?autoplay=true&loop=false&muted=true&preload=true&responsive=true" title="Self-tape scene example" loading="lazy" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /></div></div></div>}
+              {section.id === "profile" && <div style={{ marginTop: 28 }}><p style={{ color: C.lime, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", margin: "0 0 12px" }}>Casting profile example</p><img src="https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/attachments/production/17146877820/original/XXOZlqeB6wayI0YO77dK0pPZmISvkKfJZQ.png?1760124186" alt="Example of a helpful casting profile" loading="lazy" style={{ display: "block", width: "100%", height: "auto", borderRadius: 18, border: `1px solid ${C.line}` }} /></div>}
               {section.id === "resume" && <a href="https://resumes.childactor101.com" target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, marginTop: 24, padding: "18px 20px", background: C.blue, color: "#10233F", borderRadius: 16, textDecoration: "none" }}><span><span style={{ display: "block", fontFamily: display, fontSize: 18, fontWeight: 800 }}>Free Industry Standard Youth Resume Creator</span><span style={{ display: "block", marginTop: 4, fontSize: 14, fontWeight: 600 }}>Build a clean, professional youth acting résumé with Resume101.</span></span><span style={{ flex: "none", fontWeight: 900 }}>Resume101 ↗</span></a>}
+              {section.id === "type" && <div style={{ marginTop: 28 }}><p style={{ color: C.lime, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", margin: "0 0 12px" }}>Type examples</p><img src="https://gallery.eomail1.com/8b0da600-4dda-11f1-83fe-6f044faf36e1%2F019feaa9-c927-7347-b514-ec50456b9f16.jpg" alt="Examples of believable young performer types" loading="lazy" style={{ display: "block", width: "100%", height: "auto", borderRadius: 18, border: `1px solid ${C.line}` }} /></div>}
+              {section.id === "kid" && <div style={{ marginTop: 28 }}><p style={{ color: C.lime, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", margin: "0 0 12px" }}>Charisma example</p><div className="guide-video"><iframe src="https://www.youtube-nocookie.com/embed/gX8FAa1qxvw" title="Charisma short" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /></div></div>}
             </section>)}
 
-            <section id="checklist" style={{ background: C.coral, color: C.bg, borderRadius: 24, padding: "clamp(24px, 5vw, 42px)", scrollMarginTop: 100 }}>
-              <p style={{ fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", fontSize: 13, margin: "0 0 12px" }}>12 · Before you hit submit</p>
-              <h2 style={{ fontFamily: display, fontSize: "clamp(2rem, 4vw, 3.2rem)", letterSpacing: "-.035em", margin: "0 0 28px" }}>A five-minute final check</h2>
-              <div className="guide-cards">{checklist.map(([title, ...items]) => <div key={title} style={{ background: "rgba(20,18,16,.12)", border: "1px solid rgba(20,18,16,.22)", borderRadius: 16, padding: 20 }}><h3 style={{ fontFamily: display, fontSize: 18, margin: "0 0 12px" }}>{title}</h3>{items.map((item) => <p key={item} style={{ fontSize: 14, lineHeight: 1.5, margin: "0 0 10px" }}>□ {item}</p>)}</div>)}</div>
-              <p style={{ maxWidth: 780, fontFamily: display, fontSize: "clamp(1.25rem, 2.5vw, 1.65rem)", lineHeight: 1.35, fontWeight: 800, margin: "34px 0 0" }}>Do not spend the next month trying to manufacture the world’s most perfect Open Call submission. There isn’t one. Give us current materials, your strongest acting, believable types, personality and enough information to understand who this young actor is. Then submit it. That’s the job.</p>
+            <section id="checklist" style={{ background: "#F4F0E8", color: "#151513", borderRadius: 24, padding: "clamp(24px, 5vw, 42px)", scrollMarginTop: 100 }}>
+              <p style={{ color: C.coral, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", fontSize: 13, margin: "0 0 12px" }}>12 · Before you hit submit</p>
+              <div style={{ width: 60, height: 5, borderRadius: 99, background: C.coral, marginBottom: 16 }} />
+              <h2 style={{ fontFamily: display, fontSize: "clamp(2rem, 4vw, 3.2rem)", letterSpacing: "-.035em", margin: "0 0 32px" }}>A five-minute final check</h2>
+              <div className="guide-checklist">{checklist.map(([title, ...items], index) => <div key={title} className="guide-checklist-card" style={{ "--check-accent": [C.coral, C.lime, "#D69A35", C.blue, "#9D749B"][index] } as React.CSSProperties}><h3 style={{ fontFamily: display, fontSize: 18, margin: "0 0 12px" }}>{title}</h3>{items.map((item) => <p key={item} className="guide-checklist-item">{item}</p>)}</div>)}</div>
+              <aside style={{ maxWidth: 820, background: "#171714", color: "#F6F1E9", borderRadius: 20, padding: "clamp(22px, 4vw, 32px)", margin: "36px 0 0" }}><div style={{ width: 56, height: 5, borderRadius: 99, background: C.coral, marginBottom: 18 }} /><p style={{ fontFamily: display, fontSize: "clamp(1.25rem, 2.5vw, 1.65rem)", lineHeight: 1.35, fontWeight: 800, margin: 0 }}>Do not spend the next month trying to manufacture the world’s most perfect Open Call submission. There isn’t one. Give us current materials, your strongest acting, believable types, personality and enough information to understand who this young actor is. Then submit it. That’s the job.</p></aside>
             </section>
           </div>
         </div>
