@@ -668,7 +668,7 @@ export default function OpenCallApplyPage() {
             </div>
             <div style={rowStyle}>
               <div>
-                <label style={labelStyle}>Birth Year</label>
+                <label style={labelStyle}>Birth Year <span style={{ color: "var(--ink-soft)", fontWeight: 400 }}>(eligible ages 6–24)</span></label>
                 <input style={inputStyle} type="number" value={form.birth_year} onChange={(e) => setField("birth_year", e.target.value)} min={1990} max={currentYear} disabled={!editable} placeholder="e.g. 2014" />
               </div>
               <div>

@@ -179,6 +179,28 @@ export const MONTHS = [
 
 const currentYear = new Date().getFullYear();
 
+// The Open Call accepts children and young adults who can play the published
+// 6–21 casting range. Actual eligibility is 6–24 at submission time.
+export const OPEN_CALL_MIN_AGE = 6;
+export const OPEN_CALL_MAX_AGE = 24;
+
+export function getOpenCallAge(birthMonth: number | null | undefined, birthYear: number | null | undefined): number | null {
+  if (!birthMonth || !birthYear || birthMonth < 1 || birthMonth > 12) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birthYear;
+  if (now.getMonth() + 1 < birthMonth) age -= 1;
+  return age >= 0 && age <= 100 ? age : null;
+}
+
+export function getOpenCallEligibilityError(birthMonth: number | null | undefined, birthYear: number | null | undefined): string | null {
+  const age = getOpenCallAge(birthMonth, birthYear);
+  if (age === null) return "Enter a valid birth month and year.";
+  if (age < OPEN_CALL_MIN_AGE || age > OPEN_CALL_MAX_AGE) {
+    return `This Open Call is for performers ages ${OPEN_CALL_MIN_AGE}–${OPEN_CALL_MAX_AGE} at the time of submission.`;
+  }
+  return null;
+}
+
 export const draftSaveSchema = z.object({
   actor_name: z.string().max(120).nullish(),
   birth_year: z.number().int().min(1990).max(currentYear).nullish(),

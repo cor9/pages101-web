@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/opencall-admin";
+import { getOpenCallEligibilityError } from "@/lib/opencall";
 
 export const dynamic = "force-dynamic";
 
@@ -54,5 +55,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to load submissions." }, { status: 500 });
   }
 
-  return NextResponse.json({ event, submissions: submissions ?? [] });
+  // Keep ineligible applications out of any reviewer-facing payload, including
+  // older records submitted before server-side age validation was added.
+  const eligibleSubmissions = (submissions ?? []).filter((submission) =>
+    !getOpenCallEligibilityError(submission.birth_month, submission.birth_year)
+  );
+
+  return NextResponse.json({ event, submissions: eligibleSubmissions });
 }

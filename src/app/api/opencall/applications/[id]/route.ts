@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
-import { draftSaveSchema, submitConsentSchema, CONSENT_COPY, getMissingApplicationFields } from "@/lib/opencall";
+import { draftSaveSchema, submitConsentSchema, CONSENT_COPY, getMissingApplicationFields, getOpenCallEligibilityError } from "@/lib/opencall";
 import type { OpenCallApplication } from "@/lib/opencall";
 
 export const dynamic = "force-dynamic";
@@ -181,6 +181,11 @@ export async function POST(request: Request, context: RouteContext) {
         { error: `Application is incomplete. Missing: ${missing.join(", ")}.` },
         { status: 422 }
       );
+    }
+
+    const eligibilityError = getOpenCallEligibilityError(app.birth_month, app.birth_year);
+    if (eligibilityError) {
+      return NextResponse.json({ error: eligibilityError }, { status: 422 });
     }
 
     // Build consents JSONB — timestamps and copy hashes are server-generated

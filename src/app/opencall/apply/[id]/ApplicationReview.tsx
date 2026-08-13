@@ -1,6 +1,6 @@
 "use client";
 
-import { REPRESENTATION_TYPE_OPTIONS, PRONOUN_OPTIONS, CONSENT_COPY, looksLikeValidUrl } from "@/lib/opencall";
+import { REPRESENTATION_TYPE_OPTIONS, PRONOUN_OPTIONS, CONSENT_COPY, getOpenCallAge, getOpenCallEligibilityError, looksLikeValidUrl } from "@/lib/opencall";
 import type { HeadshotEntry, RepresentativeEntry, AdditionalLinkEntry } from "@/lib/opencall";
 
 // ─── Shape this component reads from — a plain snapshot of the current form
@@ -125,26 +125,17 @@ function LinkField({ label, url }: { label: string; url: string }) {
   );
 }
 
-function computeAge(birthYear: string, birthMonth: string): number | null {
-  const y = parseInt(birthYear, 10);
-  const m = parseInt(birthMonth, 10);
-  if (!Number.isFinite(y) || !Number.isFinite(m)) return null;
-  const now = new Date();
-  let age = now.getFullYear() - y;
-  if (now.getMonth() + 1 < m) age -= 1;
-  return age >= 0 && age <= 100 ? age : null;
-}
-
 export function ApplicationReview({
   form, missing, consents, setConsents, onBackToEdit, onSubmit,
   submitStatus, submitError, isSubmitted, submittedAt, editable, onWithdraw, withdrawing, readOnly,
 }: Props) {
-  const age = computeAge(form.birth_year, form.birth_month);
+  const age = getOpenCallAge(parseInt(form.birth_month, 10), parseInt(form.birth_year, 10));
+  const eligibilityError = getOpenCallEligibilityError(parseInt(form.birth_month, 10), parseInt(form.birth_year, 10));
   const location = [form.city, form.state].filter(Boolean).join(", ") + (form.country && form.country !== "US" ? `, ${form.country}` : "");
   const representationLine = form.has_current_rep === null ? "Not yet answered" : form.has_current_rep ? "Yes" : "No";
   const seekingLabels = form.seeking_representation.map((v) => TYPE_LABELS[v] ?? v).join(", ");
   const consentsComplete = consents.guardian_consent && consents.reviewer_visibility_consent && consents.contact_consent;
-  const canSubmit = missing.length === 0 && consentsComplete && submitStatus !== "submitting";
+  const canSubmit = missing.length === 0 && !eligibilityError && consentsComplete && submitStatus !== "submitting";
 
   return (
     <div>
@@ -247,6 +238,12 @@ export function ApplicationReview({
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.875rem", color: "var(--ink-soft)" }}>
                 {missing.map((m) => <li key={m}>{m}</li>)}
               </ul>
+            </div>
+          )}
+
+          {eligibilityError && (
+            <div style={{ padding: "14px 16px", background: "#fff0ee", border: "1px solid #ffccc7", borderRadius: 6, color: "#a52a20", fontSize: "0.875rem", marginBottom: 16 }}>
+              {eligibilityError}
             </div>
           )}
 
