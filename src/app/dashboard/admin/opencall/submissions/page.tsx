@@ -34,7 +34,7 @@ type Submission = {
 };
 
 type EventSummary = { id: string; name: string; year: number; status: string };
-type AgeBand = "all" | "6-8" | "9-12" | "13-15" | "16-18" | "19-21";
+type AgeBand = "all" | "6-8" | "9-12" | "13-15" | "16-18" | "19-21" | "22-24";
 
 const AGE_BANDS: Array<{ value: AgeBand; label: string; min?: number; max?: number }> = [
   { value: "all", label: "All ages" },
@@ -43,7 +43,20 @@ const AGE_BANDS: Array<{ value: AgeBand; label: string; min?: number; max?: numb
   { value: "13-15", label: "Ages 13–15", min: 13, max: 15 },
   { value: "16-18", label: "Ages 16–18", min: 16, max: 18 },
   { value: "19-21", label: "Ages 19–21", min: 19, max: 21 },
+  { value: "22-24", label: "Ages 22–24", min: 22, max: 24 },
 ];
+
+const REPRESENTATION_LABELS: Record<string, string> = {
+  manager: "Manager",
+  regional_agent: "Regional Agent",
+  theatrical_agent: "Theatrical Agent (TV & Film)",
+  commercial_agent: "Commercial Agent",
+  voiceover_agent: "Voiceover Agent",
+  theatre_agent: "Theatre Agent (Stage)",
+  print_agent: "Print Agent",
+  hosting_agent: "Hosting Agent",
+  across_the_board: "Across-the-Board",
+};
 
 function submittedDate(value: string | null) {
   return value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value)) : "—";
@@ -54,7 +67,7 @@ function joinValues(values: string[] | null) {
 }
 
 function formatRepresentationType(value: string) {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return REPRESENTATION_LABELS[value] ?? value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function ageRange(birthMonth: number | null, birthYear: number | null): { min: number; max: number; label: string } | null {
@@ -67,15 +80,6 @@ function ageRange(birthMonth: number | null, birthYear: number | null): { min: n
   return { min: ageThisYear - 1, max: ageThisYear, label: `Age ${ageThisYear - 1}–${ageThisYear}` };
 }
 
-function formatCurrentRepresentation(submission: Submission) {
-  const representatives = submission.representatives?.filter((representative) => representative.name) ?? [];
-  if (representatives.length) {
-    const details = representatives.map((representative) => [representative.name, representative.type && formatRepresentationType(representative.type), representative.market].filter(Boolean).join(" — "));
-    return [details.join("; "), submission.representation_notes].filter(Boolean).join(" · ");
-  }
-  return submission.has_current_rep === false ? "Not currently represented" : "—";
-}
-
 export default function AdminOpenCallSubmissionsPage() {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
@@ -84,6 +88,11 @@ export default function AdminOpenCallSubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [ageBand, setAgeBand] = useState<AgeBand>("all");
+  const [genderFilter, setGenderFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [seekingFilter, setSeekingFilter] = useState("all");
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -116,14 +125,34 @@ export default function AdminOpenCallSubmissionsPage() {
 
   useEffect(() => { loadSubmissions(); }, [loadSubmissions]);
 
+  useEffect(() => {
+    try {
+      setSavedIds(new Set(JSON.parse(window.localStorage.getItem("p101-opencall-owner-saved") ?? "[]")));
+    } catch { /* Ignore unavailable or malformed local saved-profile data. */ }
+  }, []);
+
+  const toggleSaved = useCallback((id: string) => {
+    setSavedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      window.localStorage.setItem("p101-opencall-owner-saved", JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
   const visibleSubmissions = useMemo(() => {
     const band = AGE_BANDS.find((item) => item.value === ageBand);
-    if (!band?.min || !band.max) return submissions;
     return submissions.filter((submission) => {
       const range = ageRange(submission.birth_month, submission.birth_year);
-      return range !== null && range.max >= band.min! && range.min <= band.max!;
+      const ageMatches = !band?.min || !band.max || (range !== null && range.max >= band.min && range.min <= band.max);
+      const genderMatches = genderFilter === "all" || submission.gender?.toLowerCase() === genderFilter;
+      const location = [submission.city, submission.state, submission.country, ...(submission.local_hire_cities ?? [])].filter(Boolean).join(" ").toLowerCase();
+      const locationMatches = !locationFilter.trim() || location.includes(locationFilter.trim().toLowerCase());
+      const seekingMatches = seekingFilter === "all" || submission.seeking_representation?.includes(seekingFilter);
+      const savedMatches = !savedOnly || savedIds.has(submission.id);
+      return ageMatches && genderMatches && locationMatches && seekingMatches && savedMatches;
     });
-  }, [ageBand, submissions]);
+  }, [ageBand, genderFilter, locationFilter, savedIds, savedOnly, seekingFilter, submissions]);
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", color: "#1e293b", fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -143,12 +172,17 @@ export default function AdminOpenCallSubmissionsPage() {
         {error ? <p style={{ background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: 8, color: "#be123c", padding: 18 }}>{error}</p> : loading ? <p style={{ color: "#64748b" }}>Loading submissions…</p> : submissions.length === 0 ? <p style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, color: "#64748b", padding: 24 }}>No completed submissions yet. Refresh this page as entries arrive.</p> : <>
           <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginBottom: 16 }}>
             <p style={{ color: "#475569", fontWeight: 700, margin: 0 }}>{visibleSubmissions.length} of {submissions.length} completed submission{submissions.length === 1 ? "" : "s"}</p>
-            <label style={{ alignItems: "center", color: "#475569", display: "flex", fontSize: 14, fontWeight: 700, gap: 8 }}>
-              Age range
-              <select aria-label="Filter submissions by age range" value={ageBand} onChange={(event) => setAgeBand(event.target.value as AgeBand)} style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: 6, color: "#1e293b", font: "inherit", padding: "8px 10px" }}>
-                {AGE_BANDS.map((band) => <option key={band.value} value={band.value}>{band.label}</option>)}
-              </select>
+            <span style={{ color: "#64748b", fontSize: 13 }}>Stars save profiles in this browser.</span>
+          </div>
+          <div style={{ alignItems: "end", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 20, padding: 14 }}>
+            <FilterSelect label="Age" value={ageBand} onChange={(value) => setAgeBand(value as AgeBand)} options={AGE_BANDS.map((band) => ({ value: band.value, label: band.label }))} />
+            <FilterSelect label="Gender" value={genderFilter} onChange={setGenderFilter} options={[{ value: "all", label: "Any gender" }, { value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "non-binary", label: "Non-binary" }]} />
+            <label style={{ color: "#475569", display: "grid", fontSize: 13, fontWeight: 800, gap: 5 }}>
+              Location / local hire
+              <input aria-label="Filter submissions by location or local hire city" value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} placeholder="City or state" style={{ border: "1px solid #cbd5e1", borderRadius: 6, font: "inherit", minWidth: 150, padding: "8px 10px" }} />
             </label>
+            <FilterSelect label="Representation sought" value={seekingFilter} onChange={setSeekingFilter} options={[{ value: "all", label: "Any type" }, ...Object.entries(REPRESENTATION_LABELS).map(([value, label]) => ({ value, label }))]} />
+            <label style={{ alignItems: "center", color: "#475569", display: "flex", fontSize: 14, fontWeight: 700, gap: 7, minHeight: 36 }}><input checked={savedOnly} onChange={(event) => setSavedOnly(event.target.checked)} type="checkbox" /> Show starred only</label>
           </div>
           {visibleSubmissions.length === 0 ? <p style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, color: "#64748b", padding: 24 }}>No submissions match this age range.</p> :
           <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fill, minmax(255px, 1fr))" }}>
@@ -162,7 +196,7 @@ export default function AdminOpenCallSubmissionsPage() {
                   <h3 style={{ fontSize: 19, margin: "0 0 8px" }}>{submission.actor_name ?? "Unnamed performer"}</h3>
                   <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.55, margin: "0 0 8px" }}>{[age?.label, submission.gender, location, submission.union_status].filter(Boolean).join(" · ") || "Profile details available"}</p>
                   <p style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>Submitted {submittedDate(submission.submitted_at)}</p>
-                  <button onClick={() => setSelected(submission)} style={{ background: "#1a1a2e", border: 0, borderRadius: 6, color: "#fff", cursor: "pointer", fontWeight: 700, padding: "9px 12px", width: "100%" }}>View full profile</button>
+                  <div style={{ display: "flex", gap: 8 }}><button onClick={() => setSelected(submission)} style={{ background: "#1a1a2e", border: 0, borderRadius: 6, color: "#fff", cursor: "pointer", flex: 1, fontWeight: 700, padding: "9px 12px" }}>View full profile</button><button aria-label={savedIds.has(submission.id) ? "Remove saved profile" : "Save profile"} onClick={() => toggleSaved(submission.id)} style={{ background: savedIds.has(submission.id) ? "#fef3c7" : "#fff", border: "1px solid #cbd5e1", borderRadius: 6, color: "#92400e", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "6px 11px" }}>{savedIds.has(submission.id) ? "★" : "☆"}</button></div>
                 </div>
               </article>;
             })}
@@ -188,7 +222,7 @@ export default function AdminOpenCallSubmissionsPage() {
             <ProfileField label="Ethnicity" value={joinValues(selected.ethnicity)} />
             <ProfileField label="Local hire cities" value={joinValues(selected.local_hire_cities)} />
             <ProfileField label="Seeking representation" value={selected.seeking_representation?.length ? selected.seeking_representation.map(formatRepresentationType).join(", ") : "—"} />
-            <ProfileField label="Current representation" value={formatCurrentRepresentation(selected)} />
+            <ProfileField label="Current representation" value={<CurrentRepresentation submission={selected} />} />
             <ProfileField label="Coogan account" value={selected.coogan_status} />
             <ProfileField label="Work permit" value={selected.work_permit} />
             <ProfileField label="Passport" value={selected.passport === null ? "—" : selected.passport ? "Yes" : "No"} />
@@ -202,6 +236,16 @@ export default function AdminOpenCallSubmissionsPage() {
   );
 }
 
-function ProfileField({ label, value }: { label: string; value: string | null | undefined }) {
+function ProfileField({ label, value }: { label: string; value: React.ReactNode }) {
   return <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 12 }}><p style={{ color: "#64748b", fontSize: 12, fontWeight: 800, letterSpacing: ".05em", margin: "0 0 5px", textTransform: "uppercase" }}>{label}</p><p style={{ color: "#1e293b", lineHeight: 1.45, margin: 0 }}>{value || "—"}</p></div>;
+}
+
+function FilterSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: Array<{ value: string; label: string }> }) {
+  return <label style={{ color: "#475569", display: "grid", fontSize: 13, fontWeight: 800, gap: 5 }}>{label}<select value={value} onChange={(event) => onChange(event.target.value)} style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: 6, color: "#1e293b", font: "inherit", padding: "8px 10px" }}>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
+}
+
+function CurrentRepresentation({ submission }: { submission: Submission }) {
+  const representatives = submission.representatives?.filter((representative) => representative.name) ?? [];
+  if (!representatives.length) return <>{submission.has_current_rep === false ? "Not currently represented" : "—"}</>;
+  return <div style={{ display: "grid", gap: 7 }}>{representatives.map((representative, index) => <div key={`${representative.name}-${index}`}><strong>{representative.name}</strong>{representative.type ? <span style={{ color: "#475569" }}> · {formatRepresentationType(representative.type)}</span> : null}{representative.market ? <span style={{ color: "#64748b" }}> · {representative.market}</span> : null}</div>)}{submission.representation_notes ? <p style={{ color: "#475569", fontStyle: "italic", margin: "4px 0 0" }}>{submission.representation_notes}</p> : null}</div>;
 }
