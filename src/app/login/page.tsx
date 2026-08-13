@@ -49,10 +49,15 @@ export default function LoginPage() {
     setStatus("loading");
     setErrorMessage("");
 
+    const requestedNext = new URLSearchParams(window.location.search).get("next");
+    const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\")
+      ? requestedNext
+      : "/dashboard";
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: 'https://pages.childactor101.com/auth/callback?next=/dashboard'
+        emailRedirectTo: `https://pages.childactor101.com/auth/callback?next=${encodeURIComponent(next)}`
       }
     });
 

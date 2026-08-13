@@ -56,7 +56,10 @@ export default function AdminOpenCallSubmissionsPage() {
   useEffect(() => {
     if (!supabase) { setError("Supabase is unavailable."); setLoading(false); return; }
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session?.access_token) { router.push("/"); return; }
+      if (!data.session?.access_token) {
+        router.push("/login?next=/dashboard/admin/opencall/submissions");
+        return;
+      }
       setToken(data.session.access_token);
     });
   }, [router, supabase]);
