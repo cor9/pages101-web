@@ -11,14 +11,29 @@ type EventSummary = {
   status: string;
 };
 
-// This endpoint deliberately reads the same privacy-safe view used by the
-// representative gallery. It never returns guardian fields to the browser.
+const REPRESENTATIVE_PROFILE_COLUMNS = [
+  "id", "event_id", "actor_name", "birth_month", "birth_year", "gender",
+  "ethnicity", "city", "state", "country", "local_hire_cities", "union_status",
+  "coogan_status", "work_permit", "passport", "has_current_rep", "representatives",
+  "seeking_representation", "representation_notes", "casting_platforms",
+  "casting_profile_urls", "headshots", "resume_url", "slate_url", "reel_url",
+  "other_video_url", "supplemental_notes", "submitted_at", "updated_at",
+].join(",");
+
+// This endpoint deliberately returns only the privacy-safe fields used by the
+// representative gallery. Draft preview is admin-only and never returns
+// guardian fields, changes application status, or makes a draft rep-visible.
 export async function GET(request: Request) {
   const auth = await requireAdminAuth(request);
   if ("error" in auth) return auth.error;
 
   const { serviceClient } = auth;
-  const requestedEventId = new URL(request.url).searchParams.get("event_id");
+  const searchParams = new URL(request.url).searchParams;
+  const requestedEventId = searchParams.get("event_id");
+  const requestedStatus = searchParams.get("status") ?? "submitted";
+  if (requestedStatus !== "submitted" && requestedStatus !== "draft") {
+    return NextResponse.json({ error: "Invalid application status." }, { status: 400 });
+  }
 
   let event: EventSummary | null = null;
   if (requestedEventId) {
@@ -45,21 +60,34 @@ export async function GET(request: Request) {
 
   if (!event) return NextResponse.json({ event: null, submissions: [] });
 
-  const { data: submissions, error: submissionsError } = await serviceClient
-    .from("p101_opencall_gallery_v")
-    .select("*")
-    .eq("event_id", event.id)
-    .order("submitted_at", { ascending: false });
+  const query = requestedStatus === "draft"
+    ? serviceClient
+        .from("p101_opencall_applications")
+        .select(REPRESENTATIVE_PROFILE_COLUMNS)
+        .eq("event_id", event.id)
+        .eq("status", "draft")
+        .eq("is_seed", false)
+        .order("updated_at", { ascending: false })
+    : serviceClient
+        .from("p101_opencall_gallery_v")
+        .select("*")
+        .eq("event_id", event.id)
+        .order("submitted_at", { ascending: false });
+
+  const { data: submissions, error: submissionsError } = await query;
 
   if (submissionsError) {
     return NextResponse.json({ error: "Failed to load submissions." }, { status: 500 });
   }
 
-  // Keep ineligible applications out of any reviewer-facing payload, including
-  // older records submitted before server-side age validation was added.
-  const eligibleSubmissions = (submissions ?? []).filter((submission) =>
-    !getOpenCallEligibilityError(submission.birth_month, submission.birth_year)
-  );
+  // Keep ineligible completed applications out of reviewer-facing payloads.
+  // Draft preview intentionally includes incomplete birth data so the owner can
+  // see every in-progress application and how incomplete profiles would render.
+  const visibleSubmissions = requestedStatus === "draft"
+    ? submissions ?? []
+    : (submissions ?? []).filter((submission) =>
+        !getOpenCallEligibilityError(submission.birth_month, submission.birth_year)
+      );
 
-  return NextResponse.json({ event, submissions: eligibleSubmissions });
+  return NextResponse.json({ event, submissions: visibleSubmissions, status: requestedStatus });
 }

@@ -31,10 +31,12 @@ type Submission = {
   reel_url: string | null;
   resume_url: string | null;
   submitted_at: string | null;
+  updated_at?: string | null;
 };
 
 type EventSummary = { id: string; name: string; year: number; status: string };
 type AgeBand = "all" | "6-8" | "9-12" | "13-15" | "16-18" | "19-21" | "22-24";
+type GalleryMode = "submitted" | "draft";
 
 const AGE_BANDS: Array<{ value: AgeBand; label: string; min?: number; max?: number }> = [
   { value: "all", label: "All ages" },
@@ -59,6 +61,10 @@ const REPRESENTATION_LABELS: Record<string, string> = {
 };
 
 function submittedDate(value: string | null) {
+  return value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value)) : "—";
+}
+
+function updatedDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value)) : "—";
 }
 
@@ -88,6 +94,7 @@ export default function AdminOpenCallSubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [ageBand, setAgeBand] = useState<AgeBand>("all");
+  const [galleryMode, setGalleryMode] = useState<GalleryMode>("submitted");
   const [genderFilter, setGenderFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("");
   const [seekingFilter, setSeekingFilter] = useState("all");
@@ -111,7 +118,7 @@ export default function AdminOpenCallSubmissionsPage() {
     if (!token) return;
     setLoading(true);
     setError(null);
-    const response = await fetch("/api/opencall/admin/submissions", { headers: { Authorization: `Bearer ${token}` } });
+    const response = await fetch(`/api/opencall/admin/submissions?status=${galleryMode}`, { headers: { Authorization: `Bearer ${token}` } });
     const body = await response.json().catch(() => ({})) as { event?: EventSummary | null; submissions?: Submission[]; error?: string };
     if (!response.ok) {
       setError(response.status === 403 ? "Admin access required." : body.error ?? "Unable to load submissions.");
@@ -120,8 +127,9 @@ export default function AdminOpenCallSubmissionsPage() {
     }
     setEvent(body.event ?? null);
     setSubmissions(body.submissions ?? []);
+    setSelected(null);
     setLoading(false);
-  }, [token]);
+  }, [galleryMode, token]);
 
   useEffect(() => { loadSubmissions(); }, [loadSubmissions]);
 
@@ -165,13 +173,17 @@ export default function AdminOpenCallSubmissionsPage() {
           <div>
             <p style={{ color: "#64748b", fontSize: 13, fontWeight: 700, letterSpacing: ".06em", margin: "0 0 6px", textTransform: "uppercase" }}>Representative view</p>
             <h2 style={{ fontSize: 26, margin: 0 }}>{event ? `${event.name} (${event.status})` : "Active Open Call"}</h2>
-            <p style={{ color: "#64748b", margin: "7px 0 0" }}>Only completed submissions are shown. Guardian details are never displayed here.</p>
+            <p style={{ color: "#64748b", margin: "7px 0 0" }}>{galleryMode === "draft" ? "Owner-only preview of in-progress applications using the representative gallery format. Drafts are not visible to representatives." : "Only completed submissions are shown. Guardian details are never displayed here."}</p>
           </div>
-          <button onClick={loadSubmissions} disabled={loading} style={{ background: "#1a1a2e", border: 0, borderRadius: 6, color: "#fff", cursor: "pointer", fontWeight: 700, padding: "10px 15px" }}>{loading ? "Refreshing…" : "Refresh submissions"}</button>
+          <button onClick={loadSubmissions} disabled={loading} style={{ background: "#1a1a2e", border: 0, borderRadius: 6, color: "#fff", cursor: "pointer", fontWeight: 700, padding: "10px 15px" }}>{loading ? "Refreshing…" : "Refresh gallery"}</button>
         </div>
-        {error ? <p style={{ background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: 8, color: "#be123c", padding: 18 }}>{error}</p> : loading ? <p style={{ color: "#64748b" }}>Loading submissions…</p> : submissions.length === 0 ? <p style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, color: "#64748b", padding: 24 }}>No completed submissions yet. Refresh this page as entries arrive.</p> : <>
+        <div aria-label="Gallery view" style={{ background: "#e2e8f0", borderRadius: 8, display: "inline-flex", gap: 4, marginBottom: 22, padding: 4 }}>
+          {(["submitted", "draft"] as GalleryMode[]).map((mode) => <button key={mode} onClick={() => setGalleryMode(mode)} aria-pressed={galleryMode === mode} style={{ background: galleryMode === mode ? "#fff" : "transparent", border: 0, borderRadius: 6, boxShadow: galleryMode === mode ? "0 1px 3px rgba(15,23,42,.15)" : "none", color: galleryMode === mode ? "#1e293b" : "#64748b", cursor: "pointer", fontWeight: 800, padding: "9px 14px" }}>{mode === "submitted" ? "Submitted" : "Draft preview"}</button>)}
+        </div>
+        {galleryMode === "draft" ? <p style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, color: "#92400e", fontSize: 14, lineHeight: 1.5, margin: "0 0 20px", padding: "12px 15px" }}><strong>Private owner preview:</strong> these applications have not been submitted. Representatives cannot see them, and some profiles may be incomplete.</p> : null}
+        {error ? <p style={{ background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: 8, color: "#be123c", padding: 18 }}>{error}</p> : loading ? <p style={{ color: "#64748b" }}>Loading {galleryMode === "draft" ? "drafts" : "submissions"}…</p> : submissions.length === 0 ? <p style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, color: "#64748b", padding: 24 }}>No {galleryMode === "draft" ? "draft applications" : "completed submissions"} yet. Refresh this page as entries arrive.</p> : <>
           <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginBottom: 16 }}>
-            <p style={{ color: "#475569", fontWeight: 700, margin: 0 }}>{visibleSubmissions.length} of {submissions.length} completed submission{submissions.length === 1 ? "" : "s"}</p>
+            <p style={{ color: "#475569", fontWeight: 700, margin: 0 }}>{visibleSubmissions.length} of {submissions.length} {galleryMode === "draft" ? "draft application" : "completed submission"}{submissions.length === 1 ? "" : "s"}</p>
             <span style={{ color: "#64748b", fontSize: 13 }}>Stars save profiles in this browser.</span>
           </div>
           <div style={{ alignItems: "end", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 20, padding: 14 }}>
@@ -195,7 +207,7 @@ export default function AdminOpenCallSubmissionsPage() {
                 <div style={{ padding: 16 }}>
                   <h3 style={{ fontSize: 19, margin: "0 0 8px" }}>{submission.actor_name ?? "Unnamed performer"}</h3>
                   <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.55, margin: "0 0 8px" }}>{[age?.label, submission.gender, location, submission.union_status].filter(Boolean).join(" · ") || "Profile details available"}</p>
-                  <p style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>Submitted {submittedDate(submission.submitted_at)}</p>
+                  <p style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>{galleryMode === "draft" ? `Draft updated ${updatedDate(submission.updated_at)}` : `Submitted ${submittedDate(submission.submitted_at)}`}</p>
                   <div style={{ display: "flex", gap: 8 }}><button onClick={() => setSelected(submission)} style={{ background: "#1a1a2e", border: 0, borderRadius: 6, color: "#fff", cursor: "pointer", flex: 1, fontWeight: 700, padding: "9px 12px" }}>View full profile</button><button aria-label={savedIds.has(submission.id) ? "Remove saved profile" : "Save profile"} onClick={() => toggleSaved(submission.id)} style={{ background: savedIds.has(submission.id) ? "#fef3c7" : "#fff", border: "1px solid #cbd5e1", borderRadius: 6, color: "#92400e", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "6px 11px" }}>{savedIds.has(submission.id) ? "★" : "☆"}</button></div>
                 </div>
               </article>;
@@ -207,7 +219,7 @@ export default function AdminOpenCallSubmissionsPage() {
       {selected && <div role="presentation" onMouseDown={() => setSelected(null)} style={{ alignItems: "center", background: "rgba(15, 23, 42, .66)", display: "flex", inset: 0, justifyContent: "center", padding: 24, position: "fixed", zIndex: 50 }}>
         <section role="dialog" aria-modal="true" aria-labelledby="submission-profile-title" onMouseDown={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 24px 64px rgba(0,0,0,.35)", maxHeight: "calc(100vh - 48px)", maxWidth: 1100, overflow: "auto", padding: 28, position: "relative", width: "100%" }}>
           <button onClick={() => setSelected(null)} aria-label="Close profile" style={{ background: "#f1f5f9", border: 0, borderRadius: "50%", color: "#334155", cursor: "pointer", fontSize: 22, height: 38, position: "absolute", right: 20, top: 18, width: 38 }}>×</button>
-          <p style={{ color: "#64748b", fontSize: 12, fontWeight: 800, letterSpacing: ".08em", margin: "0 0 6px", textTransform: "uppercase" }}>Representative profile</p>
+          <p style={{ color: galleryMode === "draft" ? "#b45309" : "#64748b", fontSize: 12, fontWeight: 800, letterSpacing: ".08em", margin: "0 0 6px", textTransform: "uppercase" }}>{galleryMode === "draft" ? "Owner-only draft preview" : "Representative profile"}</p>
           <h2 id="submission-profile-title" style={{ fontSize: 32, margin: "0 50px 6px 0" }}>{selected.actor_name ?? "Unnamed performer"}</h2>
           <p style={{ color: "#475569", fontSize: 16, margin: 0 }}>{[ageRange(selected.birth_month, selected.birth_year)?.label, selected.gender, [selected.city, selected.state, selected.country].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</p>
 
@@ -229,7 +241,7 @@ export default function AdminOpenCallSubmissionsPage() {
           </div>
           {selected.casting_profile_urls?.length ? <div style={{ marginTop: 24 }}><p style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, textTransform: "uppercase" }}>Casting profile links</p>{selected.casting_profile_urls.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" style={{ display: "block", marginBottom: 7, overflowWrap: "anywhere" }}>{url}</a>)}</div> : null}
           {selected.supplemental_notes ? <div style={{ marginTop: 24 }}><p style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, textTransform: "uppercase" }}>Additional notes</p><p style={{ color: "#334155", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap" }}>{selected.supplemental_notes}</p></div> : null}
-          <p style={{ color: "#64748b", fontSize: 12, marginTop: 28 }}>Submitted {submittedDate(selected.submitted_at)}</p>
+          <p style={{ color: "#64748b", fontSize: 12, marginTop: 28 }}>{galleryMode === "draft" ? `Draft updated ${updatedDate(selected.updated_at)} · Not visible to representatives` : `Submitted ${submittedDate(selected.submitted_at)}`}</p>
         </section>
       </div>}
     </div>
