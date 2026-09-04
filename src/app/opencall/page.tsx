@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { readAuthErrorFromLocation } from "@/lib/auth/magic-link";
 import { formatDeadline, isWindowOpen } from "@/lib/opencall";
 import { OPEN_CALL_REVIEW_URL, OPEN_CALL_WORKSHOP_URL } from "@/lib/opencall-purchases";
 import type { OpenCallEvent, OpenCallApplication } from "@/lib/opencall";
@@ -307,7 +308,13 @@ export default function OpenCallLanding() {
   const [loginSent, setLoginSent] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+
+  // A sign-in link that failed sends the visitor back here with ?auth_error=.
+  useEffect(() => {
+    setAuthError(readAuthErrorFromLocation());
+  }, []);
 
   useEffect(() => {
     fetch("/api/opencall/event")
@@ -388,6 +395,7 @@ export default function OpenCallLanding() {
     setLoginError("");
     setLoginLoading(true);
     try {
+      setAuthError(null);
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/opencall` },
@@ -483,6 +491,11 @@ export default function OpenCallLanding() {
       <div>
         <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.lime, marginBottom: 10 }}>Sign in to apply</div>
         <p style={{ fontSize: 15, color: C.soft, margin: "0 0 16px" }}>We’ll email you a magic link — no password needed.</p>
+        {authError && (
+          <p role="alert" style={{ margin: "0 0 16px", padding: "12px 14px", background: "rgba(255,106,71,0.12)", border: `1px solid ${C.coral}`, borderRadius: 12, color: C.ink, fontSize: 14, lineHeight: 1.5 }}>
+            {authError}
+          </p>
+        )}
         {loginSent ? (
           <div style={{ padding: "14px 18px", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 12, color: C.ink, fontWeight: 700 }}>Check your email for a sign-in link.</div>
         ) : (

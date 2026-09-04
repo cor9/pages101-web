@@ -8,6 +8,7 @@ import {
   isMagicLinkRateLimitError,
   MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS,
   MAGIC_LINK_SUCCESS_COOLDOWN_MS,
+  readAuthErrorFromLocation,
   setMagicLinkCooldown
 } from "@/lib/auth/magic-link";
 
@@ -16,8 +17,14 @@ export default function LoginPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [cooldownMs, setCooldownMs] = useState(0);
-  
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const supabase = createSupabaseBrowserClient();
+
+  // A sign-in link that failed sends the visitor back here with ?auth_error=.
+  useEffect(() => {
+    setAuthError(readAuthErrorFromLocation());
+  }, []);
 
   useEffect(() => {
     setCooldownMs(getMagicLinkCooldownRemaining(email));
@@ -48,6 +55,7 @@ export default function LoginPage() {
 
     setStatus("loading");
     setErrorMessage("");
+    setAuthError(null);
 
     const requestedNext = new URLSearchParams(window.location.search).get("next");
     const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\")
@@ -111,6 +119,21 @@ export default function LoginPage() {
           </p>
         ) : (
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {authError && (
+              <p role="alert" style={{
+                margin: 0,
+                padding: "12px 14px",
+                background: "rgba(200,85,61,0.08)",
+                border: "1px solid rgba(200,85,61,0.28)",
+                borderRadius: "8px",
+                color: "var(--marquee-deep, #b5271c)",
+                fontSize: "14px",
+                lineHeight: 1.5,
+                textAlign: "left"
+              }}>
+                {authError}
+              </p>
+            )}
             <input
               type="email"
               value={email}
