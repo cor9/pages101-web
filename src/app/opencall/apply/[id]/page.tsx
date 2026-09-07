@@ -160,6 +160,27 @@ function sanitizeFileName(name: string) {
   return s || "file";
 }
 
+// Browsers render these directly wherever a headshot is displayed (applicant
+// review, owner review). HEIC/HEIF — the iPhone camera's default format —
+// looks fine in Safari but shows as broken everywhere else, and this repo
+// has no reliable way to transcode it (sharp's build here only decodes AVIF,
+// not real HEIC — libheif isn't available on Vercel), so it's rejected
+// up front with an actionable message instead of silently uploading it.
+const SUPPORTED_HEADSHOT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const SUPPORTED_HEADSHOT_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+
+function isSupportedHeadshotFile(file: File): boolean {
+  const type = file.type.toLowerCase();
+  if (SUPPORTED_HEADSHOT_TYPES.includes(type)) return true;
+  // Safari on iOS sometimes reports an empty MIME type for HEIC files — fall
+  // back to the extension so we don't accidentally block a legitimate photo.
+  if (type === "") {
+    const name = file.name.toLowerCase();
+    return SUPPORTED_HEADSHOT_EXTENSIONS.some((ext) => name.endsWith(ext));
+  }
+  return false;
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
@@ -204,10 +225,12 @@ export default function OpenCallApplyPage() {
 
   // Autosave race protection
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inFlightRef = useRef(false);
-  const pendingRef = useRef<Record<string, unknown> | null>(null);
+  // Chain of queued saves — each call appends onto the previous one so saves
+  // never overlap, and flushPendingSave() can await "everything queued so far".
+  const saveChainRef = useRef<Promise<boolean>>(Promise.resolve(true));
   // Track current form snapshot for manual save recovery
   const latestFormRef = useRef<FormState | null>(null);
+  const [checkingSave, setCheckingSave] = useState(false);
 
   const getToken = useCallback(async () => {
     if (!supabase) return "";
@@ -248,9 +271,7 @@ export default function OpenCallApplyPage() {
 
   // ─── Autosave ──────────────────────────────────────────────────────────────
 
-  const executeSave = useCallback(async (payload: Record<string, unknown>) => {
-    if (inFlightRef.current) { pendingRef.current = payload; return; }
-    inFlightRef.current = true;
+  const doSave = useCallback(async (payload: Record<string, unknown>): Promise<boolean> => {
     setSaveStatus("saving");
     try {
       const token = await getToken();
@@ -260,29 +281,57 @@ export default function OpenCallApplyPage() {
         body: JSON.stringify(payload),
       });
       setSaveStatus(res.ok ? "saved" : "error");
+      return res.ok;
     } catch {
       setSaveStatus("error");
-    } finally {
-      inFlightRef.current = false;
-      if (pendingRef.current) {
-        const next = pendingRef.current;
-        pendingRef.current = null;
-        void executeSave(next);
-      }
+      return false;
     }
   }, [id, getToken]);
+
+  // Appends onto the existing chain so saves are always sent one at a time,
+  // in order — never overlapping, never dropped.
+  const queueSave = useCallback((payload: Record<string, unknown>): Promise<boolean> => {
+    const next = saveChainRef.current.then(() => doSave(payload));
+    saveChainRef.current = next;
+    return next;
+  }, [doSave]);
 
   function scheduleSave(nextForm: FormState) {
     latestFormRef.current = nextForm;
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => void executeSave(toSavePayload(nextForm)), 700);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      void queueSave(toSavePayload(nextForm));
+    }, 700);
   }
 
   // Manual save — always available, not just for error recovery
   function handleManualSave() {
     if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null; }
     const snapshot = latestFormRef.current ?? form;
-    void executeSave(toSavePayload(snapshot));
+    void queueSave(toSavePayload(snapshot));
+  }
+
+  // Forces any debounced edit to be sent immediately, then waits for the
+  // entire save chain (including whatever was already in flight) to settle.
+  // Callers must not let the user proceed to Review/Submit until this
+  // resolves true — otherwise the DB can lag behind what the applicant sees
+  // on screen (e.g. a headshot added seconds before submitting).
+  const flushPendingSave = useCallback((): Promise<boolean> => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+      const snapshot = latestFormRef.current ?? form;
+      return queueSave(toSavePayload(snapshot));
+    }
+    return saveChainRef.current;
+  }, [form, queueSave]);
+
+  async function goToReview() {
+    setCheckingSave(true);
+    const saved = await flushPendingSave();
+    setCheckingSave(false);
+    if (saved) setMode("review");
   }
 
   // Warn before unload when a save is in-flight or failed
@@ -406,6 +455,10 @@ export default function OpenCallApplyPage() {
     e.target.value = "";
     setUploadError("");
     if (file.size > 10 * 1024 * 1024) { setUploadError("Headshot must be under 10 MB."); return; }
+    if (!isSupportedHeadshotFile(file)) {
+      setUploadError("This file isn't a supported photo format. HEIC/HEIF photos (the default on iPhone) can't be used — please export or share the photo as JPEG or PNG first, then upload that.");
+      return;
+    }
     setUploadingHeadshot(true);
     try {
       const url = await uploadFile(file, "headshot");
@@ -468,6 +521,17 @@ export default function OpenCallApplyPage() {
     }
 
     setSubmitStatus("submitting");
+
+    // The DB is authoritative at submit time — never let a still-pending
+    // (debounced or in-flight) save race the submit call. If it fails to
+    // land, bail out rather than submitting stale/incomplete data.
+    const saved = await flushPendingSave();
+    if (!saved) {
+      setSubmitError("Your latest changes could not be saved. Please check your connection and try again.");
+      setSubmitStatus("error");
+      return;
+    }
+
     try {
       const token = await getToken();
       const res = await fetch(`/api/opencall/applications/${id}`, {
@@ -622,10 +686,11 @@ export default function OpenCallApplyPage() {
             {mode === "edit" ? (
               <button
                 type="button"
-                onClick={() => setMode("review")}
-                style={{ padding: "8px 18px", background: "var(--marquee)", color: "#fff", border: "none", borderRadius: 6, fontWeight: 800, fontSize: "0.85rem", cursor: "pointer" }}
+                onClick={goToReview}
+                disabled={checkingSave}
+                style={{ padding: "8px 18px", background: "var(--marquee)", color: "#fff", border: "none", borderRadius: 6, fontWeight: 800, fontSize: "0.85rem", cursor: checkingSave ? "default" : "pointer", opacity: checkingSave ? 0.7 : 1 }}
               >
-                Review Application
+                {checkingSave ? "Saving…" : "Review Application"}
               </button>
             ) : (
               <button
@@ -1065,10 +1130,11 @@ export default function OpenCallApplyPage() {
             <div style={{ paddingTop: 8 }}>
               <button
                 type="button"
-                onClick={() => setMode("review")}
-                style={{ padding: "14px 32px", background: "var(--marquee)", color: "#fff", border: "none", borderRadius: 6, fontWeight: 800, fontSize: "0.95rem", cursor: "pointer" }}
+                onClick={goToReview}
+                disabled={checkingSave}
+                style={{ padding: "14px 32px", background: "var(--marquee)", color: "#fff", border: "none", borderRadius: 6, fontWeight: 800, fontSize: "0.95rem", cursor: checkingSave ? "default" : "pointer", opacity: checkingSave ? 0.7 : 1 }}
               >
-                Review Application
+                {checkingSave ? "Saving…" : "Review Application"}
               </button>
             </div>
           )}
