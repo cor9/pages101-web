@@ -187,7 +187,10 @@ export default function AdminRepsPage() {
           ← Dashboard
         </button>
         <h1 style={{ margin: 0, color: "#fff", fontSize: 18, fontWeight: 700 }}>Open Call — Representative Management</h1>
-        <span style={{ marginLeft: "auto", color: "#64748b", fontSize: 12 }}>Admin</span>
+        <button onClick={() => router.push("/dashboard/admin/opencall/submissions")} style={{ marginLeft: "auto", background: "#fff", border: 0, borderRadius: 6, color: "#1a1a2e", cursor: "pointer", fontSize: 13, fontWeight: 700, padding: "7px 12px" }}>
+          View submission gallery
+        </button>
+        <span style={{ color: "#64748b", fontSize: 12 }}>Admin</span>
       </header>
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>

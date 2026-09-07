@@ -7,6 +7,17 @@ export type HeadshotEntry = {
   url: string;
 };
 
+export type RepresentativeEntry = {
+  name: string;
+  type: string;
+  market: string | null;
+};
+
+export type AdditionalLinkEntry = {
+  label: string;
+  url: string;
+};
+
 export type OpenCallEvent = {
   id: string;
   year: number;
@@ -37,10 +48,12 @@ export type OpenCallApplication = {
   coogan_status: "yes" | "no" | "not_required" | null;
   work_permit: "yes" | "no" | "not_required" | null;
   passport: boolean;
-  has_current_rep: boolean;
-  current_rep_name: string | null;
-  rep_context: string | null;
-  seeking: string[];
+  has_current_rep: boolean | null;
+  representatives: RepresentativeEntry[];
+  seeking_representation: string[];
+  representation_notes: string | null;
+  pronouns: string | null;
+  additional_links: AdditionalLinkEntry[];
   casting_platforms: string[];
   casting_profile_urls: string[];
   headshots: HeadshotEntry[];
@@ -86,13 +99,47 @@ export type ConsentKey = keyof typeof CONSENT_COPY;
 
 // ─── Form option lists ────────────────────────────────────────────────────────
 
-export const SEEKING_OPTIONS = [
-  { value: "theatrical", label: "Theatrical (Film & TV)" },
-  { value: "commercial", label: "Commercial" },
-  { value: "voiceover", label: "Voiceover" },
-  { value: "print", label: "Print / Modeling" },
-  { value: "musical_theater", label: "Musical Theater" },
-  { value: "hosting", label: "Hosting / MCing" },
+// Single source of truth for representation-type vocabulary — used both for
+// each representative's "Type of Representation" and for "Representation
+// Sought". theatrical_agent (TV & Film) and theatre_agent (stage) are
+// deliberately distinct categories, not interchangeable.
+export const REPRESENTATION_TYPE_OPTIONS = [
+  { value: "manager", label: "Manager" },
+  { value: "regional_agent", label: "Regional Agent" },
+  { value: "theatrical_agent", label: "Theatrical Agent — Television & Film" },
+  { value: "commercial_agent", label: "Commercial Agent" },
+  { value: "voiceover_agent", label: "Voiceover Agent" },
+  { value: "theatre_agent", label: "Theatre (Stage) Agent" },
+  { value: "print_agent", label: "Print Agent" },
+  { value: "hosting_agent", label: "Hosting Agent" },
+  { value: "across_the_board", label: "Across-the-Board Agency Representation" },
+] as const;
+
+export type RepresentationTypeValue = (typeof REPRESENTATION_TYPE_OPTIONS)[number]["value"];
+
+// zod's z.enum() needs a literal tuple, not a mapped array — kept in sync
+// with REPRESENTATION_TYPE_OPTIONS above by construction.
+const REPRESENTATION_TYPE_VALUES = REPRESENTATION_TYPE_OPTIONS.map((o) => o.value) as [
+  RepresentationTypeValue,
+  ...RepresentationTypeValue[]
+];
+
+// "Prefer to self-describe" is a UI-only sentinel — never stored. Selecting
+// it reveals a text field, and that free text becomes the stored `gender`
+// value directly (the column stays plain text, no schema change).
+export const GENDER_OPTIONS = [
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+  { value: "Non-binary", label: "Non-binary" },
+] as const;
+export const GENDER_SELF_DESCRIBE = "__self_describe__";
+
+export const PRONOUN_OPTIONS = [
+  { value: "he_him", label: "He / Him" },
+  { value: "she_her", label: "She / Her" },
+  { value: "they_them", label: "They / Them" },
+  { value: "other", label: "Other" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
 ] as const;
 
 export const ETHNICITY_OPTIONS = [
@@ -132,6 +179,28 @@ export const MONTHS = [
 
 const currentYear = new Date().getFullYear();
 
+// The Open Call accepts children and young adults who can play the published
+// 6–21 casting range. Actual eligibility is 6–24 at submission time.
+export const OPEN_CALL_MIN_AGE = 6;
+export const OPEN_CALL_MAX_AGE = 24;
+
+export function getOpenCallAge(birthMonth: number | null | undefined, birthYear: number | null | undefined): number | null {
+  if (!birthMonth || !birthYear || birthMonth < 1 || birthMonth > 12) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birthYear;
+  if (now.getMonth() + 1 < birthMonth) age -= 1;
+  return age >= 0 && age <= 100 ? age : null;
+}
+
+export function getOpenCallEligibilityError(birthMonth: number | null | undefined, birthYear: number | null | undefined): string | null {
+  const age = getOpenCallAge(birthMonth, birthYear);
+  if (age === null) return "Enter a valid birth month and year.";
+  if (age < OPEN_CALL_MIN_AGE || age > OPEN_CALL_MAX_AGE) {
+    return `This Open Call is for performers ages ${OPEN_CALL_MIN_AGE}–${OPEN_CALL_MAX_AGE} at the time of submission.`;
+  }
+  return null;
+}
+
 export const draftSaveSchema = z.object({
   actor_name: z.string().max(120).nullish(),
   birth_year: z.number().int().min(1990).max(currentYear).nullish(),
@@ -146,10 +215,24 @@ export const draftSaveSchema = z.object({
   coogan_status: z.enum(["yes", "no", "not_required"]).nullish(),
   work_permit: z.enum(["yes", "no", "not_required"]).nullish(),
   passport: z.boolean().optional(),
-  has_current_rep: z.boolean().optional(),
-  current_rep_name: z.string().max(160).nullish(),
-  rep_context: z.string().max(2000).nullish(),
-  seeking: z.array(z.string()).optional(),
+  has_current_rep: z.boolean().nullish(),
+  representatives: z
+    .array(
+      z.object({
+        name: z.string().max(160),
+        type: z.enum(REPRESENTATION_TYPE_VALUES),
+        market: z.string().max(120).nullish(),
+      })
+    )
+    .max(20)
+    .optional(),
+  seeking_representation: z.array(z.enum(REPRESENTATION_TYPE_VALUES)).optional(),
+  representation_notes: z.string().max(2000).nullish(),
+  pronouns: z.string().max(40).nullish(),
+  additional_links: z
+    .array(z.object({ label: z.string().max(80), url: z.string().max(500) }))
+    .max(10)
+    .optional(),
   casting_platforms: z.array(z.enum(["actors_access", "casting_networks", "other"])).optional(),
   casting_profile_urls: z.array(z.string().trim()).max(2).optional(),
   headshots: z
@@ -207,5 +290,67 @@ export function applicationStatusLabel(status: OpenCallApplication["status"]): s
     case "draft": return "Draft";
     case "submitted": return "Submitted";
     case "withdrawn": return "Withdrawn";
+  }
+}
+
+// ─── Submission completeness ──────────────────────────────────────────────────
+// Single source of truth for "is this application ready to submit" — used by
+// both the submit route (server-authoritative) and the review screen (client
+// display), so the two can't drift apart.
+
+type CompletenessInput = Pick<
+  OpenCallApplication,
+  | "actor_name" | "guardian_name" | "guardian_email" | "guardian_phone"
+  | "birth_year" | "birth_month" | "gender" | "city" | "state" | "country"
+  | "union_status" | "coogan_status" | "work_permit"
+  | "has_current_rep" | "representatives" | "seeking_representation"
+  | "casting_profile_urls" | "headshots" | "resume_url" | "slate_url"
+>;
+
+export function getMissingApplicationFields(app: CompletenessInput): string[] {
+  const missing: string[] = [];
+  const validTypes = new Set<string>(REPRESENTATION_TYPE_OPTIONS.map((o) => o.value));
+
+  if (!app.actor_name?.trim()) missing.push("Performer name");
+  if (!app.guardian_name?.trim()) missing.push("Guardian name");
+  if (!app.guardian_email?.trim()) missing.push("Guardian email");
+  if (!app.guardian_phone?.trim()) missing.push("Guardian phone");
+  if (!app.birth_year) missing.push("Birth year");
+  if (!app.birth_month) missing.push("Birth month");
+  if (!app.gender?.trim()) missing.push("Gender");
+  if (!app.city?.trim()) missing.push("City");
+  if (!app.state?.trim()) missing.push("State");
+  if (!app.country?.trim()) missing.push("Country");
+  if (!app.union_status) missing.push("Union status");
+  if (!app.coogan_status) missing.push("Coogan status");
+  if (!app.work_permit) missing.push("Work permit status");
+
+  if (app.has_current_rep === null || app.has_current_rep === undefined) {
+    missing.push("Are you currently represented?");
+  } else if (app.has_current_rep) {
+    const reps = app.representatives ?? [];
+    const hasCompleteEntry = reps.some((r) => r.name?.trim() && validTypes.has(r.type));
+    if (!hasCompleteEntry) missing.push("At least one current representative (name and type)");
+  }
+
+  if (!app.seeking_representation?.length) missing.push("Representation Sought (at least one)");
+  if (!app.casting_profile_urls?.length) missing.push("At least one casting profile URL");
+  if (!Array.isArray(app.headshots) || app.headshots.length < 2) missing.push("At least two headshots");
+  if (!app.resume_url?.trim()) missing.push("Resume");
+  if (!app.slate_url?.trim()) missing.push("Personality Slate video");
+
+  return missing;
+}
+
+// Lightweight "does this look like a working link" check — format only, not
+// a live reachability probe (fetching arbitrary family-supplied URLs
+// server-side to test they load has SSRF exposure and isn't needed here).
+export function looksLikeValidUrl(value: string | null | undefined): boolean {
+  if (!value?.trim()) return false;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
   }
 }

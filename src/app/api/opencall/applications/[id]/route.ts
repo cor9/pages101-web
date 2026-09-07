@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
-import { draftSaveSchema, submitConsentSchema, CONSENT_COPY } from "@/lib/opencall";
+import { draftSaveSchema, submitConsentSchema, CONSENT_COPY, getMissingApplicationFields, getOpenCallEligibilityError } from "@/lib/opencall";
 import type { OpenCallApplication } from "@/lib/opencall";
 
 export const dynamic = "force-dynamic";
@@ -97,9 +97,17 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });
   }
 
+  // Defense in depth: representatives must never persist alongside
+  // has_current_rep = false. The client clears them itself on toggle, but
+  // enforce it server-side too regardless of what was sent.
+  const updatePayload: Record<string, unknown> = { ...parsed.data };
+  if (updatePayload.has_current_rep === false) {
+    updatePayload.representatives = [];
+  }
+
   const { data: updated, error: updateError } = await serviceClient
     .from("p101_opencall_applications")
-    .update(parsed.data)
+    .update(updatePayload)
     .eq("id", id)
     .eq("user_id", user.id)
     .select("updated_at")
@@ -137,16 +145,16 @@ export async function POST(request: Request, context: RouteContext) {
       .select(
         "id, status, event_id, actor_name, guardian_name, guardian_email, guardian_phone, " +
         "birth_year, birth_month, gender, city, state, country, " +
-        "union_status, coogan_status, work_permit, has_current_rep, current_rep_name, " +
-        "seeking, casting_profile_urls, headshots, resume_url, slate_url"
+        "union_status, coogan_status, work_permit, has_current_rep, representatives, " +
+        "seeking_representation, casting_profile_urls, headshots, resume_url, slate_url"
       )
       .eq("id", id)
       .eq("user_id", user.id)
       .maybeSingle<Pick<OpenCallApplication,
         "id" | "status" | "event_id" | "actor_name" | "guardian_name" | "guardian_email" | "guardian_phone" |
         "birth_year" | "birth_month" | "gender" | "city" | "state" | "country" |
-        "union_status" | "coogan_status" | "work_permit" | "has_current_rep" | "current_rep_name" |
-        "seeking" | "casting_profile_urls" | "headshots" | "resume_url" | "slate_url"
+        "union_status" | "coogan_status" | "work_permit" | "has_current_rep" | "representatives" |
+        "seeking_representation" | "casting_profile_urls" | "headshots" | "resume_url" | "slate_url"
       >>();
 
     if (fetchError) return NextResponse.json({ error: "Failed to load application" }, { status: 500 });
@@ -166,32 +174,18 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     // Mirror the DB check constraint — give a friendly message before hitting the DB
-    const missing: string[] = [];
-    if (!app.actor_name?.trim()) missing.push("Performer name");
-    if (!app.guardian_name?.trim()) missing.push("Guardian name");
-    if (!app.guardian_email?.trim()) missing.push("Guardian email");
-    if (!app.guardian_phone?.trim()) missing.push("Guardian phone");
-    if (!app.birth_year) missing.push("Birth year");
-    if (!app.birth_month) missing.push("Birth month");
-    if (!app.gender?.trim()) missing.push("Gender");
-    if (!app.city?.trim()) missing.push("City");
-    if (!app.state?.trim()) missing.push("State");
-    if (!app.country?.trim()) missing.push("Country");
-    if (!app.union_status) missing.push("Union status");
-    if (!app.coogan_status) missing.push("Coogan status");
-    if (!app.work_permit) missing.push("Work permit status");
-    if (app.has_current_rep && !app.current_rep_name?.trim()) missing.push("Current rep name");
-    if (!app.seeking?.length) missing.push("Seeking (at least one category)");
-    if (!app.casting_profile_urls?.length) missing.push("At least one casting profile URL");
-    if (!Array.isArray(app.headshots) || app.headshots.length === 0) missing.push("At least one headshot");
-    if (!app.resume_url?.trim()) missing.push("Resume");
-    if (!app.slate_url?.trim()) missing.push("Slate video");
+    const missing = getMissingApplicationFields(app);
 
     if (missing.length > 0) {
       return NextResponse.json(
         { error: `Application is incomplete. Missing: ${missing.join(", ")}.` },
         { status: 422 }
       );
+    }
+
+    const eligibilityError = getOpenCallEligibilityError(app.birth_month, app.birth_year);
+    if (eligibilityError) {
+      return NextResponse.json({ error: eligibilityError }, { status: 422 });
     }
 
     // Build consents JSONB — timestamps and copy hashes are server-generated
