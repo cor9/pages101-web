@@ -3,7 +3,7 @@
 **Release day:** Tuesday, September 15, 2026
 **Event:** Open Call 11 (`88c99d87-ded2-4fdb-8a6b-4f55af63135e`)
 **Gallery:** https://talent.childactor101.com
-**Admin:** https://pages101.com/dashboard/admin/opencall/reps
+**Admin:** https://pages.childactor101.com/dashboard/admin/opencall/reps
 
 State as of Sunday Sept 13: 105 submitted, 62 drafts (never submitted), 1 withdrawn, 0 rep invites issued.
 

@@ -25,6 +25,7 @@ export type OpenCallEvent = {
   submits_open: string;
   submits_close: string;
   review_close: string;
+  draft_grace_close: string | null;
   status: "draft" | "open" | "reviewing" | "closed";
   created_at: string;
   updated_at: string;
@@ -276,6 +277,19 @@ export function isWindowOpen(event: OpenCallEvent): boolean {
   );
 }
 
+// True during an optional extended window after submits_close where applicants
+// who already have a draft may keep editing/submitting, even though the event
+// is no longer accepting new applications. Does not imply new drafts can be created.
+export function isDraftGraceOpen(event: OpenCallEvent): boolean {
+  return !!event.draft_grace_close && Date.now() < new Date(event.draft_grace_close).getTime();
+}
+
+// True if an existing draft can still be edited/submitted/withdrawn — either the
+// main submission window is open, or we're in the draft-only grace period.
+export function isDraftEditable(event: OpenCallEvent): boolean {
+  return isWindowOpen(event) || isDraftGraceOpen(event);
+}
+
 export function formatDeadline(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", {
     month: "long",
@@ -283,6 +297,17 @@ export function formatDeadline(dateStr: string): string {
     year: "numeric",
     timeZone: "America/New_York",
   });
+}
+
+// Date + time in Pacific, matching how deadlines are always communicated in the Open
+// Call copy ("11:59 PM Pacific"). Use this anywhere a deadline is shown without other
+// context clarifying the time — plain formatDeadline() alone can read as a different
+// calendar day once converted to America/New_York.
+export function formatDeadlinePacific(dateStr: string): string {
+  const d = new Date(dateStr);
+  const datePart = d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/Los_Angeles" });
+  const timePart = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
+  return `${datePart} at ${timePart} Pacific`;
 }
 
 export function applicationStatusLabel(status: OpenCallApplication["status"]): string {

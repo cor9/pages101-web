@@ -13,7 +13,10 @@ import {
   PRONOUN_OPTIONS,
   MONTHS,
   formatDeadline,
+  formatDeadlinePacific,
   isWindowOpen,
+  isDraftEditable,
+  isDraftGraceOpen,
   getMissingApplicationFields,
 } from "@/lib/opencall";
 import type { OpenCallApplication, OpenCallEvent, HeadshotEntry, RepresentativeEntry, AdditionalLinkEntry } from "@/lib/opencall";
@@ -622,7 +625,8 @@ export default function OpenCallApplyPage() {
   const isSubmitted = app?.status === "submitted";
   const isWithdrawn = app?.status === "withdrawn";
   const windowOpen = event ? isWindowOpen(event) : false;
-  const editable = windowOpen && !isWithdrawn;
+  const graceOpen = event ? !windowOpen && isDraftGraceOpen(event) : false;
+  const editable = event ? isDraftEditable(event) && !isWithdrawn : false;
   const currentYear = new Date().getFullYear();
   // Gender is still stored as plain text — the select is a UI layer over it.
   // A value matching one of the fixed options selects that option; any other
@@ -654,8 +658,17 @@ export default function OpenCallApplyPage() {
         <h1 style={{ fontFamily: "var(--font-fraunces), serif", fontStyle: "italic", fontSize: "2rem", color: "var(--ink)", margin: "0 0 4px" }}>
           Open Call Application
         </h1>
-        {event && <p style={{ color: "var(--ink-soft)", fontSize: "0.875rem", margin: "0 0 8px" }}>Deadline: {formatDeadline(event.submits_close)}</p>}
-        {!windowOpen && !isSubmitted && (
+        {event && (
+          <p style={{ color: "var(--ink-soft)", fontSize: "0.875rem", margin: "0 0 8px" }}>
+            Deadline: {graceOpen && event.draft_grace_close ? formatDeadlinePacific(event.draft_grace_close) : formatDeadline(event.submits_close)}
+          </p>
+        )}
+        {graceOpen && !isSubmitted && (
+          <div style={{ padding: "12px 16px", background: "var(--paper)", border: "1px solid var(--hairline)", borderRadius: 6, color: "var(--ink-soft)", fontSize: "0.875rem", marginBottom: 16 }}>
+            New applications are closed, but since you already started this one, you can keep editing and submit it until the extended deadline above.
+          </div>
+        )}
+        {!editable && !isSubmitted && (
           <div style={{ padding: "12px 16px", background: "var(--paper)", border: "1px solid var(--hairline)", borderRadius: 6, color: "var(--ink-soft)", fontSize: "0.875rem", marginBottom: 16 }}>
             The submission window is closed. This application cannot be edited.
           </div>

@@ -4,6 +4,17 @@ import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { draftSaveSchema, submitConsentSchema, CONSENT_COPY, getMissingApplicationFields, getOpenCallEligibilityError } from "@/lib/opencall";
 import type { OpenCallApplication } from "@/lib/opencall";
 
+// A draft that already exists may still be edited/submitted/withdrawn past submits_close
+// if the event has an active draft_grace_close extension. New drafts can't reach this
+// route at all — creation is blocked once the event leaves "open" status.
+function isPastDraftDeadline(event: { submits_close: string; draft_grace_close: string | null } | null): boolean {
+  if (!event) return true;
+  const now = Date.now();
+  if (now < new Date(event.submits_close).getTime()) return false;
+  if (event.draft_grace_close && now < new Date(event.draft_grace_close).getTime()) return false;
+  return true;
+}
+
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -75,11 +86,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const { data: event } = await serviceClient
     .from("p101_opencall_events")
-    .select("submits_close")
+    .select("submits_close, draft_grace_close")
     .eq("id", existing.event_id)
-    .maybeSingle<{ submits_close: string }>();
+    .maybeSingle<{ submits_close: string; draft_grace_close: string | null }>();
 
-  if (!event || new Date(event.submits_close) <= new Date()) {
+  if (isPastDraftDeadline(event)) {
     return NextResponse.json({ error: "The submission window has closed." }, { status: 409 });
   }
 
@@ -165,11 +176,11 @@ export async function POST(request: Request, context: RouteContext) {
 
     const { data: event } = await serviceClient
       .from("p101_opencall_events")
-      .select("submits_close")
+      .select("submits_close, draft_grace_close")
       .eq("id", app.event_id)
-      .maybeSingle<{ submits_close: string }>();
+      .maybeSingle<{ submits_close: string; draft_grace_close: string | null }>();
 
-    if (!event || new Date(event.submits_close) <= new Date()) {
+    if (isPastDraftDeadline(event)) {
       return NextResponse.json({ error: "The submission window has closed." }, { status: 409 });
     }
 
@@ -242,11 +253,11 @@ export async function POST(request: Request, context: RouteContext) {
 
     const { data: event } = await serviceClient
       .from("p101_opencall_events")
-      .select("submits_close")
+      .select("submits_close, draft_grace_close")
       .eq("id", existing.event_id)
-      .maybeSingle<{ submits_close: string }>();
+      .maybeSingle<{ submits_close: string; draft_grace_close: string | null }>();
 
-    if (!event || new Date(event.submits_close) <= new Date()) {
+    if (isPastDraftDeadline(event)) {
       return NextResponse.json({ error: "The submission window has closed." }, { status: 409 });
     }
 

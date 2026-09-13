@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { readAuthErrorFromLocation } from "@/lib/auth/magic-link";
-import { formatDeadline, isWindowOpen } from "@/lib/opencall";
+import { formatDeadline, formatDeadlinePacific, isWindowOpen, isDraftGraceOpen } from "@/lib/opencall";
 import { OPEN_CALL_REVIEW_URL, OPEN_CALL_WORKSHOP_URL } from "@/lib/opencall-purchases";
 import type { OpenCallEvent, OpenCallApplication } from "@/lib/opencall";
 import type { User } from "@supabase/supabase-js";
@@ -413,6 +413,7 @@ export default function OpenCallLanding() {
   }
 
   const windowOpen = event ? isWindowOpen(event) : false;
+  const graceOpen = event ? !windowOpen && isDraftGraceOpen(event) : false;
   const activeApplications = applications.filter((a) => a.status !== "withdrawn");
 
   // Single source of truth for lifecycle state — messaging can't contradict itself.
@@ -433,35 +434,44 @@ export default function OpenCallLanding() {
     { label: "Representative review", value: "Begins September 15, 2026", sub: null },
   ];
 
-  // ── Functional apply control (open state only): login / start / applications ──
-  function ApplyControl() {
+  // Reused wherever the signed-in user's in-progress/submitted applications are listed —
+  // both the normal open-window control and the closed-but-in-grace-period view.
+  function YourApplicationsList() {
+    if (activeApplications.length === 0) return null;
+    return (
+      <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.lime }}>Your applications</div>
+        {activeApplications.map((app) => (
+          <div key={app.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 18px", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 14 }}>
+            <div>
+              <div style={{ fontWeight: 700, color: C.ink }}>{app.actor_name ?? "Unnamed application"}</div>
+              <div style={{ fontSize: 13, color: C.soft, marginTop: 2 }}>
+                {app.status === "submitted"
+                  ? `Submitted ${app.submitted_at ? formatDeadline(app.submitted_at) : ""}`
+                  : `Draft — last saved ${new Date(app.updated_at).toLocaleDateString("en-US")}`}
+              </div>
+            </div>
+            <Link href={`/opencall/apply/${app.id}`} style={{ padding: "9px 16px", background: app.status === "draft" ? C.lime : "transparent", color: app.status === "draft" ? C.bg : C.ink, border: app.status === "draft" ? "none" : `1px solid ${C.line}`, borderRadius: 999, textDecoration: "none", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap" }}>
+              {app.status === "draft" ? "Continue" : "Edit / View"}
+            </Link>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── Functional apply control: login / start / applications. `allowNew` is false
+  // once the event is closed to new applicants but still in the draft grace period —
+  // existing drafts stay reachable, but no path to start a fresh one is shown. ──
+  function ApplyControl({ allowNew = true }: { allowNew?: boolean } = {}) {
     if (user) {
       return (
         <div style={{ display: "grid", gap: 20 }}>
-          {activeApplications.length > 0 && (
-            <div style={{ display: "grid", gap: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: C.lime }}>Your applications</div>
-              {activeApplications.map((app) => (
-                <div key={app.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 18px", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 14 }}>
-                  <div>
-                    <div style={{ fontWeight: 700, color: C.ink }}>{app.actor_name ?? "Unnamed application"}</div>
-                    <div style={{ fontSize: 13, color: C.soft, marginTop: 2 }}>
-                      {app.status === "submitted"
-                        ? `Submitted ${app.submitted_at ? formatDeadline(app.submitted_at) : ""}`
-                        : `Draft — last saved ${new Date(app.updated_at).toLocaleDateString("en-US")}`}
-                    </div>
-                  </div>
-                  <Link href={`/opencall/apply/${app.id}`} style={{ padding: "9px 16px", background: app.status === "draft" ? C.lime : "transparent", color: app.status === "draft" ? C.bg : C.ink, border: app.status === "draft" ? "none" : `1px solid ${C.line}`, borderRadius: 999, textDecoration: "none", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap" }}>
-                    {app.status === "draft" ? "Continue" : "Edit / View"}
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
+          <YourApplicationsList />
 
-          {createError && <p style={{ color: C.coral, fontSize: 14, margin: 0 }}>{createError}</p>}
+          {allowNew && createError && <p style={{ color: C.coral, fontSize: 14, margin: 0 }}>{createError}</p>}
 
-          {pages.length > 0 ? (
+          {allowNew && (pages.length > 0 ? (
             <div style={{ display: "grid", gap: 12 }}>
               <p style={{ fontSize: 14, color: C.soft, margin: 0 }}>Start with a performer page or apply without pre-filling.</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -482,6 +492,10 @@ export default function OpenCallLanding() {
               style={{ padding: "16px 32px", background: C.lime, color: C.bg, border: "none", borderRadius: 999, fontWeight: 800, cursor: "pointer", fontSize: 16, justifySelf: "start", opacity: creating ? 0.6 : 1 }}>
               {creating ? "Starting…" : "Start Your Application"}
             </button>
+          ))}
+
+          {!allowNew && activeApplications.length === 0 && (
+            <p style={{ fontSize: 14, color: C.soft, margin: 0 }}>You don&rsquo;t have an application in progress, and new applications are closed.</p>
           )}
         </div>
       );
@@ -786,8 +800,19 @@ export default function OpenCallLanding() {
             </>
           ) : phase === "closed" ? (
             <div style={{ textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
-              <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2.2rem, 4.6vw, 3.4rem)", lineHeight: 1.05, letterSpacing: "-0.03em", margin: "0 0 16px" }}>This Open Call has closed.</h2>
-              <p style={{ fontSize: 20, fontWeight: 500, margin: 0 }}>Thank you to everyone who submitted. Watch for the next Open Call announcement.</p>
+              <h2 style={{ fontFamily: display, fontWeight: 800, fontSize: "clamp(2.2rem, 4.6vw, 3.4rem)", lineHeight: 1.05, letterSpacing: "-0.03em", margin: "0 0 16px" }}>
+                {graceOpen ? "This Open Call is closed to new applicants." : "This Open Call has closed."}
+              </h2>
+              <p style={{ fontSize: 20, fontWeight: 500, margin: graceOpen ? "0 0 30px" : 0 }}>
+                {graceOpen
+                  ? `Already started an application? You can still finish and submit it${event?.draft_grace_close ? ` until ${formatDeadlinePacific(event.draft_grace_close)}` : ""}.`
+                  : "Thank you to everyone who submitted. Watch for the next Open Call announcement."}
+              </p>
+              {graceOpen && (
+                <div style={{ maxWidth: 620, margin: "0 auto", textAlign: "left", background: C.bg2, border: `1px solid ${C.line}`, borderRadius: 24, padding: 32 }}>
+                  <ApplyControl allowNew={false} />
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ textAlign: "center", maxWidth: 760, margin: "0 auto" }}>
