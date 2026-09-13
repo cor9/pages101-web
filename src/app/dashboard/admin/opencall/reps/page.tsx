@@ -49,7 +49,7 @@ type CreateResult = {
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit",
-    timeZone: "America/New_York",
+    timeZone: "America/Los_Angeles",
   });
 }
 
@@ -563,8 +563,8 @@ export default function AdminRepsPage() {
                   </label>
                   {selectedEvent && form.expires_at && (
                     <p style={{ margin: "0 0 16px", fontSize: 12, color: "#6b7280" }}>
-                      Effective expiry: <strong>{new Date(form.expires_at).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })} ET</strong>
-                      {" · "}Review closes: {fmtDate(selectedEvent.review_close)} ET
+                      Effective expiry: <strong>{new Date(form.expires_at).toLocaleString("en-US", { timeZone: "America/Los_Angeles", month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })} PT</strong>
+                      {" · "}Review closes: {fmtDate(selectedEvent.review_close)} PT
                     </p>
                   )}
                   <div style={{ display: "flex", gap: 10 }}>

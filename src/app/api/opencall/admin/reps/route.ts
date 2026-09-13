@@ -190,6 +190,7 @@ export async function POST(request: Request) {
   if (send_email) try {
     await sendPages101Email({
       to: rep_email,
+      from: "Child Actor 101 <noreply@childactor101.com>",
       replyTo: "info@childactor101.com",
       subject: `Your Invitation to Review Child Actor 101 Open Call Submissions`,
       html: buildInviteEmailHtml({
@@ -224,9 +225,11 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// Open Call deadlines are defined in Pacific time (e.g. Nov 30, 11:59 PM PT),
+// so format in America/Los_Angeles or the date rolls over to the next day.
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
-    month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York"
+    month: "long", day: "numeric", year: "numeric", timeZone: "America/Los_Angeles"
   });
 }
 

@@ -12,16 +12,20 @@ export async function sendPages101Email({
   to,
   subject,
   html,
-  replyTo
+  replyTo,
+  from
 }: {
   to: string;
   subject: string;
   html: string;
   replyTo?: string;
+  // Override the sender for emails that are not Pages101-branded (e.g. Child
+  // Actor 101 Open Call). Must be an address under a verified SES identity.
+  from?: string;
 }) {
   await ses.send(
     new SendEmailCommand({
-      Source: getSourceAddress(),
+      Source: from ?? getSourceAddress(),
       Destination: { ToAddresses: [to] },
       ReplyToAddresses: replyTo ? [replyTo] : undefined,
       Message: {
