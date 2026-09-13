@@ -51,13 +51,18 @@ Submissions closed Sept 8. If `notify-opencall-draft-applicants.mjs` already wen
 
 ## Tuesday checklist
 
-**Before 9am**
-- [ ] Merge `talentsearch` branch `opencall-11-rep-release` → `main` (Vercel deploys production automatically). This includes the missing modal CSS fix, the FAQ, and the copy alignment.
-- [ ] Deploy pages101-web with the invite-email Reply-To change and link-only invite mode (`src/app/api/opencall/admin/reps/route.ts`, `src/app/dashboard/admin/opencall/reps/page.tsx`).
-- [x] review_close extended to Nov 30 + status `reviewing` (done Sept 13).
-- [x] DB migration `20260913000001_p101_opencall_registration_links.sql` applied to production Supabase (done Sept 13).
-- [ ] **Verify TalentSearch Vercel env: `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `SES_FROM_ADDRESS`.** The Preview environment returned "signature does not match" on Sept 13 — the keys there are stale. Confirm Production's keys match the working pages101-web ones, because BOTH intro-request emails and registration emails are sent from talentsearch.
-- [ ] Hard-refresh `talent.childactor101.com/denied` and confirm it loads.
+**Done Sunday Sept 13 (production smoke-tested end to end)**
+- [x] talentsearch `main` at `b1525bd` deployed to `talent.childactor101.com` (modal CSS fix, FAQ, `/join` registration, no-store DB reads).
+- [x] pages101-web `d812675` promoted to `pages.childactor101.com` (admin tabs, link-only invites, Reply-To).
+- [x] review_close extended to Nov 30 + status `reviewing`.
+- [x] DB migration `20260913000001_p101_opencall_registration_links.sql` applied.
+- [x] talentsearch Vercel env rebuilt: Production now points at the Open Call 11 Supabase project (was the legacy `tultuplahemorkofmptd` project) with its own session secret, SES keys, `SES_FROM_ADDRESS`, `TALENTSEARCH_BASE_URL`. Preview SES keys refreshed.
+- [x] **SES region is `us-west-2`** on both apps (`AWS_REGION` on talentsearch, `SES_REGION` on pages101-web). `childactor101.com` verification is *Failed* in us-east-1 and that region is sandboxed; us-west-2 is verified with production access (50k/day). If an email ever fails with "not verified in region US-EAST-1", the region var got lost.
+- [x] Verified in production: bogus token → `r=unknown`; registration → personal invite emailed (landed in Gmail Inbox, not spam) → link opens gallery (105 cards, hero photos styled, FAQ shows Nov 30) → favorite saved and counted → `registered_via` shown in admin → re-registration deduped → link turned off blocks new registrations but personal link still works → direct invite emailed and redeemed → link-only invite redeemed → revoke denies the live session instantly. All test rows deleted.
+- Not exercised: Request Introduction (would email a real family; code unchanged since Phase 5, and SES delivery from talentsearch is now proven). Admin UI clicked-through only via its API; the page is typechecked and linted.
+
+**Tuesday morning**
+- [ ] Open `talent.childactor101.com/denied` and `pages.childactor101.com/dashboard/admin/opencall/reps` — both load.
 
 **Smoke test (you)**
 - [ ] Admin → Reps → create an invite to **yourself** (agency "Child Actor 101 (test)").
