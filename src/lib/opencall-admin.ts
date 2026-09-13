@@ -89,3 +89,12 @@ export async function logRepAction(
     console.error("Access log insert failed:", error.message);
   }
 }
+
+// ─── Registration link URL construction ──────────────────────────────────────
+// Reusable link posted to a rep group; it opens the self-registration form on
+// talentsearch and never grants gallery access by itself.
+
+export function buildRegistrationUrl(rawToken: string): string {
+  const base = (process.env.TALENTSEARCH_BASE_URL ?? "https://talent.childactor101.com").replace(/\/$/, "");
+  return `${base}/join?g=${encodeURIComponent(rawToken)}`;
+}
