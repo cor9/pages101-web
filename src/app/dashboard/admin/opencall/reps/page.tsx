@@ -116,6 +116,19 @@ export default function AdminRepsPage() {
     });
   }, [supabase, router]);
 
+  // Access tokens expire (~1hr). This page is often left open through a whole
+  // batch of invite sends, so every authenticated call re-reads the session
+  // instead of reusing the token captured at mount — getSession() refreshes
+  // an expired token from the stored refresh token when one is available.
+  // `token` state above still gates "logged in at all" and drives effects.
+  const getAuthToken = useCallback(async (): Promise<string | null> => {
+    if (!supabase) return null;
+    const { data } = await supabase.auth.getSession();
+    const t = data.session?.access_token ?? null;
+    if (t) setToken(t);
+    return t;
+  }, [supabase]);
+
   // Load events (all statuses visible to admin)
   useEffect(() => {
     if (!supabase || !token) return;
@@ -145,29 +158,33 @@ export default function AdminRepsPage() {
   const fetchInvites = useCallback(async () => {
     if (!token || !selectedEventId) return;
     setLoadingInvites(true);
+    const t = await getAuthToken();
+    if (!t) { router.push("/"); return; }
     const res = await fetch(`/api/opencall/admin/reps?event_id=${selectedEventId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${t}` },
     });
     if (res.status === 403) { setAuthError("Admin access required."); return; }
     const body = res.ok ? await res.json() : {};
     setInvites((body as { invites?: RepInvite[] }).invites ?? []);
     setLoadingInvites(false);
-  }, [token, selectedEventId]);
+  }, [token, selectedEventId, getAuthToken, router]);
 
   useEffect(() => { fetchInvites(); }, [fetchInvites]);
 
   const fetchRegLinks = useCallback(async () => {
     if (!token || !selectedEventId) return;
     setLoadingRegLinks(true);
+    const t = await getAuthToken();
+    if (!t) { router.push("/"); return; }
     const res = await fetch(`/api/opencall/admin/registration-links?event_id=${selectedEventId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${t}` },
     });
     if (res.ok) {
       const body = await res.json() as { links: RegistrationLink[] };
       setRegLinks(body.links ?? []);
     }
     setLoadingRegLinks(false);
-  }, [token, selectedEventId]);
+  }, [token, selectedEventId, getAuthToken, router]);
 
   useEffect(() => { fetchRegLinks(); }, [fetchRegLinks]);
 
@@ -177,10 +194,12 @@ export default function AdminRepsPage() {
     setRegCreating(true);
     setRegError(null);
     setRegResult(null);
+    const t = await getAuthToken();
+    if (!t) { setRegError("Not authenticated. Please reload the page."); setRegCreating(false); return; }
     const evt = events.find((ev) => ev.id === selectedEventId);
     const res = await fetch("/api/opencall/admin/registration-links", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         event_id: selectedEventId,
         source_name: regForm.source_name.trim(),
@@ -205,9 +224,11 @@ export default function AdminRepsPage() {
     const turningOff = link.active;
     if (turningOff && !window.confirm(`Turn off "${link.source_name}"? New registrations will stop. Reps who already registered keep their access.`)) return;
     setRegToggling(link.id);
+    const t = await getAuthToken();
+    if (!t) { setRegToggling(null); router.push("/"); return; }
     await fetch(`/api/opencall/admin/registration-links/${link.id}`, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
       body: JSON.stringify({ active: !turningOff }),
     });
     setRegToggling(null);
@@ -221,12 +242,15 @@ export default function AdminRepsPage() {
     setCreateError(null);
     setCreateResult(null);
 
+    const t = await getAuthToken();
+    if (!t) { setCreateError("Not authenticated. Please reload the page."); setCreating(false); return; }
+
     const evt = events.find((ev) => ev.id === selectedEventId);
     const expiresIso = new Date(form.expires_at).toISOString();
 
     const res = await fetch("/api/opencall/admin/reps", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         event_id: selectedEventId,
         rep_name: form.rep_name.trim(),
@@ -255,9 +279,11 @@ export default function AdminRepsPage() {
     if (!token) return;
     if (!window.confirm("Revoke this invitation? The representative will lose access immediately. This cannot be undone.")) return;
     setRevoking(inviteId);
+    const t = await getAuthToken();
+    if (!t) { setRevoking(null); router.push("/"); return; }
     await fetch(`/api/opencall/admin/reps/${inviteId}/revoke`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${t}` },
     });
     setRevoking(null);
     fetchInvites();
