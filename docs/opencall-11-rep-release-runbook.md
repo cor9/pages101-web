@@ -96,11 +96,13 @@ Voice reference: your Dec 2025 rep email. Plain, warm, short paragraphs, ALL-CAP
 
 **Subject:** Talent Submissions from over 100 youth actors seeking representation
 
-Hey Youth Talent Reps.. It's Corey Ralston from Bohemia Group and Child Actor 101.
+Hey Youth Talent Reps.. It's Corey Ralston from [Bohemia Group](https://bohemiaent.com) and [Child Actor 101](https://childactor101.com).
 
-I hope this catches you at a good time to fill any roster holes you may have. We just wrapped our 11th Online Talent Representation Open Call at Child Actor 101.
+I hope this email catches you at the perfect moment to fill any holes you may have in your youth rosters. This year's batch is a strong one. The slates are better, the reels are tighter, and there are more kids from outside LA and New York than we have ever had. Once again we just wrapped our 11th 'Free Online Talent Representation Open Call' at Child Actor 101.
 
-Child Actor 101 is a Parent Resource Community on Facebook with over 10,000 members, moderated by 25+ Talent Agents, Managers, Casting Directors, Coaches, etc. The goal is to give frank but helpful advice to parents navigating the industry. If you are not a part of it and would like to be a moderator please let me know. It is very helpful to hop in and answer a few questions when you have the time. We all have a unique perspective.
+As you may know - Child Actor 101 is a Parent Resource Community on Facebook with over 12,000 members, moderated by 25+ Talent Agents, Managers, Casting Directors, Coaches, etc. The goal is to give frank but helpful advice to parents navigating the industry.
+
+We are always looking for experienced industry perspective, so if you are not a part of the community and would like to be a moderator, podcast guest, blogger, etc please reach out. Your time, wisdom, experience and humanity is genuinely helpful and needed. Even if it is to hop online briefly and answer a few questions when you have the time. We all have a unique outlook on the industry.
 
 This year the gallery is by personal link. You will get a separate email from noreply@childactor101.com with your access button. Click it any time to get back in. If it does not show up, check spam and promotions, and if it is still missing reply here and I will send a new one.
 
@@ -112,11 +114,13 @@ MANAGERS - filter by those seeking management.
 
 To reach a family, hit Request Introduction on their profile. We email the parents your info and they reply straight to you. No need to ask me for permission. You can also star favorites and keep private notes on any kid, and they will be there when you come back.
 
-The gallery is open through November 30.
+The gallery is accessible to you through November 30.
 
 Any feedback is always helpful to myself or the process in general. I hope you find some winners!
 
-Feel free to share this with any other Rep that may be searching. Your link is for your office. If someone at another company wants in, send them my way and I will get them their own.
+Feel free to share this with any other Agent or Manager that may be searching for quality kiddos. Your link is for your office. If someone at another company wants in, send them my way and I will get them their account access.
+
+One more thing. Parents in the community ask me every week who to trust. The [Child Actor 101 Directory](https://directory.childactor101.com) is where I send them. Take two minutes to make sure your office is listed and the listing is current, and if there is a photographer, coach, or vendor you would send your own clients to, tell me and I will get them in there too.
 
 Thank You,
 
