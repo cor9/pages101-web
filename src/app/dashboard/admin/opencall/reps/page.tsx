@@ -20,6 +20,7 @@ type RepInvite = {
   redeemed_at: string | null;
   favorite_count?: number;
   intro_count?: number;
+  note_count?: number;
   last_access?: string | null;
 };
 
@@ -657,6 +658,7 @@ export default function AdminRepsPage() {
                       <div style={{ display: "flex", gap: 16, fontSize: 13, color: "#374151", alignItems: "center" }}>
                         <span title="Favorites saved">⭐ {inv.favorite_count ?? 0}</span>
                         <span title="Introduction requests">✉ {inv.intro_count ?? 0}</span>
+                        <span title="Profiles with notes">✎ {inv.note_count ?? 0}</span>
                       </div>
 
                       {!inv.revoked_at && (

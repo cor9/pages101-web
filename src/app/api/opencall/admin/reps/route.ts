@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   // Augment each invite with favorite and intro counts
   const inviteIds = (invites ?? []).map((i) => i.id as string);
 
-  const [favCounts, introCounts, lastAccess] = await Promise.all([
+  const [favCounts, introCounts, noteCounts, lastAccess] = await Promise.all([
     inviteIds.length
       ? serviceClient
           .from("p101_opencall_rep_favorites")
@@ -57,6 +57,12 @@ export async function GET(request: Request) {
       : { data: [] },
     inviteIds.length
       ? serviceClient
+          .from("p101_opencall_rep_notes")
+          .select("invite_id")
+          .in("invite_id", inviteIds)
+      : { data: [] },
+    inviteIds.length
+      ? serviceClient
           .from("p101_opencall_access_log")
           .select("invite_id, created_at")
           .in("invite_id", inviteIds)
@@ -66,6 +72,7 @@ export async function GET(request: Request) {
 
   const favByInvite: Record<string, number> = {};
   const introByInvite: Record<string, number> = {};
+  const noteByInvite: Record<string, number> = {};
   const lastByInvite: Record<string, string> = {};
 
   for (const r of (favCounts.data ?? []) as { invite_id: string }[]) {
@@ -73,6 +80,9 @@ export async function GET(request: Request) {
   }
   for (const r of (introCounts.data ?? []) as { invite_id: string }[]) {
     introByInvite[r.invite_id] = (introByInvite[r.invite_id] ?? 0) + 1;
+  }
+  for (const r of (noteCounts.data ?? []) as { invite_id: string }[]) {
+    noteByInvite[r.invite_id] = (noteByInvite[r.invite_id] ?? 0) + 1;
   }
   for (const r of (lastAccess.data ?? []) as { invite_id: string; created_at: string }[]) {
     if (!lastByInvite[r.invite_id]) lastByInvite[r.invite_id] = r.created_at;
@@ -94,6 +104,7 @@ export async function GET(request: Request) {
     registered_via_name: inv.registered_via ? sourceById[inv.registered_via as string] ?? null : null,
     favorite_count: favByInvite[inv.id as string] ?? 0,
     intro_count: introByInvite[inv.id as string] ?? 0,
+    note_count: noteByInvite[inv.id as string] ?? 0,
     last_access: lastByInvite[inv.id as string] ?? null,
   }));
 
