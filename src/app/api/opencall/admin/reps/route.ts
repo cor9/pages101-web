@@ -8,9 +8,12 @@ export const dynamic = "force-dynamic";
 const createInviteSchema = z.object({
   event_id: z.string().uuid(),
   rep_name: z.string().trim().min(1).max(120),
-  rep_email: z.string().trim().email().max(254),
+  rep_email: z.string().trim().email().max(254).optional(),
   rep_agency: z.string().trim().max(200).optional(),
   expires_at: z.string().datetime(),
+  // false = "link only": no email is sent; the admin copies the URL and
+  // distributes it themselves (a rep group post, a whole office/department).
+  send_email: z.boolean().optional().default(true),
 });
 
 // GET /api/opencall/admin/reps?event_id=UUID — list invites for an event
@@ -27,7 +30,7 @@ export async function GET(request: Request) {
 
   const { data: invites, error } = await serviceClient
     .from("p101_opencall_rep_invites")
-    .select("id, event_id, rep_name, rep_email, rep_agency, created_at, expires_at, revoked_at, redeemed_at")
+    .select("id, event_id, rep_name, rep_email, rep_agency, rep_role, registered_via, created_at, expires_at, revoked_at, redeemed_at")
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
@@ -39,7 +42,7 @@ export async function GET(request: Request) {
   // Augment each invite with favorite and intro counts
   const inviteIds = (invites ?? []).map((i) => i.id as string);
 
-  const [favCounts, introCounts, lastAccess] = await Promise.all([
+  const [favCounts, introCounts, noteCounts, lastAccess] = await Promise.all([
     inviteIds.length
       ? serviceClient
           .from("p101_opencall_rep_favorites")
@@ -54,6 +57,12 @@ export async function GET(request: Request) {
       : { data: [] },
     inviteIds.length
       ? serviceClient
+          .from("p101_opencall_rep_notes")
+          .select("invite_id")
+          .in("invite_id", inviteIds)
+      : { data: [] },
+    inviteIds.length
+      ? serviceClient
           .from("p101_opencall_access_log")
           .select("invite_id, created_at")
           .in("invite_id", inviteIds)
@@ -63,6 +72,7 @@ export async function GET(request: Request) {
 
   const favByInvite: Record<string, number> = {};
   const introByInvite: Record<string, number> = {};
+  const noteByInvite: Record<string, number> = {};
   const lastByInvite: Record<string, string> = {};
 
   for (const r of (favCounts.data ?? []) as { invite_id: string }[]) {
@@ -71,14 +81,30 @@ export async function GET(request: Request) {
   for (const r of (introCounts.data ?? []) as { invite_id: string }[]) {
     introByInvite[r.invite_id] = (introByInvite[r.invite_id] ?? 0) + 1;
   }
+  for (const r of (noteCounts.data ?? []) as { invite_id: string }[]) {
+    noteByInvite[r.invite_id] = (noteByInvite[r.invite_id] ?? 0) + 1;
+  }
   for (const r of (lastAccess.data ?? []) as { invite_id: string; created_at: string }[]) {
     if (!lastByInvite[r.invite_id]) lastByInvite[r.invite_id] = r.created_at;
   }
 
+  // Resolve registration-link source names for self-registered invites
+  const viaIds = [...new Set((invites ?? []).map((i) => i.registered_via as string | null).filter(Boolean))] as string[];
+  const sourceById: Record<string, string> = {};
+  if (viaIds.length) {
+    const { data: links } = await serviceClient
+      .from("p101_opencall_registration_links")
+      .select("id, source_name")
+      .in("id", viaIds);
+    for (const l of (links ?? []) as { id: string; source_name: string }[]) sourceById[l.id] = l.source_name;
+  }
+
   const enriched = (invites ?? []).map((inv) => ({
     ...inv,
+    registered_via_name: inv.registered_via ? sourceById[inv.registered_via as string] ?? null : null,
     favorite_count: favByInvite[inv.id as string] ?? 0,
     intro_count: introByInvite[inv.id as string] ?? 0,
+    note_count: noteByInvite[inv.id as string] ?? 0,
     last_access: lastByInvite[inv.id as string] ?? null,
   }));
 
@@ -89,7 +115,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await requireAdminAuth(request);
   if ("error" in auth) return auth.error;
-  const { serviceClient } = auth;
+  const { serviceClient, user } = auth;
 
   let body: unknown;
   try {
@@ -103,7 +129,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid fields." }, { status: 400 });
   }
 
-  const { event_id, rep_name, rep_email, rep_agency, expires_at } = parsed.data;
+  const { event_id, rep_name, rep_agency, expires_at, send_email } = parsed.data;
+
+  if (send_email && !parsed.data.rep_email) {
+    return NextResponse.json({ error: "Email address is required unless the invite is link-only." }, { status: 400 });
+  }
+  // Link-only invites keep the issuing admin as the contact on record.
+  const rep_email = parsed.data.rep_email ?? user.email;
 
   // Load the event to validate expiry bounds
   const { data: event, error: eventError } = await serviceClient
@@ -162,13 +194,15 @@ export async function POST(request: Request) {
   // Build the invite URL (one-time — not stored anywhere)
   const inviteUrl = buildInviteUrl(rawToken);
 
-  // Send invitation email
+  // Send invitation email (skipped for link-only invites)
   let emailDelivered = false;
   let emailError: string | null = null;
 
-  try {
+  if (send_email) try {
     await sendPages101Email({
       to: rep_email,
+      from: "Child Actor 101 <noreply@childactor101.com>",
+      replyTo: "info@childactor101.com",
       subject: `Your Invitation to Review Child Actor 101 Open Call Submissions`,
       html: buildInviteEmailHtml({
         repName: rep_name,
@@ -202,9 +236,11 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// Open Call deadlines are defined in Pacific time (e.g. Nov 30, 11:59 PM PT),
+// so format in America/Los_Angeles or the date rolls over to the next day.
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
-    month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York"
+    month: "long", day: "numeric", year: "numeric", timeZone: "America/Los_Angeles"
   });
 }
 
@@ -244,7 +280,8 @@ function buildInviteEmailHtml({
       </p>
       <p style="margin:0 0 12px;font-size:13px;color:#6b7280;line-height:1.5;">
         <strong>This link is for your office's use only.</strong> It may be shared internally
-        with agents, managers, assistants, and colleagues in your organization.
+        with agents, managers, assistants, and colleagues in your organization. If a colleague at
+        another company would like access, reply to this email and we will send them their own link.
       </p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
       <p style="margin:0;font-size:12px;color:#9ca3af;">

@@ -1,0 +1,698 @@
+[
+  {
+    "actor_name": "Milo Chen",
+    "birth_year": 2020, "birth_month": 3,
+    "gender": "Male", "ethnicity": ["asian"],
+    "city": "Los Angeles", "state": "CA", "country": "US",
+    "local_hire_cities": ["Los Angeles, CA"],
+    "union_status": "non_union", "coogan_status": "no", "work_permit": "not_required", "passport": false,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["commercial_agent"],
+    "casting_platforms": ["casting_networks"],
+    "casting_profile_urls": ["https://app.castingnetworks.com/talent/seed-milochen"],
+    "headshots": [{ "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" }],
+    "resume_url": "https://example.com/seed-resume-001.pdf",
+    "slate_url": "https://example.com/seed-slate-001.mp4",
+    "reel_url": null, "other_video_url": null,
+    "supplemental_notes": null,
+    "_meta": { "age_group": "6-8", "rep_category": "unrepresented", "headshot_count": 1, "reel_type": "none", "resume_type": "valid", "slate_type": "valid", "notes_length": "none", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["short"] }
+  },
+  {
+    "actor_name": "Ava Whitfield-Ross",
+    "birth_year": 2019, "birth_month": 5,
+    "gender": "Female", "ethnicity": ["white"],
+    "city": "New York", "state": "NY", "country": "US",
+    "local_hire_cities": ["New York, NY"],
+    "union_status": "sag_member", "coogan_status": "yes", "work_permit": "yes", "passport": true,
+    "has_current_rep": true,
+    "representatives": [
+      { "name": "Northgate Talent Agency", "type": "theatre_agent", "market": null },
+      { "name": "Willowmere Management", "type": "manager", "market": null }
+    ],
+    "representation_notes": "Also represented by manager Willowmere Management. Seeking additional streaming and episodic theatrical opportunities.",
+    "seeking_representation": ["theatre_agent", "theatrical_agent", "commercial_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-avawhitfieldross",
+      "https://app.castingnetworks.com/talent/seed-avawhitfieldross?ref=opencall-gallery-preview&source=admin-seed"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-002.pdf",
+    "slate_url": "https://example.com/seed-slate-002.mp4",
+    "reel_url": "https://example.com/seed-reel-002.mp4", "other_video_url": null,
+    "supplemental_notes": "Trained since age three in ballet, tap, and jazz, with two seasons in the regional touring cast of a family musical.\nRecent credits include a featured ensemble role in a community theater holiday production and a national commercial callback for a breakfast cereal brand.\nSkills: TapJazzBalletContemporaryTheatricalSingingSightReadingStageCombatBasicsHorsebackRidingBeginnerRollerSkatingIntermediatePianoGrade2ImprovComedyImprovDramaDialectsGeneralAmericanCockneyBasic\nAvailable for self-tape turnarounds within 24 hours and open to travel for the right opportunity.",
+    "_meta": { "age_group": "6-8", "rep_category": "both", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "long", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated"] }
+  },
+  {
+    "actor_name": "Beckett O'Malley",
+    "birth_year": 2018, "birth_month": 1,
+    "gender": "Male", "ethnicity": ["white"],
+    "city": "Atlanta", "state": "GA", "country": "US",
+    "local_hire_cities": ["Atlanta, GA"],
+    "union_status": "sag_eligible", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Crestline Talent Agency", "type": "theatrical_agent", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["theatrical_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-beckettomalley"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-003.pdf",
+    "slate_url": "https://example.com/seed-slate-003.mp4",
+    "reel_url": "https://example.com/seed-reel-003.mp4", "other_video_url": null,
+    "supplemental_notes": "Strong callback history for regional theater; comfortable with cold reads and classical text.",
+    "_meta": { "age_group": "6-8", "rep_category": "agency_only", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "short", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["apostrophe"] }
+  },
+  {
+    "actor_name": "Ruby Tran",
+    "birth_year": 2020, "birth_month": 6,
+    "gender": "Female", "ethnicity": ["asian"],
+    "city": "Chicago", "state": "IL", "country": "US",
+    "local_hire_cities": ["Chicago, IL"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": false,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["commercial_agent", "theatrical_agent"],
+    "casting_platforms": ["casting_networks"],
+    "casting_profile_urls": ["https://app.castingnetworks.com/talent/seed-rubytran"],
+    "headshots": [{ "type": "commercial", "url": "https://placehold.co/700x700/1a1a2e/e5e7eb?text=Square" }],
+    "resume_url": "https://example.com/seed-resume-004.pdf",
+    "slate_url": "https://example.com/seed-slate-004.mp4",
+    "reel_url": null, "other_video_url": null,
+    "supplemental_notes": null,
+    "_meta": { "age_group": "6-8", "rep_category": "unrepresented", "headshot_count": 1, "reel_type": "none", "resume_type": "valid", "slate_type": "valid", "notes_length": "none", "local_market_count": 1, "casting_broken": false, "image_edge_case": "square", "name_features": ["short"] }
+  },
+  {
+    "actor_name": "Django Okafor-Smith",
+    "birth_year": 2019, "birth_month": 2,
+    "gender": "Male", "ethnicity": ["black_african_american"],
+    "city": "Dallas", "state": "TX", "country": "US",
+    "local_hire_cities": ["Dallas, TX"],
+    "union_status": "sag_member", "coogan_status": "not_required", "work_permit": "not_required", "passport": false,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Bluewater Artists Agency", "type": "theatrical_agent", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["theatrical_agent", "commercial_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-djangookaforsmith"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-005.pdf",
+    "slate_url": "https://example.com/seed-slate-005.mp4",
+    "reel_url": "https://example.com/seed-reel-005.mp4", "other_video_url": null,
+    "supplemental_notes": "Three years of martial arts training; comfortable with basic stage combat and choreographed action sequences.",
+    "_meta": { "age_group": "6-8", "rep_category": "agency_only", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "short", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated"] }
+  },
+  {
+    "actor_name": "Nora Fitzgerald",
+    "birth_year": 2017, "birth_month": 4,
+    "gender": "Female", "ethnicity": ["white"],
+    "city": "Austin", "state": "TX", "country": "US",
+    "local_hire_cities": ["Austin, TX"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Pinecrest Management", "type": "manager", "market": null }],
+    "representation_notes": "Manager only; not currently seeking additional theatrical representation.",
+    "seeking_representation": ["commercial_agent", "print_agent", "hosting_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-norafitzgerald",
+      "https://app.castingnetworks.com/talent/seed-norafitzgerald"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" },
+      { "type": "other", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Lifestyle" }
+    ],
+    "resume_url": "https://example.com/seed-resume-006.pdf",
+    "slate_url": "https://example.com/seed-slate-006.mp4",
+    "reel_url": "https://example.com/seed-reel-006.mp4", "other_video_url": "https://example.com/seed-other-006.mp4",
+    "supplemental_notes": "Competitive-level gymnast with strong physicality for stunt-adjacent and athletic roles. Comfortable with quick costume changes and high-energy commercial shoots, and has two regional print campaigns on file.",
+    "_meta": { "age_group": "9-11", "rep_category": "manager_only", "headshot_count": 3, "reel_type": "multiple", "resume_type": "valid", "slate_type": "valid", "notes_length": "medium", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": [] }
+  },
+  {
+    "actor_name": "Kai Nakamura",
+    "birth_year": 2016, "birth_month": 3,
+    "gender": "Male", "ethnicity": ["asian"],
+    "city": "Albuquerque", "state": "NM", "country": "US",
+    "local_hire_cities": ["Albuquerque, NM"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": false,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["commercial_agent"],
+    "casting_platforms": ["other"],
+    "casting_profile_urls": ["https://www.talentvault.example/profile/seed-kainakamura"],
+    "headshots": [{ "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" }],
+    "resume_url": "https://seed-broken-resume.example.com/resume-007.pdf",
+    "slate_url": "https://example.com/seed-slate-007.mp4",
+    "reel_url": null, "other_video_url": null,
+    "supplemental_notes": null,
+    "_meta": { "age_group": "9-11", "rep_category": "unrepresented", "headshot_count": 1, "reel_type": "none", "resume_type": "broken", "slate_type": "valid", "notes_length": "none", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": [] }
+  },
+  {
+    "actor_name": "Genevieve St. Clair-Whitmore",
+    "birth_year": 2015, "birth_month": 5,
+    "gender": "Female", "ethnicity": ["white"],
+    "city": "Santa Fe", "state": "NM", "country": "US",
+    "local_hire_cities": ["Santa Fe, NM"],
+    "union_status": "sag_eligible", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Amberlane Management Group", "type": "manager", "market": null }],
+    "representation_notes": "Manager only; open to a theatrical or commercial agent.",
+    "seeking_representation": ["theatre_agent", "commercial_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-genevievestclairwhitmore"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-008.pdf",
+    "slate_url": "https://example.com/seed-slate-008.mp4",
+    "reel_url": "https://example.com/seed-reel-008.mp4", "other_video_url": null,
+    "supplemental_notes": "Trained dancer with competition experience in jazz and contemporary; available for regional musical theater auditions.",
+    "_meta": { "age_group": "9-11", "rep_category": "manager_only", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "short", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated", "long_name"] }
+  },
+  {
+    "actor_name": "Theo Park",
+    "birth_year": 2017, "birth_month": 1,
+    "gender": "Male", "ethnicity": ["asian"],
+    "city": "Phoenix", "state": "AZ", "country": "US",
+    "local_hire_cities": ["Phoenix, AZ"],
+    "union_status": "sag_member", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Northstar Talent Partners", "type": "theatre_agent", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["theatre_agent", "voiceover_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-theopark",
+      "https://app.castingnetworks.com/talent/seed-theopark"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-009.pdf",
+    "slate_url": "https://seed-broken-slate.example.com/slate-009.mp4",
+    "reel_url": "https://example.com/seed-reel-009.mp4", "other_video_url": null,
+    "supplemental_notes": "Trained vocalist (treble) with two seasons in a youth choir; interested in animation and audiobook voice work.",
+    "_meta": { "age_group": "9-11", "rep_category": "agency_only", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "broken", "notes_length": "short", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["short"] }
+  },
+  {
+    "actor_name": "Adaeze N'Diaye",
+    "birth_year": 2016, "birth_month": 6,
+    "gender": "Female", "ethnicity": ["black_african_american"],
+    "city": "Denver", "state": "CO", "country": "US",
+    "local_hire_cities": ["Denver, CO"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": false,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["commercial_agent", "print_agent"],
+    "casting_platforms": ["other"],
+    "casting_profile_urls": ["https://www.talentvault.example/profile/seed-adaezendiaye?region=mountain-west&updated=2026-06"],
+    "headshots": [{ "type": "other", "url": "https://placehold.co/900x600/1a1a2e/e5e7eb?text=Lifestyle" }],
+    "resume_url": "https://example.com/seed-resume-010.pdf",
+    "slate_url": "https://example.com/seed-slate-010.mp4",
+    "reel_url": null, "other_video_url": null,
+    "supplemental_notes": null,
+    "_meta": { "age_group": "9-11", "rep_category": "unrepresented", "headshot_count": 1, "reel_type": "none", "resume_type": "valid", "slate_type": "valid", "notes_length": "none", "local_market_count": 1, "casting_broken": false, "image_edge_case": "landscape", "name_features": ["apostrophe"] }
+  },
+  {
+    "actor_name": "Wyatt Calloway-Reyes",
+    "birth_year": 2014, "birth_month": 2,
+    "gender": "Male", "ethnicity": ["hispanic_latino", "white"],
+    "city": "Salt Lake City", "state": "UT", "country": "US",
+    "local_hire_cities": ["Salt Lake City, UT"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["theatrical_agent"],
+    "casting_platforms": ["casting_networks"],
+    "casting_profile_urls": ["https://app.castingnetworks.com/talent/seed-wyattcallowayreyes"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-011.pdf",
+    "slate_url": "https://example.com/seed-slate-011.mp4",
+    "reel_url": "https://example.com/seed-reel-011.mp4", "other_video_url": null,
+    "supplemental_notes": "Uses a wheelchair; experienced with adaptive blocking and comfortable auditioning for both disability-specific and general roles.",
+    "_meta": { "age_group": "12-14", "rep_category": "unrepresented", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "short", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated"] }
+  },
+  {
+    "actor_name": "Priya Subramaniam",
+    "birth_year": 2013, "birth_month": 4,
+    "gender": "Female", "ethnicity": ["asian"],
+    "city": "Orlando", "state": "FL", "country": "US",
+    "local_hire_cities": ["Orlando, FL"],
+    "union_status": "sag_member", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [
+      { "name": "Bluewater Artists Agency", "type": "theatrical_agent", "market": null },
+      { "name": "Cascade Management Partners", "type": "manager", "market": null }
+    ],
+    "representation_notes": "Also represented by manager Cascade Management Partners. Seeking theatrical representation to complement commercial bookings.",
+    "seeking_representation": ["theatrical_agent", "commercial_agent", "print_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-priyasubramaniam",
+      "https://app.castingnetworks.com/talent/seed-priyasubramaniam"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-012.pdf",
+    "slate_url": "https://example.com/seed-slate-012.mp4",
+    "reel_url": "https://example.com/seed-reel-012.mp4", "other_video_url": null,
+    "supplemental_notes": "This performer has trained in on-camera technique since age five and has booked two national commercial campaigns for a regional grocery chain and a children's snack brand. Currently repped for commercial work but not yet signed for theatrical representation, and actively submitting to student films and short-form content to build a reel. Comfortable with cold reads and callback adjustments, and has worked with three different casting directors in the last year. Seeking a theatrical agent who can also support crossover into streaming guest-star roles, alongside continued commercial bookings through existing representation.",
+    "_meta": { "age_group": "12-14", "rep_category": "both", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "long", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["long_name"] }
+  },
+  {
+    "actor_name": "Finn O'Sullivan",
+    "birth_year": 2012, "birth_month": 3,
+    "gender": "Male", "ethnicity": ["white"],
+    "city": "Miami", "state": "FL", "country": "US",
+    "local_hire_cities": ["Miami, FL"],
+    "union_status": "sag_eligible", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Harbor Light Talent", "type": "theatrical_agent", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["theatrical_agent", "commercial_agent", "voiceover_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-finnosullivan",
+      "https://app.castingnetworks.com/talent/seed-finnosullivan"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" },
+      { "type": "other", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Lifestyle" }
+    ],
+    "resume_url": "https://example.com/seed-resume-013.pdf",
+    "slate_url": "https://example.com/seed-slate-013.mp4",
+    "reel_url": "https://example.com/seed-reel-013.mp4", "other_video_url": "https://example.com/seed-other-013.mp4",
+    "supplemental_notes": "Deaf performer; fluent in ASL and experienced working with on-set interpreters and captioned self-tape review. Comfortable with both spoken and signed material, and has booked a supporting role in a short film festival selection.",
+    "_meta": { "age_group": "12-14", "rep_category": "agency_only", "headshot_count": 3, "reel_type": "multiple", "resume_type": "valid", "slate_type": "valid", "notes_length": "medium", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["apostrophe"] }
+  },
+  {
+    "actor_name": "Selah Marchetti",
+    "birth_year": 2014, "birth_month": 5,
+    "gender": "Female", "ethnicity": ["white"],
+    "city": "Seattle", "state": "WA", "country": "US",
+    "local_hire_cities": ["Seattle, WA"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": false,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["hosting_agent", "commercial_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-selahmarchetti"],
+    "headshots": [{ "type": "commercial", "url": "https://placehold.co/450x550/1a1a2e/e5e7eb?text=Close-Up" }],
+    "resume_url": "https://example.com/seed-resume-014.pdf",
+    "slate_url": "https://example.com/seed-slate-014.mp4",
+    "reel_url": "https://example.com/seed-reel-014.mp4", "other_video_url": null,
+    "supplemental_notes": null,
+    "_meta": { "age_group": "12-14", "rep_category": "unrepresented", "headshot_count": 1, "reel_type": "single", "resume_type": "placeholder", "slate_type": "valid", "notes_length": "none", "local_market_count": 1, "casting_broken": false, "image_edge_case": "close_up", "name_features": [] }
+  },
+  {
+    "actor_name": "Dashiell Okonkwo-Lindqvist",
+    "birth_year": 2013, "birth_month": 1,
+    "gender": "Male", "ethnicity": ["black_african_american", "white"],
+    "city": "Portland", "state": "OR", "country": "US",
+    "local_hire_cities": ["Portland, OR"],
+    "union_status": "sag_member", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Vantage Talent Group", "type": "voiceover_agent", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["voiceover_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-dashiellokonkwolindqvist"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-015.pdf",
+    "slate_url": "https://example.com/seed-slate-015.mp4",
+    "reel_url": "https://example.com/seed-reel-015.mp4", "other_video_url": null,
+    "supplemental_notes": "Home voiceover booth set up for fast-turnaround auditions; comfortable reading commercial and animation copy.",
+    "_meta": { "age_group": "12-14", "rep_category": "agency_only", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "short", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated", "long_name"] }
+  },
+  {
+    "actor_name": "Wren Baptiste",
+    "birth_year": 2012, "birth_month": 6,
+    "gender": "Non-binary", "ethnicity": ["multiracial"],
+    "city": "New Orleans", "state": "LA", "country": "US",
+    "local_hire_cities": ["New Orleans, LA"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": false,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["theatrical_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://seed-broken-casting.example.com/profile/404"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-016.pdf",
+    "slate_url": "https://example.com/seed-slate-016.mp4",
+    "reel_url": "https://example.com/seed-reel-016.mp4", "other_video_url": null,
+    "supplemental_notes": "Drawn to genre work; comfortable with tense, physical scenes and has completed a stage-combat workshop.",
+    "_meta": { "age_group": "12-14", "rep_category": "unrepresented", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "short", "local_market_count": 1, "casting_broken": true, "image_edge_case": null, "name_features": [] }
+  },
+  {
+    "actor_name": "Rosalind Whitmore Ashby Callahan",
+    "birth_year": 2011, "birth_month": 2,
+    "gender": "Female", "ethnicity": ["white"],
+    "city": "Nashville", "state": "TN", "country": "US",
+    "local_hire_cities": ["Nashville, TN"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["theatre_agent", "commercial_agent"],
+    "casting_platforms": ["casting_networks"],
+    "casting_profile_urls": ["https://app.castingnetworks.com/talent/seed-rosalindwhitmoreashbycallahan"],
+    "headshots": [{ "type": "commercial", "url": "https://seed-broken-image.example.com/404.jpg" }],
+    "resume_url": "https://example.com/seed-resume-017.pdf",
+    "slate_url": "https://example.com/seed-slate-017.mp4",
+    "reel_url": null, "other_video_url": null,
+    "supplemental_notes": null,
+    "_meta": { "age_group": "15-17", "rep_category": "unrepresented", "headshot_count": 1, "reel_type": "none", "resume_type": "valid", "slate_type": "valid", "notes_length": "none", "local_market_count": 1, "casting_broken": false, "image_edge_case": "broken", "name_features": ["long_multipart", "wrap_worthy"] }
+  },
+  {
+    "actor_name": "Jaxon Delacroix-Muhammad",
+    "birth_year": 2010, "birth_month": 4,
+    "gender": "Male", "ethnicity": ["black_african_american"],
+    "city": "Detroit", "state": "MI", "country": "US",
+    "local_hire_cities": ["Detroit, MI"],
+    "union_status": "sag_member", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [
+      { "name": "Vantage Talent Group", "type": "theatrical_agent", "market": null },
+      { "name": "Amberlane Management Group", "type": "manager", "market": null }
+    ],
+    "representation_notes": "Also represented by manager Amberlane Management Group. Balancing theatrical, musical theater, and commercial submissions during an older-teen transition.",
+    "seeking_representation": ["theatrical_agent", "theatre_agent", "commercial_agent", "print_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-jaxondelacroixmuhammad",
+      "https://app.castingnetworks.com/talent/seed-jaxondelacroixmuhammad?ref=opencall-gallery-preview&campaign=admin-seed-2026&region=midwest"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-018.pdf",
+    "slate_url": "https://example.com/seed-slate-018.mp4",
+    "reel_url": "https://example.com/seed-reel-018.mp4", "other_video_url": null,
+    "supplemental_notes": "A recent co-star booking on a regional streaming drama has opened doors to larger auditions, and this performer is now balancing a full slate of self-tape submissions with in-person callbacks. Trained in tap, jazz, and contemporary dance, with two years of a cappella group experience and a strong grasp of comedic timing developed through improv classes. The family is exploring additional theatrical representation to complement an existing commercial and musical theater client roster, and is open to relocating temporarily for a significant booking. Available on short notice for self-tapes and comfortable auditioning for both younger and older-teen roles during this transitional stage.",
+    "_meta": { "age_group": "15-17", "rep_category": "both", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "long", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated"] }
+  },
+  {
+    "actor_name": "Odalys Villanueva",
+    "birth_year": 2009, "birth_month": 3,
+    "gender": "Female", "ethnicity": ["hispanic_latino"],
+    "city": "Minneapolis", "state": "MN", "country": "US",
+    "local_hire_cities": ["Minneapolis, MN"],
+    "union_status": "sag_eligible", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Cobalt Talent Agency", "type": "theatrical_agent", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["theatrical_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-odalysvillanueva",
+      "https://app.castingnetworks.com/talent/seed-odalysvillanueva"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" },
+      { "type": "other", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Lifestyle" }
+    ],
+    "resume_url": "https://example.com/seed-resume-019.pdf",
+    "slate_url": "https://example.com/seed-slate-019.mp4",
+    "reel_url": "https://example.com/seed-reel-019.mp4", "other_video_url": "https://example.com/seed-other-019.mp4",
+    "supplemental_notes": "Consistent callback history for dramatic guest-star roles; comfortable with emotionally demanding material.",
+    "_meta": { "age_group": "15-17", "rep_category": "agency_only", "headshot_count": 3, "reel_type": "multiple", "resume_type": "valid", "slate_type": "valid", "notes_length": "short", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": [] }
+  },
+  {
+    "actor_name": "Bodhi Kessler",
+    "birth_year": 2011, "birth_month": 5,
+    "gender": "Male", "ethnicity": ["white"],
+    "city": "Cleveland", "state": "OH", "country": "US",
+    "local_hire_cities": ["Cleveland, OH"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": false,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["commercial_agent", "print_agent"],
+    "casting_platforms": ["other"],
+    "casting_profile_urls": ["https://www.talentvault.example/profile/seed-bodhikessler"],
+    "headshots": [{ "type": "commercial", "url": "https://placehold.co/120x150/1a1a2e/e5e7eb?text=LowRes" }],
+    "resume_url": "https://example.com/seed-resume-020.pdf",
+    "slate_url": "https://example.com/seed-slate-020.mp4",
+    "reel_url": "https://example.com/seed-reel-020.mp4", "other_video_url": null,
+    "supplemental_notes": null,
+    "_meta": { "age_group": "15-17", "rep_category": "unrepresented", "headshot_count": 1, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "none", "local_market_count": 1, "casting_broken": false, "image_edge_case": "low_res", "name_features": ["short"] }
+  },
+  {
+    "actor_name": "Anaya Fitzroy-Okwuosa",
+    "birth_year": 2010, "birth_month": 1,
+    "gender": "Female", "ethnicity": ["black_african_american"],
+    "city": "Los Angeles", "state": "CA", "country": "US",
+    "local_hire_cities": ["Los Angeles, CA", "San Diego, CA", "Long Beach, CA"],
+    "union_status": "sag_member", "coogan_status": "yes", "work_permit": "yes", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Fieldstone Artists", "type": "theatrical_agent", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["theatrical_agent", "commercial_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-anayafitzroyokwuosa"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-021.pdf",
+    "slate_url": "https://example.com/seed-slate-021.mp4",
+    "reel_url": "https://example.com/seed-reel-021.mp4", "other_video_url": null,
+    "supplemental_notes": "Quirky, comedic sensibility with strong improv instincts; frequently cast in oddball supporting roles.",
+    "_meta": { "age_group": "15-17", "rep_category": "agency_only", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "short", "local_market_count": 3, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated"] }
+  },
+  {
+    "actor_name": "Sawyer Lindqvist",
+    "birth_year": 2009, "birth_month": 6,
+    "gender": "Non-binary", "ethnicity": ["white"],
+    "city": "New York", "state": "NY", "country": "US",
+    "local_hire_cities": ["New York, NY", "Philadelphia, PA"],
+    "union_status": "non_union", "coogan_status": "no", "work_permit": "no", "passport": true,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["hosting_agent", "commercial_agent", "voiceover_agent"],
+    "casting_platforms": ["casting_networks"],
+    "casting_profile_urls": ["https://app.castingnetworks.com/talent/seed-sawyerlindqvist"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://seed-broken-resume.example.com/resume-022.pdf",
+    "slate_url": "https://example.com/seed-slate-022.mp4",
+    "reel_url": "https://example.com/seed-reel-022.mp4", "other_video_url": null,
+    "supplemental_notes": "Former local-access TV host; comfortable on camera unscripted and confident with teleprompter reads.",
+    "_meta": { "age_group": "15-17", "rep_category": "unrepresented", "headshot_count": 2, "reel_type": "single", "resume_type": "broken", "slate_type": "valid", "notes_length": "short", "local_market_count": 2, "casting_broken": false, "image_edge_case": null, "name_features": [] }
+  },
+  {
+    "actor_name": "Zora Abernathy-Chen",
+    "birth_year": 2010, "birth_month": 2,
+    "gender": "Female", "ethnicity": ["multiracial"],
+    "city": "Atlanta", "state": "GA", "country": "US",
+    "local_hire_cities": ["Atlanta, GA", "Nashville, TN", "Chattanooga, TN"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": false,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["commercial_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-zoraabernathychen"],
+    "headshots": [{ "type": "theatrical", "url": "https://placehold.co/300x800/1a1a2e/e5e7eb?text=Tall+Portrait" }],
+    "resume_url": "https://example.com/seed-resume-023.pdf",
+    "slate_url": "https://example.com/seed-slate-023.mp4",
+    "reel_url": "https://example.com/seed-reel-023.mp4", "other_video_url": null,
+    "supplemental_notes": null,
+    "_meta": { "age_group": "15-17", "rep_category": "unrepresented", "headshot_count": 1, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "none", "local_market_count": 3, "casting_broken": false, "image_edge_case": "tall", "name_features": ["hyphenated"] }
+  },
+  {
+    "actor_name": "Maximilian Beauregard Thibodeaux III",
+    "birth_year": 2008, "birth_month": 3,
+    "gender": "Male", "ethnicity": ["white"],
+    "city": "Dallas", "state": "TX", "country": "US",
+    "local_hire_cities": ["Dallas, TX", "Austin, TX"],
+    "union_status": "sag_member", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [
+      { "name": "Meridian Youth Talent", "type": "theatrical_agent", "market": null },
+      { "name": "Driftwood Talent Management", "type": "manager", "market": null }
+    ],
+    "representation_notes": "Also represented by manager Driftwood Talent Management. Actively repositioning submissions toward young-adult roles.",
+    "seeking_representation": ["theatrical_agent", "commercial_agent", "print_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-maximilianbthibodeauxiii",
+      "https://app.castingnetworks.com/talent/seed-maximilianbthibodeauxiii"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-024.pdf",
+    "slate_url": "https://example.com/seed-slate-024.mp4",
+    "reel_url": "https://example.com/seed-reel-024.mp4", "other_video_url": null,
+    "supplemental_notes": "Now aging into young-adult casting after several years of youth and teen bookings, this performer has a resume that spans regional theater, national commercial work, and background work on two feature films shot in Texas. Formal training includes two years of scene study, a semester of on-camera technique, and ongoing voice lessons. The current agency and management team are actively repositioning the submission strategy toward college-age and young-adult roles while keeping the door open for final teen-appropriate bookings. Comfortable with dialects, physical comedy, and light stunt work, and has a valid passport for out-of-state and international production travel.",
+    "_meta": { "age_group": "18-21", "rep_category": "both", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "long", "local_market_count": 2, "casting_broken": false, "image_edge_case": null, "name_features": ["long_multipart", "wrap_worthy"] }
+  },
+  {
+    "actor_name": "Harlow Ng",
+    "birth_year": 2007, "birth_month": 4,
+    "gender": "Female", "ethnicity": ["asian"],
+    "city": "Albuquerque", "state": "NM", "country": "US",
+    "local_hire_cities": ["Albuquerque, NM", "Santa Fe, NM", "Taos, NM"],
+    "union_status": "sag_eligible", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Silversmith Management", "type": "manager", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["theatre_agent", "theatrical_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-harlowng",
+      "https://app.castingnetworks.com/talent/seed-harlowng"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" },
+      { "type": "other", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Lifestyle" }
+    ],
+    "resume_url": "https://example.com/seed-resume-025.pdf",
+    "slate_url": "https://example.com/seed-slate-025.mp4",
+    "reel_url": "https://example.com/seed-reel-025.mp4", "other_video_url": "https://example.com/seed-other-025.mp4",
+    "supplemental_notes": "Trained in tap, jazz, and voice; two seasons with a regional youth musical theater company. Comfortable with ensemble choreography and has covered a principal understudy track.",
+    "_meta": { "age_group": "18-21", "rep_category": "manager_only", "headshot_count": 3, "reel_type": "multiple", "resume_type": "valid", "slate_type": "valid", "notes_length": "medium", "local_market_count": 3, "casting_broken": false, "image_edge_case": null, "name_features": ["short"] }
+  },
+  {
+    "actor_name": "Esperanza Delgado-Marsh",
+    "birth_year": 2006, "birth_month": 5,
+    "gender": "Female", "ethnicity": ["hispanic_latino"],
+    "city": "Phoenix", "state": "AZ", "country": "US",
+    "local_hire_cities": ["Phoenix, AZ", "Las Vegas, NV"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": false, "representatives": [], "representation_notes": null,
+    "seeking_representation": ["print_agent", "commercial_agent"],
+    "casting_platforms": ["casting_networks"],
+    "casting_profile_urls": ["https://app.castingnetworks.com/talent/seed-esperanzadelgadomarsh"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-026.pdf",
+    "slate_url": "https://example.com/seed-slate-026.mp4",
+    "reel_url": "https://example.com/seed-reel-026.mp4", "other_video_url": null,
+    "supplemental_notes": "Bilingual (English/Spanish) with regional print and commercial bookings for retail and grocery brands. Comfortable self-taping in both languages and open to national commercial travel.",
+    "_meta": { "age_group": "18-21", "rep_category": "unrepresented", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "medium", "local_market_count": 2, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated"] }
+  },
+  {
+    "actor_name": "Cormac D'Ambrosio",
+    "birth_year": 2005, "birth_month": 1,
+    "gender": "Male", "ethnicity": ["white"],
+    "city": "Chicago", "state": "IL", "country": "US",
+    "local_hire_cities": ["Chicago, IL", "Detroit, MI", "Milwaukee, WI"],
+    "union_status": "sag_member", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Cobalt Talent Agency", "type": "theatrical_agent", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["theatrical_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-cormacdambrosio"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-027.pdf",
+    "slate_url": "https://example.com/seed-slate-027.mp4",
+    "reel_url": "https://example.com/seed-reel-027.mp4", "other_video_url": null,
+    "supplemental_notes": "Consistent dramatic lead casting in student and independent short films; currently building a reel for wider commercial and theatrical submission.",
+    "_meta": { "age_group": "18-21", "rep_category": "agency_only", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "medium", "local_market_count": 3, "casting_broken": false, "image_edge_case": null, "name_features": ["apostrophe"] }
+  },
+  {
+    "actor_name": "Seraphina Alexandra Whitcombe-Reyes",
+    "birth_year": 2008, "birth_month": 6,
+    "gender": "Female", "ethnicity": ["white", "hispanic_latino"],
+    "city": "Los Angeles", "state": "CA", "country": "US",
+    "local_hire_cities": ["Los Angeles, CA"],
+    "union_status": "non_union", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Cascade Management Partners", "type": "manager", "market": null }],
+    "representation_notes": "Manager only; open to theatrical and musical theater agency representation.",
+    "seeking_representation": ["theatre_agent", "theatrical_agent", "commercial_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-seraphinawhitcombereyes",
+      "https://app.castingnetworks.com/talent/seed-seraphinawhitcombereyes"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" },
+      { "type": "other", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Lifestyle" }
+    ],
+    "resume_url": "https://example.com/seed-resume-028.pdf",
+    "slate_url": "https://example.com/seed-slate-028.mp4",
+    "reel_url": "https://example.com/seed-reel-028.mp4", "other_video_url": null,
+    "supplemental_notes": "Triple-threat trained in voice, dance, and acting; two seasons in regional musical theater ensembles with one featured solo number. Comfortable with fast character changes and choreography retention.",
+    "_meta": { "age_group": "18-21", "rep_category": "manager_only", "headshot_count": 3, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "medium", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated", "long_multipart", "wrap_worthy"] }
+  },
+  {
+    "actor_name": "Tobias Redmond",
+    "birth_year": 2007, "birth_month": 2,
+    "gender": "Male", "ethnicity": ["white"],
+    "city": "New York", "state": "NY", "country": "US",
+    "local_hire_cities": ["New York, NY"],
+    "union_status": "sag_eligible", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [{ "name": "Willowmere Management", "type": "manager", "market": null }],
+    "representation_notes": null,
+    "seeking_representation": ["voiceover_agent", "hosting_agent"],
+    "casting_platforms": ["actors_access"],
+    "casting_profile_urls": ["https://www.actorsaccess.com/members/seed-tobiasredmond"],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" }
+    ],
+    "resume_url": "https://example.com/seed-resume-029.pdf",
+    "slate_url": "https://example.com/seed-slate-029.mp4",
+    "reel_url": "https://example.com/seed-reel-029.mp4", "other_video_url": null,
+    "supplemental_notes": "Home studio set up for voiceover auditions; also hosts a weekly community-access interview segment. Comfortable with scripted narration and unscripted hosting formats.",
+    "_meta": { "age_group": "18-21", "rep_category": "manager_only", "headshot_count": 2, "reel_type": "single", "resume_type": "valid", "slate_type": "valid", "notes_length": "medium", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": [] }
+  },
+  {
+    "actor_name": "Amara Nkemdirim Osei-Baptiste",
+    "birth_year": 2006, "birth_month": 3,
+    "gender": "Non-binary", "ethnicity": ["black_african_american"],
+    "city": "Chicago", "state": "IL", "country": "US",
+    "local_hire_cities": ["Chicago, IL"],
+    "union_status": "sag_member", "coogan_status": "not_required", "work_permit": "not_required", "passport": true,
+    "has_current_rep": true,
+    "representatives": [
+      { "name": "Cobalt Talent Agency", "type": "theatrical_agent", "market": null },
+      { "name": "Pinecrest Management", "type": "manager", "market": null }
+    ],
+    "representation_notes": "Also represented by manager Pinecrest Management. Open to additional voiceover representation.",
+    "seeking_representation": ["theatrical_agent", "commercial_agent", "voiceover_agent"],
+    "casting_platforms": ["actors_access", "casting_networks"],
+    "casting_profile_urls": [
+      "https://www.actorsaccess.com/members/seed-amaraoseibaptiste",
+      "https://app.castingnetworks.com/talent/seed-amaraoseibaptiste"
+    ],
+    "headshots": [
+      { "type": "commercial", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Commercial" },
+      { "type": "theatrical", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Theatrical" },
+      { "type": "other", "url": "https://placehold.co/600x750/1a1a2e/e5e7eb?text=Lifestyle" }
+    ],
+    "resume_url": "https://example.com/seed-resume-030.pdf",
+    "slate_url": "https://example.com/seed-slate-030.mp4",
+    "reel_url": "https://example.com/seed-reel-030.mp4", "other_video_url": "https://example.com/seed-other-030.mp4",
+    "supplemental_notes": "Consistent dramatic lead and supporting bookings across regional theater and independent film; comfortable with both scripted drama and improvisational callback formats. Also maintains an active voiceover demo for animation and commercial narration.",
+    "_meta": { "age_group": "18-21", "rep_category": "both", "headshot_count": 3, "reel_type": "multiple", "resume_type": "valid", "slate_type": "valid", "notes_length": "medium", "local_market_count": 1, "casting_broken": false, "image_edge_case": null, "name_features": ["hyphenated", "long_multipart"] }
+  }
+]

@@ -8,3 +8,8 @@ dist
 .DS_Store
 tsconfig.tsbuildinfo
 .vercel
+
+# Real prior-year Open Call submission data (names, emails, phone numbers) —
+# imported locally via scripts/import-opencall-2025-gallery.mjs, never committed.
+scripts/data/opencall-2025-export.csv
+supabase/.temp/

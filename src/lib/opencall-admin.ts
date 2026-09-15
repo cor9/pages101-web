@@ -4,10 +4,14 @@ import { randomBytes, createHash } from "crypto";
 
 // ─── Admin authorization ──────────────────────────────────────────────────────
 // Admin emails are a server-only env var (never exposed to clients).
-// The list is comma-separated: ADMIN_EMAILS=a@b.com,c@d.com
+// The lists are comma-separated: ADMIN_EMAILS=a@b.com,c@d.com
+// ADMIN_EMAILS_EXTRA is an additive production override so owner access can be
+// restored without replacing an existing administrator allowlist.
 
 export function isAdminEmail(email: string): boolean {
-  const raw = process.env.ADMIN_EMAILS ?? "";
+  const raw = [process.env.ADMIN_EMAILS, process.env.ADMIN_EMAILS_EXTRA]
+    .filter(Boolean)
+    .join(",");
   const admins = raw.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   return admins.includes(email.toLowerCase());
 }
@@ -84,4 +88,13 @@ export async function logRepAction(
   if (error) {
     console.error("Access log insert failed:", error.message);
   }
+}
+
+// ─── Registration link URL construction ──────────────────────────────────────
+// Reusable link posted to a rep group; it opens the self-registration form on
+// talentsearch and never grants gallery access by itself.
+
+export function buildRegistrationUrl(rawToken: string): string {
+  const base = (process.env.TALENTSEARCH_BASE_URL ?? "https://talent.childactor101.com").replace(/\/$/, "");
+  return `${base}/join?g=${encodeURIComponent(rawToken)}`;
 }
