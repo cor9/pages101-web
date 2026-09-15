@@ -59,6 +59,7 @@ Submissions closed Sept 8. If `notify-opencall-draft-applicants.mjs` already wen
 - [x] talentsearch Vercel env rebuilt: Production now points at the Open Call 11 Supabase project (was the legacy `tultuplahemorkofmptd` project) with its own session secret, SES keys, `SES_FROM_ADDRESS`, `TALENTSEARCH_BASE_URL`. Preview SES keys refreshed.
 - [x] **SES region is `us-west-2`** on both apps (`AWS_REGION` on talentsearch, `SES_REGION` on pages101-web). `childactor101.com` verification is *Failed* in us-east-1 and that region is sandboxed; us-west-2 is verified with production access (50k/day). If an email ever fails with "not verified in region US-EAST-1", the region var got lost.
 - [x] Verified in production: bogus token → `r=unknown`; registration → personal invite emailed (landed in Gmail Inbox, not spam) → link opens gallery (105 cards, hero photos styled, FAQ shows Nov 30) → favorite saved and counted → `registered_via` shown in admin → re-registration deduped → link turned off blocks new registrations but personal link still works → direct invite emailed and redeemed → link-only invite redeemed → revoke denies the live session instantly. All test rows deleted.
+- [x] Notes (Sept 14): every profile has a private per-link Notes box (autosaves on blur, ✎ badge on the card); admin shows ✎ count per invite. Verified end to end in production and cleaned up.
 - [x] Final cleanup (Sept 13): rep invite emails from pages101-web now send as "Child Actor 101 <noreply@…>" (relay/sign-in emails keep the Pages101 sender); invite + admin dates format in Pacific time (Nov 30, not Dec 1); legacy `NEXT_PUBLIC_SUPABASE_URL` removed from talentsearch. SES audit: both apps verified sending via us-west-2 from delivered-message headers. **Frozen — no further infra changes before Tuesday.**
 - Not exercised: Request Introduction (would email a real family; code unchanged since Phase 5, and SES delivery from talentsearch is now proven). Admin UI clicked-through only via its API; the page is typechecked and linted.
 
@@ -89,24 +90,60 @@ Submissions closed Sept 8. If `notify-opencall-draft-applicants.mjs` already wen
 
 ## Email drafts
 
-### A. Personal heads-up to reps (send from your Gmail, before creating their invite)
+Voice reference: your Dec 2025 rep email. Plain, warm, short paragraphs, ALL-CAPS callouts for the audience that needs to hear it (REGIONAL REPS, MANAGERS), "I hope you find some winners." One change from last year: you no longer say "contact the parents on your own" — the gallery has a Request Introduction button that emails the family with the rep's details, and families reply directly. Parent contact info is never shown.
 
-**Subject:** Open Call 11 is ready for you (link coming from a robot)
+### A. To your rep list (send from your own email; each rep's personal link goes out separately from the system)
 
-Hi [First name],
+**Subject:** Talent Submissions from over 100 youth actors seeking representation
 
-The 11th Child Actor 101 Open Call submissions are in and they are good. 105 kids from all over the country, headshots, slates, reels, casting profiles, the works.
+Hey Youth Talent Reps.. It's Corey Ralston from Bohemia Group and Child Actor 101.
 
-In the next few minutes you will get a second email from noreply@childactor101.com with your personal access button. That one is the real one. If it does not show up, it is hiding in spam or promotions ... please go rescue it, because I cannot resend it (security thing, long story, I did not design the vault).
+I hope this catches you at a good time to fill any roster holes you may have. We just wrapped our 11th Online Talent Representation Open Call at Child Actor 101.
 
-Two quick things:
+Child Actor 101 is a Parent Resource Community on Facebook with over 10,000 members, moderated by 25+ Talent Agents, Managers, Casting Directors, Coaches, etc. The goal is to give frank but helpful advice to parents navigating the industry. If you are not a part of it and would like to be a moderator please let me know. It is very helpful to hop in and answer a few questions when you have the time. We all have a unique perspective.
 
-- The link is for your whole office. Share it with your agents, managers, assistants. Do not forward it to other companies, just tell them to email me and I will get them their own.
-- To reach a family, hit **Request Introduction** on the profile. We email the parents with your info and they reply straight to you. You will never see a parent's email in the gallery, on purpose.
+This year the gallery is by personal link. You will get a separate email from noreply@childactor101.com with your access button. Click it any time to get back in. If it does not show up, check spam and promotions, and if it is still missing reply here and I will send a new one.
 
-There is a short FAQ at the bottom of the gallery page that answers everything else I usually get asked at 11pm.
+105 submissions. Every one has Headshots, a Profile Link and Video Links. It lists what type of representation they are looking for and where they live. I have personally signed around 20 kids over the past seven years from this. There are some real gems.
 
-The gallery stays open through [REVIEW CLOSE DATE]. Go find your next client.
+REGIONAL REPS. There are many looking just for Regional so please keep your eye on that!
+
+MANAGERS - filter by those seeking management.
+
+To reach a family, hit Request Introduction on their profile. We email the parents your info and they reply straight to you. No need to ask me for permission. You can also star favorites and keep private notes on any kid, and they will be there when you come back.
+
+The gallery is open through November 30.
+
+Any feedback is always helpful to myself or the process in general. I hope you find some winners!
+
+Feel free to share this with any other Rep that may be searching. Your link is for your office. If someone at another company wants in, send them my way and I will get them their own.
+
+Thank You,
+
+Corey
+
+---
+
+### F. Rep-group post (paste with a Registration Link)
+
+Hey Youth Talent Reps.. Corey Ralston from Bohemia Group and Child Actor 101 here.
+
+We just wrapped our 11th Online Talent Representation Open Call. 105 kids from across the country looking for reps, with headshots, slates, reels, resumes and casting profile links. You can filter by age, gender, location and the kind of rep they are seeking.
+
+Register here and your personal access link lands in your inbox in about a minute:
+[REGISTRATION LINK]
+
+Every submission lists what type of representation they want and where they live. I have personally signed around 20 kids from this over the years. There are some real gems.
+
+REGIONAL REPS. There are many looking just for Regional so please keep your eye on that!
+
+MANAGERS - filter by those seeking management.
+
+To reach a family, hit Request Introduction on their profile. We email the parents your info and they reply straight to you. Parent contact info is never shown, on purpose. Star favorites and keep private notes on any kid and they will be there when you come back.
+
+Open through November 30. Everyone in your office can register for their own link. Please keep this inside the group.
+
+I hope you find some winners!
 
 Corey
 
@@ -118,19 +155,19 @@ Corey
 
 Hi [First name],
 
-It happened. As of today, [Child's name]'s Open Call 11 submission is live in a private gallery being reviewed by youth talent agents and managers from across the country. [Number] offices are getting access this week, and more will be added as they respond.
+As of today, [Child's name]'s Open Call 11 submission is live in a private gallery being reviewed by youth talent agents and managers from across the country. More offices are being added all week.
 
-Here is exactly how this works, so nobody is refreshing their inbox for the wrong thing:
+Here is how it works so nobody is refreshing their inbox for the wrong thing.
 
-**What reps see.** Your child's headshots, slate, reel, resume, casting profile links, and the details you entered. They do NOT see your name, email, or phone number. Nobody does.
+What reps see: your child's headshots, slate, reel, resume, casting profile links, and the details you entered. They do NOT see your name, email, or phone number.
 
-**What happens if a rep is interested.** They click a button that sends YOU an email through Child Actor 101 with the rep's name, agency, role, and a note. You reply to that email and it goes straight to the rep. If you are not interested, you do nothing. No pressure, no obligation, no awkwardness.
+What happens if a rep is interested: they click a button that sends YOU an email through Child Actor 101 with the rep's name, agency, role, and a note. You reply to that email and it goes straight to the rep. If you are not interested, you do nothing. No pressure, no obligation.
 
-**What you should do right now.** Make sure your slate and reel links are public and play on a phone. Every year a few links are set to private and a rep moves on. Check them today. Then leave it alone.
+What to do right now: make sure your slate and reel links are public and play on a phone. Every year a few are set to private and a rep moves on. Check them today. Then leave it alone.
 
-**How long.** The gallery stays open through [REVIEW CLOSE DATE]. Some reps look on day one. Some look in week six. Both are normal.
+How long: the gallery stays open through November 30. Some reps look on day one. Some look in week six. Both are normal.
 
-**What this is not.** It is not a guarantee. Not every kid gets a request, and that says nothing about your kid. Reps are building specific rosters and looking for specific holes. I have watched kids get zero requests in one Open Call and three the next.
+What this is not: a guarantee. Not every kid gets a request, and that says nothing about your kid. Reps are building specific rosters. I have watched kids get zero requests in one Open Call and three the next.
 
 If a rep reaches out and you want a gut check before replying, you know where I am.
 
@@ -140,52 +177,37 @@ Corey
 
 ---
 
-### C. Optional: consent clarification for families (only if you want it on record)
+### C. Optional: consent clarification for families (fold into B if you want it on record)
 
-Fold this paragraph into Draft B, or skip it:
-
-> A note on privacy. When you submitted, the consent language said reps could contact you at the email and phone you provided. In practice it is even tighter than that: reps never see your contact information. They request an introduction, we email you, and you decide whether to write back.
+> A note on privacy. When you submitted, the consent language said reps could contact you at the email and phone you provided. In practice it is tighter than that: reps never see your contact information. They request an introduction, we email you, and you decide whether to write back.
 
 ---
 
-### D. Nudge to reps who have not redeemed (Thursday)
+### D. Nudge to reps who have not opened their link (Thursday)
 
 **Subject:** Did the Open Call link find you?
 
-Hi [First name],
+Hey [First name],
 
-Quick one. I sent your Open Call 11 access link Tuesday and it has not been opened yet, which usually means it is sitting in spam under noreply@childactor101.com.
+Quick one. Your Open Call 11 access link went out Tuesday and it has not been opened yet, which usually means it is sitting in spam under noreply@childactor101.com.
 
-If you can find it, great, click the button. If you cannot, reply here and I will issue a fresh one.
+If you can find it, great, click the button. If you cannot, reply here and I will send a fresh one.
 
-105 kids, and a few of the ones I would have bet on are already getting introduction requests. Do not let the good ones get away.
+105 kids, and a few of the ones I would have bet on are already getting introduction requests.
 
 Corey
 
 ---
 
-### F. Rep-group post (paste with a Registration Link)
+### E. Closing-soon notice to reps (one week before Nov 30)
 
-Youth agents and managers: the Child Actor 101 Open Call 11 gallery is open. 105 kids from across the country looking for representation, with headshots, slates, reels, resumes and casting profile links, all searchable and filterable by age, gender and the kind of rep they are seeking.
+**Subject:** Open Call 11 gallery closes November 30
 
-Register here and your personal access link lands in your inbox in about a minute:
-[REGISTRATION LINK]
+Hey Youth Talent Reps.. Corey here.
 
-Everyone in your office can register for their own. Please do not repost this outside the group. To reach a family, hit Request Introduction on their profile and they get your info and reply to you directly. Parent contact info is never shown, on purpose.
+The Open Call 11 gallery closes November 30 and then the link stops working. The families consented to a window, not forever.
 
-Open through [REVIEW CLOSE DATE]. Questions, I am right here. Go find your next client.
-
----
-
-### E. Closing-soon notice to reps (one week before review_close)
-
-**Subject:** Open Call 11 gallery closes [DATE]
-
-Hi [First name],
-
-The Open Call 11 gallery closes on [DATE] and then the link stops working, no exceptions (the families consented to a window, not forever).
-
-If you starred anyone and never hit Request Introduction, this is the week. Your favorites are still saved under your link.
+If you starred anyone or left yourself a note and never hit Request Introduction, this is the week. Your favorites and notes are still saved under your link.
 
 Thank you for looking. Every year a couple of these kids end up on a call sheet because someone in your office took twenty minutes.
 
@@ -198,7 +220,7 @@ Corey
 - **How do I get back in later?** Click the same button in the invite email. Every click = fresh 8-hour session. Bookmarking the page itself lands on "Access Required."
 - **Can I share this with my office?** Yes, whole company. Not outside it; email info@ for a colleague's own link.
 - **How do I contact a family?** Request Introduction on the profile. We email the family; they reply directly to you. You get a confirmation. One request per performer.
-- **What does the star do?** Favorites, saved per invite, private to you.
+- **What does the star do?** Favorites, saved per invite, private to you. There is also a private Notes box on every profile (meeting times, impressions, follow-ups) — same scope as favorites.
 - **How long is the gallery open?** Through `review_close` (displayed live on the page).
 - **Some of these kids already have reps?** Yes, shown per profile; use the Seeking filter.
 - **How old are they, really?** Age computed from birth month/year; birth year only is shown; guardian-consented.
