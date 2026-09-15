@@ -13,8 +13,8 @@ State as of Sunday Sept 13: 105 submitted, 62 drafts (never submitted), 1 withdr
 
 1. You create an invite in the admin UI (name, email, agency, expiry). The server generates a one-time link, emails it to the rep, and shows it to you once. Only a hash is stored.
 2. Rep clicks the link → `talent.childactor101.com/access?t=…` → gets an 8-hour session cookie → lands on the gallery. Clicking the email link again any time before expiry gives a fresh session.
-3. Gallery shows all 105 submitted applications for Open Call 11 only. Search + filters (age, gender, seeking). Star = favorite (persists per invite). Guardian name/email/phone are never in the gallery, the API, or the DB view.
-4. Rep clicks **Request Introduction** → fills name/email/role/note → the family gets an email with the rep's details (Reply-To = rep), the rep gets a confirmation. The family decides whether to answer. One request per performer per invite (duplicates are silently deduped).
+3. Gallery shows all 105 submitted applications for Open Call 11 only. Three views: **All Talent / Saved / Introductions**, plus search + filters (age, gender, location, seeking). Star = favorite, ✎ = private note, "✓ Intro" = requested; all persist per invite so a rep can close the browser and pick up later. **Introductions** is their working list: everyone requested, with the parent's contact, date and their note. The banner shows "Saved N · Introductions M". Guardian contact is never in the gallery payload; it is fetched only for requested profiles.
+4. Rep clicks **Request Introduction**. First time only, they confirm name / agency / role / email (prefilled from the invite; stored in a signed cookie on that browser). After that it is one click; a note for the family is optional. The family is emailed the good news with the rep's name, agency, role and email in the body; the rep immediately sees the parent's name, email and phone (Email Parent / Copy Contact) and gets a confirmation email with the same contact. Families consented to exactly this. Contact is never visible without a request, every reveal is logged (`reveal_guardian_contact`), and one request per performer per invite.
 5. Everything is logged to `p101_opencall_access_log` (redeem, session start, favorite, intro, denied). The admin reps page shows per-invite favorites, intro count, and last access.
 6. You can revoke any invite from the admin page; it's dead on the next request.
 7. On `review_close` the whole gallery goes dark (`/denied?r=closed`). Invites cannot be issued past that date.
@@ -70,7 +70,7 @@ Submissions closed Sept 8. If `notify-opencall-draft-applicants.mjs` already wen
 - [ ] Admin → Reps → create an invite to **yourself** (agency "Child Actor 101 (test)").
 - [ ] Confirm the invite email arrives, from-address looks right, Reply-To is info@.
 - [ ] Click the link. Confirm: gallery loads, ~105 cards, filters work, open a profile, photos render in the hero + thumbnails, star a kid, FAQ shows the correct close date.
-- [ ] Request Introduction on your **own child's** or a known-friendly family's profile (or skip if you don't have one; the intro path was verified in Phase 5).
+- [ ] Request Introduction on a known-friendly family's profile (warn them first): confirm-details form appears once → contact panel shows parent name/email/phone → Email Parent opens mail → family receives the "Good news" email with your name/agency/email → you receive the confirmation with the contact → Introductions tab lists them → reload, still there, card says View Contact.
 - [ ] Revoke your test invite from the admin page, confirm the link now shows "Access Revoked".
 - [ ] Registration Links tab → create "Smoke test" link → open it in a private window → register with a second email you control → confirm the email arrives and the button opens the gallery → confirm you appear under Direct Invites as "Registered via Smoke test" → turn the link off → confirm the /join page now says "Registration Closed" while your personal link still works → revoke the test invite.
 
@@ -96,35 +96,53 @@ Voice reference: your Dec 2025 rep email. Plain, warm, short paragraphs, ALL-CAP
 
 **Subject:** Talent Submissions from over 100 youth actors seeking representation
 
-Hey Youth Talent Reps.. It's Corey Ralston from [Bohemia Group](https://bohemiaent.com) and [Child Actor 101](https://childactor101.com).
+Hey Youth Talent Reps.. It's Corey Ralston from Bohemia Group and [Child Actor 101](https://childactor101.com).
 
-I hope this email catches you at the perfect moment to fill any holes you may have in your youth rosters. This year's batch is a strong one. The slates are better, the reels are tighter, and there are more kids from outside LA and New York than we have ever had. Once again we just wrapped our 11th 'Free Online Talent Representation Open Call' at Child Actor 101.
+I hope this email catches you at the perfect moment to fill any holes you may have in your youth roster. This year's Open Call brought in some truly strong submissions, and I'm excited to finally get them in front of you.
 
-As you may know - Child Actor 101 is a Parent Resource Community on Facebook with over 12,000 members, moderated by 25+ Talent Agents, Managers, Casting Directors, Coaches, etc. The goal is to give frank but helpful advice to parents navigating the industry.
+We just wrapped our 11th Free Online Talent Representation Open Call at Child Actor 101.
 
-We are always looking for experienced industry perspective, so if you are not a part of the community and would like to be a moderator, podcast guest, blogger, etc please reach out. Your time, wisdom, experience and humanity is genuinely helpful and needed. Even if it is to hop online briefly and answer a few questions when you have the time. We all have a unique outlook on the industry.
+As you may know, Child Actor 101 is a parent resource community on Facebook with more than 12,000 members, moderated by 25+ talent agents, managers, casting directors, coaches and other working industry professionals. The goal has always been pretty simple: give parents frank, useful advice about navigating an industry that isn't exactly famous for coming with an instruction manual.
 
-This year the gallery is by personal link. You will get a separate email from noreply@childactor101.com with your access button. Click it any time to get back in. If it does not show up, check spam and promotions, and if it is still missing reply here and I will send a new one.
+We're always looking for more experienced industry perspectives. If you're not already part of the community and would like to participate as a moderator, podcast guest, blogger, or simply hop in occasionally and answer a few parent questions, please reach out. Your time, wisdom, experience and humanity are genuinely helpful and needed. We all see this business through a slightly different lens, and that's part of what makes the community valuable.
 
-105 submissions. Every one has Headshots, a Profile Link and Video Links. It lists what type of representation they are looking for and where they live. I have personally signed around 20 kids over the past seven years from this. There are some real gems.
+THIS YEAR'S OPEN CALL
 
-REGIONAL REPS. There are many looking just for Regional so please keep your eye on that!
+We received 105 submissions. Every profile includes headshots, profile and video links, location, and the type of representation they're seeking.
 
-MANAGERS - filter by those seeking management.
+I've personally signed around 20 kids through the Open Call over the past seven years, so I don't say this lightly: there are some real gems in this group.
 
-To reach a family, hit Request Introduction on their profile. We email the parents your info and they reply straight to you. No need to ask me for permission. You can also star favorites and keep private notes on any kid, and they will be there when you come back.
+Regional reps: There are quite a few actors specifically seeking regional representation, so please keep an eye on those submissions.
 
-The gallery is accessible to you through November 30.
+Managers: You can filter specifically for talent seeking management.
 
-Any feedback is always helpful to myself or the process in general. I hope you find some winners!
+This year's gallery is accessed through your own private link. You'll receive a separate email from noreply@childactor101.com with your access button. Click that button anytime you want to return to the gallery. If you don't see it, check Spam or Promotions. If it's still missing, reply to me and I'll send you a new one.
 
-Feel free to share this with any other Agent or Manager that may be searching for quality kiddos. Your link is for your office. If someone at another company wants in, send them my way and I will get them their account access.
+CONNECTING WITH TALENT
 
-One more thing. Parents in the community ask me every week who to trust. The [Child Actor 101 Directory](https://directory.childactor101.com) is where I send them. Take two minutes to make sure your office is listed and the listing is current, and if there is a photographer, coach, or vendor you would send your own clients to, tell me and I will get them in there too.
+When someone interests you, simply click Request Introduction on their profile. The family is immediately notified that you'd like to connect, and you'll receive the parent/guardian contact information so you can reach out directly. You do not need to ask me for permission or wait for me to make the connection.
 
-Thank You,
+You can also save favorites, keep private notes, and revisit everyone you've requested an introduction with when you return. The idea is to make this as easy as possible for you to browse when you have time, leave, and pick up exactly where you left off.
+
+The gallery will remain accessible through November 30.
+
+Please use it. Even if you aren't actively looking to fill a particular slot today, spend a little time browsing. These families participated because they're serious about finding the right representation, and there is a surprisingly broad mix of ages, types, markets and experience levels this year.
+
+ONE MORE QUICK FAVOR
+
+While you're there, please take a minute to check out the [Child Actor 101 Directory](https://directory.childactor101.com). If your agency or management company isn't listed, or the information needs updating, let me know. And if there are photographers, coaches, self-tape studios, schools or other reputable vendors you regularly recommend to families, I'd love those recommendations as well. I'm continuing to build the Directory into a genuinely useful, vetted resource rather than another giant list of whoever managed to find the submission form.
+
+As always, feedback is welcome, whether it's about an individual submission, the gallery itself, or how we can make the Open Call better for reps next year.
+
+I hope you find some winners.
+
+And please feel free to share this with another agent or manager who may be looking for quality young talent. Your access link is intended for your office. If someone at another company would like access, send them my way and I'll get them their own account.
+
+Thank you again for participating and, more importantly, for giving these kids a legitimate opportunity to get in front of working representation.
 
 Corey
+Director of Youth Talent, [Bohemia Group](https://bohemiaent.com)
+Founder, [Child Actor 101](https://childactor101.com)
 
 ---
 
@@ -143,7 +161,7 @@ REGIONAL REPS. There are many looking just for Regional so please keep your eye 
 
 MANAGERS - filter by those seeking management.
 
-To reach a family, hit Request Introduction on their profile. We email the parents your info and they reply straight to you. Parent contact info is never shown, on purpose. Star favorites and keep private notes on any kid and they will be there when you come back.
+When someone interests you, click Request Introduction on their profile. The family is notified right away and you get the parent's contact so you can reach out directly. Save favorites, keep private notes, and everyone you've requested is waiting under Introductions when you come back.
 
 Open through November 30. Everyone in your office can register for their own link. Please keep this inside the group.
 
@@ -163,9 +181,9 @@ As of today, [Child's name]'s Open Call 11 submission is live in a private galle
 
 Here is how it works so nobody is refreshing their inbox for the wrong thing.
 
-What reps see: your child's headshots, slate, reel, resume, casting profile links, and the details you entered. They do NOT see your name, email, or phone number.
+What reps see while browsing: your child's headshots, slate, reel, resume, casting profile links, and the details you entered. Not your name, email, or phone.
 
-What happens if a rep is interested: they click a button that sends YOU an email through Child Actor 101 with the rep's name, agency, role, and a note. You reply to that email and it goes straight to the rep. If you are not interested, you do nothing. No pressure, no obligation.
+What happens if a rep is interested: they click Request Introduction. The same moment, you get an email from Child Actor 101 with the rep's name, agency, role and email, and the rep receives the contact information you provided when you submitted. They may reach out directly, or you can write to them first. Please try to reply within a few days, even if it is just to set up a better time to talk. If it is not a fit, a polite no is fine.
 
 What to do right now: make sure your slate and reel links are public and play on a phone. Every year a few are set to private and a rep moves on. Check them today. Then leave it alone.
 
@@ -183,7 +201,7 @@ Corey
 
 ### C. Optional: consent clarification for families (fold into B if you want it on record)
 
-> A note on privacy. When you submitted, the consent language said reps could contact you at the email and phone you provided. In practice it is tighter than that: reps never see your contact information. They request an introduction, we email you, and you decide whether to write back.
+> A note on privacy. Your contact information is not visible to reps browsing the gallery. A rep only receives it after they specifically request an introduction to your child, and you are emailed at the same moment telling you exactly who. Every one of those requests is logged.
 
 ---
 
@@ -223,8 +241,8 @@ Corey
 
 - **How do I get back in later?** Click the same button in the invite email. Every click = fresh 8-hour session. Bookmarking the page itself lands on "Access Required."
 - **Can I share this with my office?** Yes, whole company. Not outside it; email info@ for a colleague's own link.
-- **How do I contact a family?** Request Introduction on the profile. We email the family; they reply directly to you. You get a confirmation. One request per performer.
-- **What does the star do?** Favorites, saved per invite, private to you. There is also a private Notes box on every profile (meeting times, impressions, follow-ups) — same scope as favorites.
+- **How do I contact a family?** Request Introduction on the profile. First time, confirm your details once; then one click. Family is notified, you see the parent's name/email/phone immediately (Email Parent / Copy Contact), and it stays under Introductions. Note optional.
+- **What do Saved, Notes and Introductions do?** Saved = shortlist. Notes = private per-profile box. Introductions = everyone requested, with contact. All persist per link; families and other offices never see any of it.
 - **How long is the gallery open?** Through `review_close` (displayed live on the page).
 - **Some of these kids already have reps?** Yes, shown per profile; use the Seeking filter.
 - **How old are they, really?** Age computed from birth month/year; birth year only is shown; guardian-consented.
