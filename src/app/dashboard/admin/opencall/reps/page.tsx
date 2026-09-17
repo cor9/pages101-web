@@ -340,6 +340,30 @@ export default function AdminRepsPage() {
           )}
         </div>
 
+        {/* Totals — covers every invite for this event, direct or self-registered */}
+        {selectedEventId && invites.length > 0 && (
+          <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+            {([
+              ["Active (redeemed)", "#22c55e"],
+              ["Active (not yet redeemed)", "#f59e0b"],
+              ["Revoked", "#ef4444"],
+              ["Expired", "#9ca3af"],
+            ] as const).map(([label, color]) => {
+              const count = invites.filter((inv) => inviteStatus(inv).label === label).length;
+              return (
+                <div key={label} style={{ flex: "1 1 140px", padding: "12px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color }}>{count}</div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{label}</div>
+                </div>
+              );
+            })}
+            <div style={{ flex: "1 1 140px", padding: "12px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>{invites.length}</div>
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Total invites</div>
+            </div>
+          </div>
+        )}
+
         {/* Invite type tabs */}
         {selectedEventId && (
           <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #e2e8f0" }}>
