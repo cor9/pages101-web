@@ -18,14 +18,48 @@ Two separate things are stored, and they are never joined for anonymous answers:
 - An anonymous respondent who volunteers a name or email at the end is told the response is no longer anonymous, and the server then stores it as named and linked.
 - "May I quote your comments?" is a separate choice from anonymity. Anonymous respondents can only answer "Yes, anonymously" or "No".
 
+## Dashboard
+
+`/dashboard/admin/opencall/survey` shows aggregates only: no individual answers, no free text.
+
+- **Funnel:** respondents → heard from a rep → meeting → offer → signed, each with its count, % of respondents and % of actors contacted. Conversions have explicit denominators (e.g. "Offer, after a meeting: 2 of 3 actors who met a rep"). A signing counts as an offer.
+- **By representation at submission:** none / agent only / manager only / both. Counts of 1 or 2 show as "<3"; a percentage appears only for groups of 5+; a group under 3 is hidden entirely. This stops the breakdown from singling anyone out.
+- **Preparedness:** the full 1-5 distribution for both questions, next to the average.
+- **Invitation timing:** median time to finish and "finished after a reminder", from invitations' exact timestamps. No opens (no tracking pixel, by design).
+
+### Free-text comments (not shown anywhere yet)
+
+Nothing in the admin UI reads `signed_with`, `top_improvement`, `additional_comments`, or `followup_contact`; a test pins the analytics query to a column allow-list. If a comment reader is added later, show anonymous comments as a plain, shuffled list with **no** attributes beside them (no prior representation, contact count, meeting/offer counts, date, or filters). A comment next to a filterable combination like "11-13 + agent only + 2 contacts + 1 meeting + 0 offers" can re-identify someone even though the database keeps them apart. Named comments can show the actor.
+
+## Test before sending to families
+
+Use the isolated fixture, never a real submission. It lives in its own event (year 2000, "SURVEY TEST EVENT"), so it can't appear in the rep gallery or change any real number.
+
+```
+set -a; source .env.local; set +a
+npx tsx scripts/opencall-survey-fixture.ts create --user-email you@x.com --guardian-email you@x.com
+#  then in the admin page pick "SURVEY TEST EVENT": Create invitations, Email invitations
+#  (a real email arrives at the guardian address) → open the link → submit anonymously
+#  repeat: a second run needs a second fixture application (cleanup, then create again),
+#  or use --invite for a direct link, to test named → submit → reopen → update
+npx tsx scripts/opencall-survey-fixture.ts status
+npx tsx scripts/opencall-survey-fixture.ts cleanup          # dry run
+npx tsx scripts/opencall-survey-fixture.ts cleanup --yes    # delete
+```
+
+`create` refuses to run unless a real event with a higher year exists (so the fixture can never become the public event). `cleanup` only deletes inside the fixture event and refuses if it finds any application not named "SURVEY TEST - …" or any rep invite.
+
 ## Runbook
 
 1. Set `SURVEY_LINK_SECRET` (random, 32+ chars) in the deployment environment. Optional: `SURVEY_BASE_URL` (defaults to `https://pages.childactor101.com`).
 2. Apply `supabase/migrations/202610020001_p101_opencall_survey.sql`.
-3. Open `/dashboard/admin/opencall/survey` and run, in order: **Create invitations**, **Email invitations**, later **Remind non-responders**. Each shows a count and asks before doing anything.
-4. Results: `select * from p101_opencall_survey_participation;` and `select * from p101_opencall_survey_summary;`
+3. Deploy, then run the fixture test above end to end and delete the fixture.
+4. In the admin page pick the real event and run, in order: **Create invitations**, **Email invitations**, later **Remind non-responders**. Each shows a count and asks before doing anything.
+5. Results: the dashboard, or `select * from p101_opencall_survey_participation;` / `p101_opencall_survey_summary`.
 
 Reminders re-send the same link (it is derived from the invitation id, not stored), and only go to families who haven't finished.
+
+Emails send as "Corey at Child Actor 101 <noreply@childactor101.com>", reply-to info@childactor101.com.
 
 ---
 
