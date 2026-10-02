@@ -1,18 +1,37 @@
-# Open Call 11 Follow-Up Survey: Parent Email
+# Open Call 11 Follow-Up Survey
 
-**Send to:** all families with a submitted Open Call 11 application (105)
-**Survey link:** https://pages.childactor101.com/opencall/survey
-**From:** Corey Ralston
+The emails below are sent by the admin tool (`/dashboard/admin/opencall/survey`),
+one per submitted application, each with that actor's personal link. The live
+copy is in `src/lib/opencall-survey-email.ts`; this file is the readable version.
 
-Send it once, then a short nudge to everyone a week later (second version below).
-There is no per-family link, so the nudge can't skip people who already answered.
-That's why the nudge copy says "if you've already done this, thank you."
+## How privacy works
+
+Two separate things are stored, and they are never joined for anonymous answers:
+
+| Concept | Table | What it says |
+|---|---|---|
+| Participation | `p101_opencall_survey_invites` | "Invitation #72 was completed." Drives response rate, de-duplication, reminders. |
+| Survey data | `p101_opencall_survey_responses` | "Respondent reported 2 rep contacts, 1 meeting, 0 offers, prepared 3/5." |
+
+- **Named** responses carry `application_id` + `invite_id`, so results can be analysed against the submission. The family can reopen the same link to update their outcome as things change.
+- **Anonymous** responses carry neither (enforced by a DB constraint). No name, email, token, IP or user agent is stored. The date is rounded to the start of the week so a timestamp can't be matched to an invitation's `completed_at`.
+- An anonymous respondent who volunteers a name or email at the end is told the response is no longer anonymous, and the server then stores it as named and linked.
+- "May I quote your comments?" is a separate choice from anonymity. Anonymous respondents can only answer "Yes, anonymously" or "No".
+
+## Runbook
+
+1. Set `SURVEY_LINK_SECRET` (random, 32+ chars) in the deployment environment. Optional: `SURVEY_BASE_URL` (defaults to `https://pages.childactor101.com`).
+2. Apply `supabase/migrations/202610020001_p101_opencall_survey.sql`.
+3. Open `/dashboard/admin/opencall/survey` and run, in order: **Create invitations**, **Email invitations**, later **Remind non-responders**. Each shows a count and asks before doing anything.
+4. Results: `select * from p101_opencall_survey_participation;` and `select * from p101_opencall_survey_summary;`
+
+Reminders re-send the same link (it is derived from the invitation id, not stored), and only go to families who haven't finished.
 
 ---
 
-## Email 1 (send now)
+## Email 1 (invitation)
 
-**Subject:** So... did anyone call? (3-minute survey)
+**Subject:** So... did anyone call? Open Call 11 follow-up for {actor} (3 minutes)
 
 Hi Open Call families,
 
@@ -22,19 +41,19 @@ Quick question, and I promise it's one you can answer even if the answer is "cri
 
 I don't know. And I really, really want to.
 
-This is not a satisfaction survey. I don't need you to tell me I'm wonderful (my mom already did, thank you, Mom). I need real numbers about what is working and what is not, so I can fix the next Open Call instead of just feeling good about the last one.
+This is not a satisfaction survey. I don't need you to tell me I'm wonderful. I need real numbers about what is working and what is not, so I can fix the next Open Call instead of just feeling good about the last one.
 
-**Please answer even if your actor heard nothing at all.** I mean that. "Nobody contacted us" is not a failed answer. It's one of the most useful answers I can get, and if I only hear from the families with good news, I'll be flying blind with a very flattering tailwind.
+**Please answer even if {actor} heard nothing at all.** I mean that. "Nobody contacted us" is not a failed answer. It's one of the most useful answers I can get, and if I only hear from the families with good news, I'm flying blind with a very flattering tailwind.
 
 Here's the deal:
 
 It takes about 3 minutes.
 
-It can be completely anonymous. There's a switch at the very top. Choose anonymous and I won't ask for your actor's name, and nothing in the database connects your answers to your application, your email, or you. If you'd rather put your actor's name on it so I can follow up, that's fine too. Your call.
+You choose how to answer. With {actor}'s name attached, I can connect your feedback to the Open Call submission and do some richer digging. Anonymously, your answers are not connected to {actor}, your submission, or you. Not "anonymous-ish." Actually anonymous. I want honest feedback, so pick whichever makes you most comfortable.
 
-One response per actor, please. If you have two kiddos in the Open Call, two responses is perfect.
+This link is personal to {actor}'s submission. That's how I make sure each actor is counted once (and nobody gets nagged after they've finished). It doesn't change how anonymous you can be.
 
-**Take the survey here:** https://pages.childactor101.com/opencall/survey
+[ Take the survey ]
 
 I read every single answer, including the long angry ones and the ones that say I should have done this three weeks ago (fair).
 
@@ -48,17 +67,17 @@ Director of Youth Talent, Bohemia Group
 
 ---
 
-## Email 2 (nudge, one week later)
+## Email 2 (reminder, about a week later, non-responders only)
 
-**Subject:** Last call on the Open Call survey (it's short, I swear)
+**Subject:** Last call: Open Call 11 follow-up for {actor}
 
 Hi again,
 
-If you've already filled out the Open Call 11 follow-up survey, thank you, you're a hero and you can delete this.
+If you've already filled out the Open Call 11 follow-up survey for {actor}, thank you. You're a hero and you can delete this.
 
 If you haven't, here's the pitch: 3 minutes, anonymous if you want, and no answer is the wrong answer. "Nobody called" counts. Honestly, it counts double.
 
-https://pages.childactor101.com/opencall/survey
+[ Take the survey ]
 
 The more families I hear from, the better the next Open Call gets. That's the whole trade.
 
