@@ -12,14 +12,52 @@ type Stats = {
   sent: number;
   reminded: number;
   completed: number;
+  completed_after_reminder: number;
+  median_hours_to_complete: number | null;
   responses: number;
   named_responses: number;
   anonymous_responses: number;
+  outcomes: {
+    contacted_yes: number;
+    contacted_no: number;
+    contacted_unsure: number;
+    with_meeting: number;
+    with_offer: number;
+    signed: number;
+    meetings_total_min: number;
+    offers_total_min: number;
+    avg_submission_prepared: number | null;
+    avg_next_step_prepared: number | null;
+  };
 };
 
 type ActionResult = { dry_run?: boolean; would_create?: number; would_email?: number; created?: number; sent?: number; failed?: number; error?: string };
 
 const btn = { padding: "9px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600 } as const;
+
+const note = { color: "#64748b", fontSize: 13, margin: "10px 0 0" } as const;
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginBottom: 28 }}>
+      <h2 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.07em", color: "#475569", margin: "0 0 10px" }}>{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Tiles({ items }: { items: [string, string | number][] }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+      {items.map(([k, v]) => (
+        <div key={k} style={{ padding: "14px 16px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" }}>
+          <div style={{ fontSize: 12, color: "#64748b" }}>{k}</div>
+          <div style={{ fontSize: 22, fontWeight: 800 }}>{v}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AdminSurveyPage() {
   const router = useRouter();
@@ -109,28 +147,48 @@ export default function AdminSurveyPage() {
 
       {stats && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
-            {[
+          <Section title="Funnel">
+            <Tiles items={[
               ["Submitted apps", stats.submitted_applications],
               ["Invitations", stats.invites],
               ["Emailed", stats.sent],
               ["Completed", `${stats.completed} (${pct}%)`],
+              ["Median time to finish", stats.median_hours_to_complete === null ? "–" : `${stats.median_hours_to_complete} hrs`],
+              ["Finished after a reminder", stats.completed_after_reminder],
+            ]} />
+            <p style={note}>Email opens aren&apos;t tracked (the emails carry no tracking pixel, on purpose). Timing comes from invitations only.</p>
+          </Section>
+
+          <Section title="Who responded">
+            <Tiles items={[
+              ["Responses", stats.responses],
               ["Named", stats.named_responses],
               ["Anonymous", stats.anonymous_responses],
-            ].map(([k, v]) => (
-              <div key={String(k)} style={{ padding: "14px 16px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" }}>
-                <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>{k}</div>
-                <div style={{ fontSize: 22, fontWeight: 800 }}>{v}</div>
-              </div>
-            ))}
-          </div>
+            ]} />
+          </Section>
+
+          <Section title="What happened (all responses)">
+            <Tiles items={[
+              ["Heard from a rep", stats.outcomes.contacted_yes],
+              ["No contact", stats.outcomes.contacted_no],
+              ["Not sure", stats.outcomes.contacted_unsure],
+              ["Had a meeting", stats.outcomes.with_meeting],
+              ["Got an offer", stats.outcomes.with_offer],
+              ["Signed", stats.outcomes.signed],
+              ["Meetings (min.)", stats.outcomes.meetings_total_min],
+              ["Offers (min.)", stats.outcomes.offers_total_min],
+              ["Submission readiness (avg /5)", stats.outcomes.avg_submission_prepared ?? "–"],
+              ["Readiness after contact (avg /5)", stats.outcomes.avg_next_step_prepared ?? "–"],
+            ]} />
+            <p style={note}>Counts combine named and anonymous answers. With few responses, small numbers can be traceable by process of elimination, so avoid publishing a cell of 1 or 2.</p>
+          </Section>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button disabled={busy} style={btn} onClick={() => run("create")}>1. Create invitations</button>
             <button disabled={busy} style={btn} onClick={() => run("send")}>2. Email invitations</button>
             <button disabled={busy} style={btn} onClick={() => run("remind")}>3. Remind non-responders</button>
           </div>
-          <p style={{ color: "#64748b", fontSize: 13 }}>Each button previews the count first and asks before anything is created or emailed.</p>
+          <p style={note}>Each button previews the count first and asks before anything is created or emailed.</p>
         </>
       )}
       {message && <p style={{ marginTop: 16, fontSize: 14, fontWeight: 600 }}>{message}</p>}
