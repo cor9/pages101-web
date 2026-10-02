@@ -98,52 +98,64 @@ async function create() {
   if (evErr || !ev) die(`Could not create the fixture event: ${evErr?.message}`);
   ok(`Fixture event created (year ${FIXTURE_YEAR}, closed)`);
 
-  const { data: app, error: appErr } = await db.from("p101_opencall_applications").insert({
-    event_id: ev.id,
-    user_id: userId,
-    actor_name: `${ACTOR_PREFIX}Corey`,
-    guardian_name: "Corey Ralston (test)",
-    guardian_email: guardianEmail,
-    guardian_phone: "000-000-0000",
-    birth_year: new Date().getFullYear() - 12,
-    birth_month: 6,
-    gender: "Prefer not to say",
-    city: "Test City",
-    state: "CA",
-    country: "US",
-    union_status: "non_union",
-    coogan_status: "not_required",
-    work_permit: "not_required",
-    has_current_rep: false,
-    seeking: ["theatrical"],
-    casting_profile_urls: ["https://example.com/survey-test"],
-    headshots: [{ type: "commercial", url: "https://example.com/survey-test.jpg" }],
-    resume_url: "https://example.com/survey-test-resume",
-    slate_url: "https://example.com/survey-test-slate",
-    status: "submitted",
-    submitted_at: new Date().toISOString(),
-    consents: {
-      guardian_consent: new Date().toISOString(),
-      reviewer_visibility_consent: new Date().toISOString(),
-      contact_consent: new Date().toISOString(),
-    },
-  }).select("id").single();
-  if (appErr || !app) {
-    await db.from("p101_opencall_events").delete().eq("id", ev.id); // don't leave a half-built fixture
-    die(`Could not create the test submission (fixture event rolled back): ${appErr?.message}`);
+  // Two test submissions: one invitation is used up by whichever way you answer
+  // (anonymous or named), so you need one for each run.
+  const runs = ["Corey A (anonymous run)", "Corey B (named run)"];
+  const apps: { id: string; label: string }[] = [];
+  for (const label of runs) {
+    const { data: app, error: appErr } = await db.from("p101_opencall_applications").insert({
+      event_id: ev.id,
+      user_id: userId,
+      actor_name: `${ACTOR_PREFIX}${label}`,
+      guardian_name: "Corey Ralston (test)",
+      guardian_email: guardianEmail,
+      guardian_phone: "000-000-0000",
+      birth_year: new Date().getFullYear() - 12,
+      birth_month: 6,
+      gender: "Prefer not to say",
+      city: "Test City",
+      state: "CA",
+      country: "US",
+      union_status: "non_union",
+      coogan_status: "not_required",
+      work_permit: "not_required",
+      has_current_rep: false,
+      seeking: ["theatrical"],
+      casting_profile_urls: ["https://example.com/survey-test"],
+      headshots: [{ type: "commercial", url: "https://example.com/survey-test.jpg" }],
+      resume_url: "https://example.com/survey-test-resume",
+      slate_url: "https://example.com/survey-test-slate",
+      status: "submitted",
+      submitted_at: new Date().toISOString(),
+      consents: {
+        guardian_consent: new Date().toISOString(),
+        reviewer_visibility_consent: new Date().toISOString(),
+        contact_consent: new Date().toISOString(),
+      },
+    }).select("id").single();
+    if (appErr || !app) {
+      // Don't leave a half-built fixture behind.
+      await db.from("p101_opencall_applications").delete().eq("event_id", ev.id);
+      await db.from("p101_opencall_events").delete().eq("id", ev.id);
+      die(`Could not create test submission "${label}" (fixture rolled back): ${appErr?.message}`);
+    }
+    apps.push({ id: app.id as string, label });
+    ok(`Test submission created: "${ACTOR_PREFIX}${label}" (guardian email: ${guardianEmail})`);
   }
-  ok(`Test submission created: "${ACTOR_PREFIX}Corey" (guardian email: ${guardianEmail})`);
 
   if (flag("invite")) {
-    const { data: inv, error } = await db.from("p101_opencall_survey_invites")
-      .insert({ event_id: ev.id, application_id: app.id }).select("id").single();
-    if (error || !inv) die(`Could not create the survey invitation (is the survey migration applied?): ${error?.message}`);
-    ok("Survey invitation created. Personal link:");
-    console.log(`\n  ${surveyUrl(inv.id as string)}\n`);
+    for (const app of apps) {
+      const { data: inv, error } = await db.from("p101_opencall_survey_invites")
+        .insert({ event_id: ev.id, application_id: app.id }).select("id").single();
+      if (error || !inv) die(`Could not create the survey invitation (is the survey migration applied?): ${error?.message}`);
+      ok(`Personal link for "${app.label}":`);
+      console.log(`\n  ${surveyUrl(inv.id as string)}\n`);
+    }
   } else {
     console.log(`
 Next: in /dashboard/admin/opencall/survey pick "${FIXTURE_EVENT_NAME}", then
-Create invitations → Email invitations. That sends the real email to ${guardianEmail}.`);
+Create invitations → Email invitations. That sends two real emails to ${guardianEmail}
+(one per test submission): use the first for the anonymous run, the second for the named run.`);
   }
 }
 

@@ -38,10 +38,12 @@ Use the isolated fixture, never a real submission. It lives in its own event (ye
 ```
 set -a; source .env.local; set +a
 npx tsx scripts/opencall-survey-fixture.ts create --user-email you@x.com --guardian-email you@x.com
-#  then in the admin page pick "SURVEY TEST EVENT": Create invitations, Email invitations
-#  (a real email arrives at the guardian address) → open the link → submit anonymously
-#  repeat: a second run needs a second fixture application (cleanup, then create again),
-#  or use --invite for a direct link, to test named → submit → reopen → update
+#  creates TWO test submissions: "Corey A (anonymous run)" and "Corey B (named run)"
+#  in the admin page pick "SURVEY TEST EVENT": Create invitations, Email invitations
+#  (two real emails arrive at the guardian address)
+#    A: open the link → submit anonymously → confirm the link now says "all set"
+#    B: open the link → submit named → reopen the link → update the outcome
+#  (add --invite to skip the emails and get direct links instead)
 npx tsx scripts/opencall-survey-fixture.ts status
 npx tsx scripts/opencall-survey-fixture.ts cleanup          # dry run
 npx tsx scripts/opencall-survey-fixture.ts cleanup --yes    # delete
