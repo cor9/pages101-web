@@ -59,3 +59,32 @@ export function isMagicLinkRateLimitError(error: { message?: string; status?: nu
     message.includes("wait")
   );
 }
+
+/**
+ * Copy for a sign-in link that didn't work. `/auth/callback` redirects back to
+ * a page that can send a new link and names the reason in `?auth_error=`, so
+ * the visitor sees what went wrong instead of an unexplained empty email form.
+ */
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  expired:
+    "That sign-in link has expired. Links are only good for a short window — enter your email below and we'll send a fresh one.",
+  used: "That sign-in link was already used. Each link works once, so enter your email below and we'll send a new one.",
+  wrong_device:
+    "That link was opened in a different browser from the one that requested it. Enter your email below, then open the new link on this same device.",
+  config: "Sign-in is temporarily unavailable. Please email info@childactor101.com and we'll get you in.",
+  unknown: "We couldn't sign you in with that link. Enter your email below and we'll send a fresh one."
+};
+
+export function getAuthErrorMessage(reason: string | null | undefined) {
+  if (!reason) return null;
+  return AUTH_ERROR_MESSAGES[reason] ?? AUTH_ERROR_MESSAGES.unknown;
+}
+
+/**
+ * Reads `?auth_error=` once on mount. Deliberately not `useSearchParams` — these
+ * are statically rendered marketing pages and this avoids a Suspense boundary.
+ */
+export function readAuthErrorFromLocation() {
+  if (typeof window === "undefined") return null;
+  return getAuthErrorMessage(new URLSearchParams(window.location.search).get("auth_error"));
+}

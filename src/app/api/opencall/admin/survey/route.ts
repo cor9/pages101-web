@@ -65,13 +65,16 @@ export async function POST(request: Request) {
   const { event_id, action, confirm } = parsed.data;
 
   const { data: event } = await serviceClient
-    .from("p101_opencall_events").select("id, status").eq("id", event_id).maybeSingle<{ id: string; status: string }>();
+    .from("p101_opencall_events").select("id, status, is_test").eq("id", event_id).maybeSingle<{ id: string; status: string; is_test: boolean }>();
   if (!event) return NextResponse.json({ error: "Event not found." }, { status: 404 });
 
   // ─── create ────────────────────────────────────────────────────────────────
   if (action === "create") {
+    // Same rule as the gallery: seed rows only count inside a test event.
+    let appQuery = serviceClient.from("p101_opencall_applications").select("id").eq("event_id", event_id).eq("status", "submitted");
+    if (!event.is_test) appQuery = appQuery.eq("is_seed", false);
     const [{ data: apps }, { data: have }] = await Promise.all([
-      serviceClient.from("p101_opencall_applications").select("id").eq("event_id", event_id).eq("status", "submitted"),
+      appQuery,
       serviceClient.from("p101_opencall_survey_invites").select("application_id").eq("event_id", event_id),
     ]);
     const haveSet = new Set((have ?? []).map((h) => h.application_id as string));
@@ -126,7 +129,7 @@ export async function POST(request: Request) {
         subject: surveyEmailSubject(kind, app.actor_name),
         html: buildSurveyEmailHtml(kind, { actorName: app.actor_name, url: surveyUrl(t.id as string) }),
         replyTo: "info@childactor101.com",
-        fromName: "Corey at Child Actor 101",
+        from: "Corey at Child Actor 101 <noreply@childactor101.com>",
       });
       await serviceClient
         .from("p101_opencall_survey_invites")

@@ -17,6 +17,9 @@
 //     HIGHEST year among open/reviewing/closed events, so a low year can never
 //     be picked over a real event (a year-9999 fixture once could).
 //   - status 'closed': the survey only accepts reviewing/closed events.
+//   - is_test = true on the event and is_seed = true on its applications: the
+//     live schema's own markers for test data (the gallery view hides is_seed rows
+//     everywhere except is_test events, and nobody has rep access to this one).
 //
 // BLAST RADIUS: cleanup only ever deletes rows inside the one fixture event, and
 // refuses to run if that event contains anything that isn't clearly fixture data.
@@ -46,8 +49,8 @@ async function fixtureEvent(): Promise<Row | null> {
   const { data, error } = await db.from("p101_opencall_events").select("*").eq("year", FIXTURE_YEAR).maybeSingle();
   if (error) die(`Could not look up the fixture event: ${error.message}`);
   if (!data) return null;
-  if (data.name !== FIXTURE_EVENT_NAME) {
-    die(`An event with year ${FIXTURE_YEAR} exists but is not named "${FIXTURE_EVENT_NAME}". Refusing to touch it.`);
+  if (data.name !== FIXTURE_EVENT_NAME || data.is_test !== true) {
+    die(`An event with year ${FIXTURE_YEAR} exists but is not the fixture (name "${FIXTURE_EVENT_NAME}" and is_test = true). Refusing to touch it.`);
   }
   return data;
 }
@@ -94,6 +97,7 @@ async function create() {
     submits_close: "2000-02-01T00:00:00Z",
     review_close: "2000-03-01T00:00:00Z",
     status: "closed",
+    is_test: true,
   }).select("id").single();
   if (evErr || !ev) die(`Could not create the fixture event: ${evErr?.message}`);
   ok(`Fixture event created (year ${FIXTURE_YEAR}, closed)`);
@@ -120,7 +124,8 @@ async function create() {
       coogan_status: "not_required",
       work_permit: "not_required",
       has_current_rep: false,
-      seeking: ["theatrical"],
+      seeking_representation: ["theatrical"],
+      is_seed: true,
       casting_profile_urls: ["https://example.com/survey-test"],
       headshots: [{ type: "commercial", url: "https://example.com/survey-test.jpg" }],
       resume_url: "https://example.com/survey-test-resume",
