@@ -7,6 +7,10 @@ import { summarizeSurvey, SURVEY_STATS_COLUMNS, type InviteRow, type ResponseRow
 import { buildSurveyEmailHtml, surveyEmailSubject } from "@/lib/opencall-survey-email";
 
 export const dynamic = "force-dynamic";
+// 105 emails at a few at a time takes seconds, but allow headroom so a slow mail
+// service can't cut a send off halfway.
+export const maxDuration = 60;
+const SEND_CONCURRENCY = 4;
 
 // GET /api/opencall/admin/survey?event_id=UUID
 // Participation and aggregate counts only. Never returns an individual answer,
@@ -115,31 +119,53 @@ export async function POST(request: Request) {
     .in("id", list.map((t) => t.application_id as string));
   const appById = new Map((apps ?? []).map((a) => [a.id as string, a as AppRow]));
 
+  // Sending is claim-then-send: each invitation is atomically marked as sent
+  // BEFORE its email goes out, so only one request can ever win a given family.
+  // A double-click, a retry after a timeout, or two admins at once can't email
+  // anyone twice. If the email itself fails, the claim is released so the next
+  // run picks it up again.
+  const field = kind === "invite" ? "sent_at" : "reminder_sent_at";
   let sent = 0;
   const failures: { invite_id: string; error: string }[] = [];
-  for (const t of list) {
+
+  async function sendOne(t: { id: unknown; application_id: unknown }) {
+    const id = t.id as string;
     const app = appById.get(t.application_id as string);
     if (!app?.guardian_email) {
-      failures.push({ invite_id: t.id as string, error: "No guardian email." });
-      continue;
+      failures.push({ invite_id: id, error: "No guardian email." });
+      return;
     }
+    let claim = serviceClient
+      .from("p101_opencall_survey_invites")
+      .update({ [field]: new Date().toISOString() })
+      .eq("id", id)
+      .is(field, null)
+      .is("completed_at", null); // never email someone who has just finished
+    if (kind === "reminder") claim = claim.not("sent_at", "is", null);
+    const { data: claimed, error: claimError } = await claim.select("id");
+    if (claimError || !claimed?.length) return; // someone else has it, or they finished
+
     try {
       await sendPages101Email({
         to: app.guardian_email,
         subject: surveyEmailSubject(kind, app.actor_name),
-        html: buildSurveyEmailHtml(kind, { actorName: app.actor_name, url: surveyUrl(t.id as string) }),
+        html: buildSurveyEmailHtml(kind, { actorName: app.actor_name, url: surveyUrl(id) }),
         replyTo: "info@childactor101.com",
         from: "Corey at Child Actor 101 <noreply@childactor101.com>",
       });
-      await serviceClient
-        .from("p101_opencall_survey_invites")
-        .update(kind === "invite" ? { sent_at: new Date().toISOString() } : { reminder_sent_at: new Date().toISOString() })
-        .eq("id", t.id);
       sent++;
     } catch (err) {
       console.error("Survey email failed:", (err as Error).message);
-      failures.push({ invite_id: t.id as string, error: "Email send failed." });
+      await serviceClient.from("p101_opencall_survey_invites").update({ [field]: null }).eq("id", id);
+      failures.push({ invite_id: id, error: "Email send failed." });
     }
   }
+
+  const queue = [...list];
+  await Promise.all(
+    Array.from({ length: Math.min(SEND_CONCURRENCY, queue.length) }, async () => {
+      for (let t = queue.shift(); t; t = queue.shift()) await sendOne(t);
+    })
+  );
   return NextResponse.json({ sent, failed: failures.length, failures });
 }
