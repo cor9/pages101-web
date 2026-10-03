@@ -12,6 +12,7 @@ import {
   isMagicLinkRateLimitError,
   MAGIC_LINK_RATE_LIMIT_COOLDOWN_MS,
   MAGIC_LINK_SUCCESS_COOLDOWN_MS,
+  readAuthErrorFromLocation,
   setMagicLinkCooldown
 } from "@/lib/auth/magic-link";
 
@@ -25,6 +26,12 @@ export default function HomePage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [cooldownMs, setCooldownMs] = useState(0);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // A sign-in link that failed sends the visitor back here with ?auth_error=.
+  useEffect(() => {
+    setAuthError(readAuthErrorFromLocation());
+  }, []);
 
   useEffect(() => {
     if (!supabase) return;
@@ -74,6 +81,7 @@ export default function HomePage() {
 
     setStatus("loading");
     setErrorMessage("");
+    setAuthError(null);
 
     // Dynamic redirect URI for local vs production
     const redirectTo = `${window.location.origin}/auth/callback?next=/dashboard`;
@@ -480,6 +488,10 @@ export default function HomePage() {
           <div className="login-card">
             <h2>Create Your Free Actor Page</h2>
             <p className="login-card-subtitle">No password needed. We&apos;ll email you a secure link to sign in or register.</p>
+
+            {authError && (
+              <p className="login-auth-error" role="alert">{authError}</p>
+            )}
             
             {status === "success" ? (
               <div className="login-success-state">
