@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { OpenCallEvent } from "@/lib/opencall";
@@ -60,7 +60,11 @@ function toLocalDateTimeInput(utcIso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function inviteStatus(inv: RepInvite): { label: string; color: string } {
+type StatusLabel = "Active (redeemed)" | "Active (not yet redeemed)" | "Revoked" | "Expired";
+type ActivityFilter = "all" | "favorites" | "intros" | "notes" | "accessed" | "never";
+type SortKey = "newest" | "oldest" | "name" | "agency" | "last_access" | "favorites" | "intros";
+
+function inviteStatus(inv: RepInvite): { label: StatusLabel; color: string } {
   if (inv.revoked_at) return { label: "Revoked", color: "#ef4444" };
   if (new Date(inv.expires_at) <= new Date()) return { label: "Expired", color: "#9ca3af" };
   if (inv.redeemed_at) return { label: "Active (redeemed)", color: "#22c55e" };
@@ -106,6 +110,54 @@ export default function AdminRepsPage() {
 
   // Revoke
   const [revoking, setRevoking] = useState<string | null>(null);
+
+  // Direct-invite list filters (all client-side: the full list is already loaded)
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusLabel | "all">("all");
+  const [sourceFilter, setSourceFilter] = useState("all"); // "all" | "direct" | <registration source name>
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("newest");
+
+  const sourceOptions = useMemo(
+    () => Array.from(new Set(invites.map((i) => i.registered_via_name).filter((n): n is string => !!n))).sort(),
+    [invites]
+  );
+
+  const filteredInvites = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const list = invites.filter((inv) => {
+      if (statusFilter !== "all" && inviteStatus(inv).label !== statusFilter) return false;
+      if (sourceFilter === "direct" && inv.registered_via) return false;
+      if (sourceFilter !== "all" && sourceFilter !== "direct" && inv.registered_via_name !== sourceFilter) return false;
+      if (activityFilter === "favorites" && !inv.favorite_count) return false;
+      if (activityFilter === "intros" && !inv.intro_count) return false;
+      if (activityFilter === "notes" && !inv.note_count) return false;
+      if (activityFilter === "accessed" && !inv.last_access) return false;
+      if (activityFilter === "never" && inv.last_access) return false;
+      if (needle) {
+        const hay = [inv.rep_name, inv.rep_email, inv.rep_agency, inv.rep_role, inv.registered_via_name].filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(needle)) return false;
+      }
+      return true;
+    });
+    const byNum = (f: (i: RepInvite) => number) => (a: RepInvite, b: RepInvite) => f(b) - f(a);
+    const time = (iso?: string | null) => (iso ? new Date(iso).getTime() : 0);
+    const sorters: Record<SortKey, (a: RepInvite, b: RepInvite) => number> = {
+      newest: byNum((i) => time(i.created_at)),
+      oldest: (a, b) => time(a.created_at) - time(b.created_at),
+      name: (a, b) => a.rep_name.localeCompare(b.rep_name),
+      agency: (a, b) => (a.rep_agency ?? "\uffff").localeCompare(b.rep_agency ?? "\uffff"),
+      last_access: byNum((i) => time(i.last_access)),
+      favorites: byNum((i) => i.favorite_count ?? 0),
+      intros: byNum((i) => i.intro_count ?? 0),
+    };
+    return [...list].sort(sorters[sortKey]);
+  }, [invites, query, statusFilter, sourceFilter, activityFilter, sortKey]);
+
+  const filtersActive = query.trim() !== "" || statusFilter !== "all" || sourceFilter !== "all" || activityFilter !== "all";
+  function clearFilters() {
+    setQuery(""); setStatusFilter("all"); setSourceFilter("all"); setActivityFilter("all");
+  }
 
   // Get auth token
   useEffect(() => {
@@ -340,7 +392,8 @@ export default function AdminRepsPage() {
           )}
         </div>
 
-        {/* Totals — covers every invite for this event, direct or self-registered */}
+        {/* Totals — covers every invite for this event, direct or self-registered.
+            Click a tile to filter the Direct Invites list by that status. */}
         {selectedEventId && invites.length > 0 && (
           <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
             {([
@@ -350,17 +403,22 @@ export default function AdminRepsPage() {
               ["Expired", "#9ca3af"],
             ] as const).map(([label, color]) => {
               const count = invites.filter((inv) => inviteStatus(inv).label === label).length;
+              const on = statusFilter === label;
               return (
-                <div key={label} style={{ flex: "1 1 140px", padding: "12px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+                <button key={label} type="button" aria-pressed={on}
+                  onClick={() => { setStatusFilter(on ? "all" : label); setTab("direct"); }}
+                  title={on ? "Click to clear this filter" : `Show only: ${label}`}
+                  style={{ flex: "1 1 140px", padding: "12px 16px", background: on ? "#f8fafc" : "#fff", border: on ? `2px solid ${color}` : "1px solid #e2e8f0", borderRadius: 8, textAlign: "left", cursor: "pointer", font: "inherit" }}>
                   <div style={{ fontSize: 22, fontWeight: 700, color }}>{count}</div>
                   <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{label}</div>
-                </div>
+                </button>
               );
             })}
-            <div style={{ flex: "1 1 140px", padding: "12px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8 }}>
+            <button type="button" onClick={clearFilters} title="Show all invites"
+              style={{ flex: "1 1 140px", padding: "12px 16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, textAlign: "left", cursor: "pointer", font: "inherit" }}>
               <div style={{ fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>{invites.length}</div>
               <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Total invites</div>
-            </div>
+            </button>
           </div>
         )}
 
@@ -637,16 +695,78 @@ export default function AdminRepsPage() {
         {/* Invite list */}
         <section>
           <h2 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700 }}>
-            Direct Invites {!loadingInvites && `(${invites.length})`}
+            Direct Invites {!loadingInvites && `(${filtersActive ? `${filteredInvites.length} of ${invites.length}` : invites.length})`}
           </h2>
+
+          {!loadingInvites && invites.length > 0 && (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search name, email, agency, role…"
+                aria-label="Search invites"
+                style={{ flex: "2 1 240px", minWidth: 200, padding: "9px 12px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 14, background: "#fff" }}
+              />
+              <select aria-label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusLabel | "all")}
+                style={{ padding: "9px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, background: "#fff" }}>
+                <option value="all">All statuses</option>
+                <option value="Active (redeemed)">Active (redeemed)</option>
+                <option value="Active (not yet redeemed)">Active (not yet redeemed)</option>
+                <option value="Revoked">Revoked</option>
+                <option value="Expired">Expired</option>
+              </select>
+              <select aria-label="How they got access" value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}
+                style={{ padding: "9px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, background: "#fff" }}>
+                <option value="all">Any source</option>
+                <option value="direct">Direct invite (not self-registered)</option>
+                {sourceOptions.map((n) => <option key={n} value={n}>Registered via {n}</option>)}
+              </select>
+              <select aria-label="Activity" value={activityFilter} onChange={(e) => setActivityFilter(e.target.value as ActivityFilter)}
+                style={{ padding: "9px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, background: "#fff" }}>
+                <option value="all">Any activity</option>
+                <option value="accessed">Has accessed the gallery</option>
+                <option value="never">Never accessed</option>
+                <option value="favorites">Saved favorites</option>
+                <option value="intros">Requested introductions</option>
+                <option value="notes">Left notes</option>
+              </select>
+              <select aria-label="Sort" value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}
+                style={{ padding: "9px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, background: "#fff" }}>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="name">Name A–Z</option>
+                <option value="agency">Agency A–Z</option>
+                <option value="last_access">Most recent access</option>
+                <option value="favorites">Most favorites</option>
+                <option value="intros">Most introductions</option>
+              </select>
+              {filtersActive && (
+                <button type="button" onClick={clearFilters}
+                  style={{ padding: "9px 12px", background: "none", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer", color: "#475569" }}>
+                  Clear filters
+                </button>
+              )}
+              <span aria-live="polite" style={{ fontSize: 12, color: "#64748b", marginLeft: "auto" }}>
+                Showing {filteredInvites.length} of {invites.length}
+              </span>
+            </div>
+          )}
 
           {loadingInvites ? (
             <p style={{ color: "#94a3b8", fontSize: 14 }}>Loading…</p>
           ) : invites.length === 0 ? (
             <p style={{ color: "#94a3b8", fontSize: 14 }}>No invites for this event yet.</p>
+          ) : filteredInvites.length === 0 ? (
+            <p style={{ color: "#64748b", fontSize: 14 }}>
+              No invites match these filters.{" "}
+              <button type="button" onClick={clearFilters} style={{ background: "none", border: "none", color: "#4f46e5", fontWeight: 600, cursor: "pointer", padding: 0, font: "inherit" }}>
+                Clear filters
+              </button>
+            </p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {invites.map((inv) => {
+              {filteredInvites.map((inv) => {
                 const st = inviteStatus(inv);
                 return (
                   <div key={inv.id} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "16px 20px" }}>
